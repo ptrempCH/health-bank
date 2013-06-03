@@ -1,0 +1,254 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+	<title>Health Bank Register</title>
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script type="text/javascript" src="../js/jquery.base64.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+	<link href="../css/register.css" rel="stylesheet" type="text/css">
+	<!--Sliding icons-->
+	<script type="text/javascript">
+		function register() {
+			if($("#companydata").is(":visible")){
+				var companyname = $("#companyname").val();
+				if(companyname==undefined || companyname.length<2){
+					$("#feedbackText").html("Please fill out all the fields."); 
+					$("#feedbackText").css("color","red"); 
+					return false;
+				}
+			} else {
+				var firstname = $("#firstname").val();
+				var lastname = $("#lastname").val();
+				if(firstname==undefined || lastname==undefined || firstname.length<1 || lastname.length<1){
+					$("#feedbackText").html("Please fill out all the fields."); 
+					$("#feedbackText").css("color","red"); 
+					return false;
+				}
+			}
+			var username = $("#username").val();
+			var pw = $("#pw").val();
+			var repPw = $("#repPw").val();
+			if(username==undefined ||  pw==undefined || repPw==undefined || username.length<1 || pw.length<1 || repPw.length<1){
+				$("#feedbackText").html("Please fill out all the fields."); 
+				$("#feedbackText").css("color","red"); 
+				return false;
+			}
+			if(username.length<4 || pw.length < 6){ 
+				$("#feedbackText").html("Username or password is either missing or too short. Username has to be at least 4, password at least 6 characters long"); 
+				$("#feedbackText").css("color","red"); 
+				return false;
+			}
+			if(pw!=repPw){
+				$("#feedbackText").html("The passwords do not match!"); 
+				$("#feedbackText").css("color","red"); 
+				return false;
+			}
+			var credentials = $.base64.encode(username+":"+pw);
+
+			if($("#companydata").is(":visible")){
+				$.ajax({
+					url: API_URL+"Register",
+					type: 'post',
+					dataType: 'json',
+					data: { username : encodeURIComponent(username), pw : encodeURIComponent(credentials), companyname : encodeURIComponent(companyname) },
+					success: function(data){
+						if(data.result=="failed"){
+							$("#feedbackText").html(data.result+": "+data.error); 
+							$("#feedbackText").css("color","red"); 
+						} else {
+							$("#feedbackText").html(data.result+": "+data.message+"!<br/>You will automatically be redirected to login."); 
+							$("#feedbackText").css("color","#4F8A10"); 
+							setTimeout(function(){window.location = WEB_URL+"login.html";},3000);
+						}
+					},
+					error: function (request, status, error) {
+						console.log(request);
+						$("#feedbackText").html(request.status + " " + request.statusText + ": " + request.responseText); 
+						$("#feedbackText").css("color","red"); 
+					}
+				});
+			} else {
+				$.ajax({
+					url: API_URL+"Register",
+					type: 'post',
+					dataType: 'json',
+					data: { username : encodeURIComponent(username), pw : encodeURIComponent(credentials), firstname : encodeURIComponent(firstname), lastname : encodeURIComponent(lastname) },
+					success: function(data){
+						if(data.result=="failed"){
+							$("#feedbackText").html(data.result+": "+data.error); 
+							$("#feedbackText").css("color","red"); 
+						} else {
+							$("#feedbackText").html(data.result+": "+data.message+"!<br/>You will automatically be redirected to login."); 
+							$("#feedbackText").css("color","#4F8A10"); 
+							setTimeout(function(){window.location = WEB_URL+"login.html";},3000);
+						}
+					},
+					error: function (request, status, error) {
+						console.log(request);
+						$("#feedbackText").html("There was an error:" + request.status + " " + request.statusText + ": " + request.responseText); 
+						$("#feedbackText").css("color","red"); 
+					}
+				});
+			}
+
+			return false;
+		}
+		
+		function cancel() {
+			window.location = WEB_URL+"login.html";
+		}
+
+		$(document).ready(function() {
+			$(".firstname").focus(function() {
+				$(".icon1").css("left","-48px");
+			});
+			$(".firstname").blur(function() {
+				$(".icon1").css("left","0px");
+			});
+			$(".lastname").focus(function() {
+				$(".icon2").css("left","-48px");
+			});
+			$(".lastname").blur(function() {
+				$(".icon2").css("left","0px");
+			});
+
+			$(".username").focus(function() {
+				$(".icon3").css("left","-48px");
+			});
+			$(".username").blur(function() {
+				$(".icon3").css("left","0px");
+			});
+			$(".companyname").focus(function() {
+				$(".icon1").css("left","-48px");
+			});
+			$(".companyname").blur(function() {
+				$(".icon1").css("left","0px");
+			});
+			
+			$(".password").focus(function() {
+				$(".pIcon1").css("left","-48px");
+			});
+			$(".password").blur(function() {
+				$(".pIcon1").css("left","0px");
+			});
+			$(".repPassword").focus(function() {
+				$(".pIcon2").css("left","-48px");
+			});
+			$(".repPassword").blur(function() {
+				$(".pIcon2").css("left","0px");
+			});
+			$("#cancelButton").click(function(){
+				cancel();
+				return false;
+			});
+			$("#registerButton").click(function(){
+				register();
+				return false;
+			});
+			$("#instituteRegButton").click(function(){
+				if($("#companydata").is(":visible")){
+					$("#companydata").hide();
+					$("#userdata").show();
+					$("#instituteRegButton").html("Register as an institute");
+					$("#regTitle").html("User Registration");
+					$("#login-form label").autoWidth();
+					$(".icon3").removeClass("icon3-comp");
+					$(".pIcon1").removeClass("pIcon1-comp");
+					$(".pIcon2").removeClass("pIcon2-comp");
+				} else {
+					$("#companydata").show();
+					$("#userdata").hide();
+					$("#instituteRegButton").html("Register as a user");
+					$("#regTitle").html("Company Registration");
+					$("#login-form label").autoWidth();
+					$(".icon3").addClass("icon3-comp");
+					$(".pIcon1").addClass("pIcon1-comp");
+					$(".pIcon2").addClass("pIcon2-comp");
+				}
+			});
+			$("#companydata").hide();
+			$("#login-form label").autoWidth();
+		});
+		
+	</script>
+</head>
+<body>
+	<h1 class="heading">Welcome to the Health Bank<sup>&copy;</sup></h1>
+	<div id="wrapper">
+		<!--Sliding icons-->
+		<div class="user-icon icon1"></div>
+		<div class="user-icon icon2"></div>
+		<div class="user-icon icon3"></div>
+		<div class="pass-icon pIcon1"></div>
+		<div class="pass-icon pIcon2"></div>
+		<!--END Sliding icons-->
+
+		<!--login form inputs-->
+		<form name="login-form" id="login-form" class="wrapper-form" action="" method="post">
+
+			<!--Header-->
+			<div class="wrapper-header">
+			<h1 id="regTitle">User Registration</h1>
+			<span id="feedbackText">Please fill out all the forms below in order to sign up to the system!</span>
+			</div>
+			<!--END header-->
+			
+			<!--Input fields-->
+			<div class="wrapper-content">
+			<div id="userdata">
+				<label for="firstname" id="firstnameLabel" class="label firstname">Firstname</label> 
+				<input id="firstname" name="firstname" type="text" class="input firstname" placeholder="Firstname" /> 
+				<br/>
+				<label for="lastname" id="lastnameLabel" class="label lastname">Lastname</label>
+				<input id="lastname" name="lastname" type="text" class="input lastname" placeholder="Lastname" />
+			</div>
+			<div id="companydata">
+				<label for="companyname" id="companynameLabel" class="label companyname">Company</label>
+				<input id="companyname" name="companyname" type="text" class="input companyname" placeholder="Company Name" />
+			</div>
+			<label for="username" id="usernameLabel" class="label username">Username</label>
+			<input id="username" name="username" type="text" class="input username" placeholder="Username" />
+			<br/>
+			<label for="pw" id="passwordLabel" class="label passLabel">Password</label> 
+			<input name="password" id="pw" type="password" class="input password" placeholder="Password" />
+			<br/>
+			<label for="repPw" id="repPasswordLabel" class="label repPassLabel">Repeat </label>
+			<input name="confirmpassword" id="repPw" type="password" class="input repPassword" placeholder="Confirm Password" />
+			</div>
+			<!--END Input fields-->
+			
+			<!--Buttons-->
+			<div class="wrapper-footer">
+			<!--Register button--><input id="registerButton" type="submit" name="submit" value="Register" class="wrapper-button" /><!--END Register button-->
+			<!--Cancel button--><input id="cancelButton" type="submit" name="submit" value="Cancel" class="cancel" /><!--END cancel button-->
+			</div>
+			<!--END Buttons-->
+
+			<!--Register as an Institute -->
+			<div class="reg-institute">
+				<a id="instituteRegButton">Register as an Institute</a>
+			</div>
+			<!--END Register as an Institute -->
+		</form>
+		<!--end login form-->
+
+	</div><!--end wrapper-->
+	
+	<!--bg gradient--><div class="gradient"></div><!--END bg gradient-->
+	
+	<!-- bottom bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+<!--bottom bar -->
+</body>
+</html>

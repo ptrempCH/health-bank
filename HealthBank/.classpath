@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jre7">
+		<attributes>
+			<attribute name="owner.project.facets" value="java"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/org.eclipse.jst.server.tomcat.runtimeTarget/Apache Tomcat v7.0">
+		<attributes>
+			<attribute name="owner.project.facets" value="jst.web"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
+	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
+	<classpathentry exported="true" kind="lib" path="D:/Master/Masterthesis/Code/Libraries/mongo-java-driver-2.11.0.jar" sourcepath="D:/Master/Masterthesis/Code/Libraries/mongo-java-driver-2.11.0-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/D:/Master/Masterthesis/Code/Libraries/mongo-java-driver-2.11.0-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="D:/Master/Masterthesis/Code/Libraries/commons-codec-1.7.jar" sourcepath="D:/Master/Masterthesis/Code/Libraries/commons-codec-1.7-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/D:/Master/Masterthesis/Code/Libraries/mongo-java-driver-2.11.0-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry exported="true" kind="lib" path="D:/Master/Masterthesis/Code/HealthBank/WebContent/WEB-INF/lib/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="D:/Master/Masterthesis/Code/HealthBank/WebContent/WEB-INF/lib/commons-io-2.4.jar" sourcepath="D:/Master/Masterthesis/Code/HealthBank/WebContent/WEB-INF/lib/commons-io-2.4-sources.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/D:/Master/Masterthesis/Code/HealthBank/WebContent/WEB-INF/lib/commons-io-2.4-javadoc.jar!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="output" path="build/classes"/>
+</classpath>

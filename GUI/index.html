@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<link href="css/healthbank.css" rel="stylesheet" type="text/css">
+	<link href="css/login.css" rel="stylesheet" type="text/css">
+	<script src="js/healthbank.js"></script>
+	<script type="text/javascript">
+
+		function checkLogin() {
+			if(typeof(Storage)!=="undefined")
+			{
+				var mySession = localStorage.getItem("hb_session");
+				var myCredentials = localStorage.getItem("hb_cred");
+				if(mySession==undefined || myCredentials==undefined){ return; }
+				
+				$.ajax({
+					url: API_URL+"Login",
+					type: 'get',
+					dataType: 'json',
+					data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials) },
+					success: function(data){
+						if(data.result=="failed"){
+							if(data.status=="loggedOut"){
+								// don't do anything, since we are redirected any second.
+							}
+						} else {
+							window.location = WEB_URL+"home.html";
+						}
+					},
+					error: function (request, status, error) {
+						console.log(request);
+						$("#feedbackText").html(request.status + " " + request.statusText + ": " + request.responseText); 
+						$("#feedbackText").css("color","red"); 
+					}
+				});
+			}
+		}
+
+		$(document).ready(function() {
+			checkLogin();
+			setTimeout(function(){window.location = WEB_URL+"login.html";}, 2000);
+			$("#redirectButton").click(function(){
+				window.location = WEB_URL+"login.html";
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<h1 class="heading">Welcome to the Health Bank<sup>&copy;</sup></h1>
+	<div id="wrapper">
+		<div class="wrapper-form">
+			<!--Header-->
+			<div class="wrapper-header">
+				<h1>You Need to Login!</h1>
+			</div>
+			<!--END header-->
+
+
+			<div class="wrapper-content">
+				<p>You need to login first in order to work with the system. To do so, you are being redirected to the login page now.</p>
+				<br/>
+				<p>If you are not redirected after a few seconds, please click on the button below!</p>
+			</div>
+
+			<div class="wrapper-footer">
+				<button id="redirectButton" name="redirect" value="Redirect" class="wrapper-button">Redirect</button>
+			</div>
+		</div>
+	</div><!--end wrapper-->
+	
+	<!--bg gradient--><div class="gradient"></div><!--END bg gradient-->
+	
+	<!-- bottom bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+<!--bottom bar -->
+</body>
+</html>

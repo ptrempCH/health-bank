@@ -1,0 +1,62 @@
+/*******************
+FONTS
+*******************/
+
+@import url(http://fonts.googleapis.com/css?family=Bree+Serif);
+
+
+/*******************
+WRAPPER CONTENT
+*******************/
+
+.wrapper-form .wrapper-content {
+	padding: 0 30px 25px 30px;
+}
+
+/* Input field */
+.wrapper-form .wrapper-content .input {
+	width: 188px;
+	padding: 15px 25px;
+}
+
+/* Second input field */
+.wrapper-form .wrapper-content .password, .wrapper-form .wrapper-content .pass-icon {
+	margin-top: 25px;
+}
+
+.user-icon {
+	top:147px; /* Positioning fix for slide-in, got lazy to think up of simpler method. */
+	background: rgba(65,72,72,0.75) url(../images/user-icon.png) no-repeat center;	
+}
+
+.pass-icon {
+	top:221px;
+	background: rgba(65,72,72,0.75) url(../images/pass-icon.png) no-repeat center;
+}
+
+/* Register button */
+.wrapper-form .wrapper-footer .register {
+	display: block;
+	float: right;
+	padding: 10px;
+	margin-right: 20px;
+	
+	background: none;
+	border: none;
+	cursor: pointer;
+	
+	font-family: 'Bree Serif', serif;
+	font-weight: 300;
+	font-size: 18px;
+	color: #414848;
+	text-shadow: 0px 1px 0 rgba(256,256,256,0.5);
+}
+
+.wrapper-form .wrapper-footer .register:hover {
+	color: #3f9db8;
+}
+
+.wrapper-form .wrapper-footer .register:focus {
+	position: relative;
+	bottom: -1px;
+}

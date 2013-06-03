@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="../../js/healthbank.js"></script>
+	<script src="../../js/moment.min.js"></script>
+	<script src="../../js/apps/caloriesApp.js"></script>
+	<link href="../../css/healthbank.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+
+		var userData;
+
+		function loadUserIcon(data){
+			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
+			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
+			$(".detail-icon").css("display", "block");
+		}
+
+		function loadUserInfo(data){
+			if(data==undefined){ 
+				/* Do nothing for the moment */ 
+				console.log("data undefined in loadUserInfo()");
+				return;
+			}
+			if(data.userIcon!=undefined){
+				$("#userInfo").html(decodeURIComponent(data.username));
+				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
+			} else {
+				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
+			}
+			userData = data;
+		}
+
+		$(document).ready(function() {
+			checkLogin();
+			setSearchAnimationApp();
+			getUserData({onSuccess: function(data){loadUserInfo(data);}});
+			loadTodaySportsItems();
+			$("#logoutButton").click(function(){
+				logout();
+				return false;
+			});
+			$("#addNewButton").click(function(){
+				$("#calApp-addnew-box").css("display", "block");
+				$("#calApp-addnew-box .label").css("width", "150px");
+				$("#addNewButton").css("display", "none");
+				$("#addBMRButton").css("display", "none");
+				$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+				if(bmrSet){
+					$("#mealtype").val("sports");
+					$("#gender").parent().hide();
+					$("#age").parent().hide();
+					$("#weight").parent().hide();
+					$("#activity").parent().hide();
+					$("#tall").parent().hide();
+				} else {
+					$("#cal").parent().hide();
+					$("#descr").parent().hide();
+				}
+				if(userData.gender=="mr"){
+					$("#gender").val("m");
+					$("#gender").parent().hide();
+				} else if(userData.gender=="mrs"){
+					$("#gender").val("f");
+					$("#gender").parent().hide();
+				}
+				if(userData.birthday!=undefined){
+					$("#age").parent().hide();
+				}
+				$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+				return false;
+			});
+			$("#cancelButton").click(function(){
+				$("#calApp-addnew-box").css("display", "none");
+				return false;
+			});
+			$("#submitButton").click(function(){
+				if($("#mealtype").val()=="sports"){
+					addCalEntry();
+				} else {
+					addBMREntry();
+				}
+				return false;
+			});
+			$("#timelineButton").click(function(){
+				window.location = WEB_URL+"spaces/caloriesTimeline.html";
+			});
+			$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+			$("#mealtype").change(function(e){
+				if(this.value=="sports"){
+					$("#cal").parent().show();
+					$("#descr").parent().show();
+					$("#gender").parent().hide();
+					$("#age").parent().hide();
+					$("#weight").parent().hide();
+					$("#activity").parent().hide();
+					$("#tall").parent().hide();
+					$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+				} else {
+					if(bmrSet){
+						$("#calApp-feedback").html("You can add your BMR only once a day!");
+						$("#calApp-feedback").css("color", "red");
+						$("#mealtype").val("sports");
+						return false;
+					} 
+					if($("#gender").parent().is(":hidden")){
+						$("#cal").parent().hide();
+						$("#descr").parent().hide();
+						if(userData.gender=="undefined"){$("#gender").parent().show();}
+						if(userData.birthday=="undefined"){$("#age").parent().show();}
+						$("#weight").parent().show();
+						$("#activity").parent().show();
+						$("#tall").parent().show();
+						$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+					}
+				}
+			});
+			$("#userInfo").click(function(){
+				window.location = WEB_URL+"profile.html";
+			});
+			$("#search").keyup(function(event){
+			    if(event.keyCode == 13){
+			    	if($("#search").val()!=undefined && $("#search").val().length>0){
+			    		if(typeof(Storage)!=="undefined") {
+							localStorage.setItem("hb_query", $("#search").val());
+						}
+			        	window.location = WEB_URL + "queryResult.html?";
+			       	}
+			    }
+			});
+		});
+	</script>
+</head>
+<body>
+	<!--Header-->
+	<h1 class="heading">Welcome to the Health Bank<sup>&copy;</sup></h1>
+	<!--END Header-->
+
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>Your Burned Calories Today</h1> 
+				<div class="page-actionbox">
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../../images/search-icon.png"/></span>
+						<input id="search" type="text" x-webkit-speech/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li><a href="../home.html">Home</a></li>
+					<li><a href="../profile.html">Profile</a></li>
+					<li><a href="../spaces/spaces.html">Spaces</a></li>
+					<li><a href="../circles.html">Circles</a></li>
+					<li class="selectedLi"><a href="../apps.html">Apps</a></li>
+					<li><a href="../community.html">Community</a></li>
+					<li><a href="../about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<div id="chronic-section">
+						<div>
+							<h3 id="chronic-section-header">Your records for today</h3>
+							<input id="timelineButton" type="submit" name="submit" value="Timeline" class="big-button timelineButton" />
+						</div>
+						<ul id="recordentries" class="recordentries calAppRecEnt">
+							<center>
+								<img style="height:60px; float:center; display: block; margin-left: auto; margin-right: auto;" src="../../images/loading.gif"></img>
+								Loading...
+							</center>
+						</ul>
+					</div>
+
+					<input id="addNewButton" type="submit" name="submit" value="Add New Item" class="button" />
+					<div class="calApp-addnew-box" id="calApp-addnew-box">
+						<h3 class="calApp-header-text">Add a new entry to your chronicle.</h3>
+						<div id="calApp-feedback" class="callApp-feedback">Please fill out all the fields with a *.</div>
+						<form name="calApp-form" id="calApp-form" class="calApp-form" action="" method="post">
+							<!--Input fields-->
+
+							<!-- sports -->
+							<div>
+								<label for="mealtype" id="mealLabel" class="label">How did you burn the calories?(*)</label>
+								<select id="mealtype" name="mealtype" class="select" placeholder="Meal Type" require>
+								  <option value="bmr">BMR (<a href="http://en.wikipedia.org/wiki/Harris-Benedict_equation" target='_blank'>Basal Metabolic Rate</a>)</option>
+								  <option value="sports">Sports</option>
+								</select>
+							</div>
+							<div>
+								<label for="descr" id="descrLabel" class="label">What did you do?(*)</label> 
+								<input id="descr" name="descr" type="text" class="input descr" placeholder="What?" required />
+							</div>
+							<div>
+								<label for="cal" id="calLabel" class="label">How many calories?</label> 
+								<input id="cal" name="cal" type="number" class="input cal" placeholder="1" step="1" min="0" value="1" />
+							</div>
+
+							<!-- bmr -->
+							<div>
+								<label for="gender" id="genderLabel" class="label">&#9794; or &#9792; ?(*)</label>
+								<select id="gender" name="gender" class="select" require>
+								  <option value="m">Men</option>
+								  <option value="f">Women</option>
+								</select>
+							</div>
+							<div>
+								<label for="activity" id="activityLabel" class="label">How much activity do you have during the day?(*)</label>
+								<select id="activity" name="activity" class="select" require>
+								  <option value="little">Little to no exercise</option>
+								  <option value="light">Light exercise</option>
+								  <option value="moderate">Moderate exercise</option>
+								  <option value="heavy">Heavy exercise</option>
+								  <option value="veryHeavy">Very heavy exercise</option>
+								</select>
+							</div>
+							<div>
+								<label for="age" id="ageLabel" class="label">How old are you?(*)</label> 
+								<input id="age" name="age" type="number" class="input age" placeholder="21" step="1" min="0" value="21" required />
+							</div>
+							<div>
+								<label for="weight" id="weightLabel" class="label">How much do you weight (in kg)(*)</label> 
+								<input id="weight" name="weight" type="number" class="input weight" placeholder="75" step="0.1" min="0" value="75" required />
+							</div>
+							<div>
+								<label for="tall" id="tallLabel" class="label">How tall are you (in cm)?(*)</label> 
+								<input id="tall" name="tall" type="number" class="input tall" placeholder="170" step="1" min="0" value="170" />
+							</div>
+
+
+							<div>
+								<label for="comment" id="commentLabel" class="label comment">Any comments?</label>
+								<textarea id="comment" name="comment" class="input comment" placeholder="Comment" rows="3" cols="50" onkeyup="textAreaAdjust(this)"></textarea>
+							</div>
+							<!--END Input fields-->
+							<!--Buttons-->
+							<div class="addRec-footer">
+								<input id="submitButton" type="submit" name="submit" value="Add" class="big-button calAppFormButton" />
+								<input id="cancelButton" type="submit" name="submit" value="Cancel" class="big-button calAppFormButton" />
+							</div>
+							<!--END Buttons-->
+						</form>
+					</div>
+					<div class="calApp-addnew-box" id="calApp-addbmr-box">
+						<h3 class="calApp-header-text">Add a new entry with your daily BMR (<a href="http://en.wikipedia.org/wiki/Harris-Benedict_equation" target='_blank'>Basal Metabolic Rate</a>).</h3>
+						<div id="calApp-bmrfeedback" class="callApp-feedback">Please fill out all the fields with a *.</div>
+						<form name="calApp-form" id="calAppBMR-form" class="calApp-form" action="" method="post">
+							<!--Input fields-->
+							<div>
+								<label for="gender" id="genderLabel" class="label">&#9794; or &#9792; ?(*)</label>
+								<select id="gender" name="gender" class="select" require>
+								  <option value="m">Men</option>
+								  <option value="f">Women</option>
+								</select>
+							</div>
+							<div>
+								<label for="activity" id="activityLabel" class="label">How much activity do you have during the day?(*)</label>
+								<select id="activity" name="activity" class="select" require>
+								  <option value="little">Little to no exercise</option>
+								  <option value="light">Light exercise</option>
+								  <option value="moderate">Moderate exercise</option>
+								  <option value="heavy">Heavy exercise</option>
+								  <option value="veryHeavy">Very heavy exercise</option>
+								</select>
+							</div>
+							<div>
+								<label for="age" id="ageLabel" class="label">How old are you?(*)</label> 
+								<input id="age" name="age" type="number" class="input age" placeholder="21" step="1" min="0" value="21" required />
+							</div>
+							<div>
+								<label for="weight" id="weightLabel" class="label">How much do you weight (in kg)(*)</label> 
+								<input id="weight" name="weight" type="number" class="input weight" placeholder="75" step="0.1" min="0" value="75" required />
+							</div>
+							<div>
+								<label for="tall" id="tallLabel" class="label">How tall are you (in cm)?(*)</label> 
+								<input id="tall" name="tall" type="number" class="input tall" placeholder="170" step="1" min="0" value="170" />
+							</div>
+							<!--END Input fields-->
+							<!--Buttons-->
+							<div class="addRec-footer">
+								<input id="submitBMRButton" type="submit" name="submit" value="Add" class="callApp-submit-button" />
+								<input id="cancelBMRButton" type="submit" name="submit" value="Cancel" class="callApp-submit-button" />
+							</div>
+							<!--END Buttons-->
+						</form>
+					</div>
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<dbServerConnection>
+		<HOST>localhost</HOST>
+		<PORT>27017</PORT>
+	</dbServerConnection>
+	<dbServerSetup>
+		<DB_NAME>healthbank</DB_NAME>
+		<collection>
+			<USER_COLLECTION_NAME>users</USER_COLLECTION_NAME>
+			<INSTITUTES_COLLECTION_NAME>institutes</INSTITUTES_COLLECTION_NAME>
+			<RECORDS_COLLECTION_NAME>records</RECORDS_COLLECTION_NAME>
+			<FOLDERS_COLLECTION_NAME>folders</FOLDERS_COLLECTION_NAME>
+			<CIRCLES_COLLECTION_NAME>circles</CIRCLES_COLLECTION_NAME>
+			<MESSAGES_COLLECTION_NAME>messages</MESSAGES_COLLECTION_NAME>
+		</collection>
+	</dbServerSetup>
+	<debugSettings>
+		<DEBUGGING>true</DEBUGGING>
+		<DEBUGLEVEL>info</DEBUGLEVEL>
+	</debugSettings>
+	<imagesPath>
+		<IPATH>C:\Temp\images\</IPATH>
+	</imagesPath>
+</configuration>

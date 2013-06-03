@@ -1,0 +1,27 @@
+<html>
+<head>
+	<title>Get Image</title>
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$.ajax({
+			url: "http://localhost:8080/HealthBank/image",
+			type: 'get',
+			data: { name : encodeURIComponent("defaultUserIcon")},
+			success: function(data){
+					$("#image").attr("src", "data:image/png;base64,"+data);
+				}, 
+			error: function(data){
+					$("#image").attr("src", "data:image/png;base64,"+data.responseText);
+					console.log(data);
+				}
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	This is the image...<br/>
+	<img id="image"/>
+</body>
+</html>

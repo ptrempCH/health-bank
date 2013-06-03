@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+	<script type="text/javascript" src="../js/jquery.base64.js"></script>
+	<script type="text/javascript" src="../js/moment.min.js"></script>
+	<script type="text/javascript" src="../js/healthbank.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">  
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+
+	<script type="text/javascript">
+
+		var userData;
+
+		function loadUserIcon(data, userId){
+			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
+			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
+			$(".detail-icon").css("display", "block");
+		}
+
+		function loadUserInfo(data){
+			if(data==undefined){ 
+				/* Do nothing for the moment */ 
+				console.log("data undefined in loadUserInfo()");
+				return;
+			}
+			if(data.gender!=undefined){
+				data.gender=decodeURIComponent(data.gender);
+				if(data.gender=="mr"){ data.gender = "Mr.";} else { data.gender = "Mrs.";}
+				$(".detail-name").html("Name: "+data.gender+" "+decodeURIComponent(data.firstname)+" "+decodeURIComponent(data.lastname));
+			} else {
+				$(".detail-name").html("Name: "+decodeURIComponent(data.firstname)+" "+decodeURIComponent(data.lastname));
+			}
+			if(data.userIcon!=undefined){
+				$("#userInfo").html(decodeURIComponent(data.username));
+				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
+			} else {
+				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
+			}
+	    	$(".detail-username").html("<b>Username: </b>"+decodeURIComponent(data.username));
+	    	if(data.street!=undefined && data.code!=undefined && data.city!=undefined){
+	    		$(".detail-address").html("<b>Address: </b>"+decodeURIComponent(data.street)+", "+decodeURIComponent(data.code)+" "+decodeURIComponent(data.city)+", "+decodeURIComponent(data.country));
+	    		$(".detail-address").css("display", "block");
+	    	}
+	    	if(data.privMail!=undefined && data.workMail!=undefined){
+	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.privMail)+"</div><div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.workMail)+"</div>");
+	    		$(".detail-email").css("display", "block");
+	    	} else if (data.privMail!=undefined) {
+	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.privMail))+"</div>";
+	    		$(".detail-email").css("display", "block");
+	    	} else if (data.workMail!=undefined) {
+	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.workMail)+"</div>");
+	    		$(".detail-email").css("display", "block");
+	    	}
+	    	if(data.privPhone!=undefined || data.workPhone!=undefined || data.mobPhone!=undefined){
+	    		var s = "<b>Phone: </b><br/>";
+	    		$(".detail-phone").css("display", "block");
+	    		if (data.privPhone!=undefined) {
+		    		s += "<div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.privPhone)+"</div>";
+		    	}
+		    	if (data.workPhone!=undefined) {
+		    		s += "<div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.workPhone)+"</div>";
+		    	} 
+		    	if (data.mobPhone!=undefined) {
+		    		s += "<div style=\"margin-left:10px\">Mobile: "+decodeURIComponent(data.mobPhone)+"</div>";
+		    	}
+		    	$(".detail-phone").html(s);
+	    	}
+	    	if(data.nationality!=undefined){
+	    		$(".detail-nationality").html("<b>Nationality: </b>"+decodeURIComponent(data.nationality));
+	    		$(".detail-nationality").css("display", "block");
+	    	}
+	    	if(data.spouse!=undefined){
+	    		$(".detail-spouse").html("<b>Spouse: </b>"+decodeURIComponent(data.spouse));
+	    		$(".detail-spouse").css("display", "block");
+	    	}
+	    	if(data.insurance!=undefined){
+	    		$(".detail-insurance").html("<b>Insurance: </b>"+decodeURIComponent(data.insurance));
+	    		$(".detail-insurance").css("display", "block");
+	    	}
+	    	if(data.birthday!=undefined){
+	    		$(".detail-birthday").html("<b>Birthday: </b>"+decodeURIComponent(data.birthday));
+	    		$(".detail-birthday").css("display", "block");
+	    	}
+
+			userData = data;
+		}
+
+		function popup(){
+			var maskHeight = $(document).height();  
+    		var maskWidth = $(window).width();
+    		var dialogTop =  (maskHeight/2) - ($('#dialog-form').height()/2);  
+    		var dialogLeft = (maskWidth/2) - ($('#dialog-form').width()/2);
+    		if(userData==undefined){
+				$(".dialog-header").html("Could not load userData. There must be a connection problem.");
+				$(".dialog-header").css("color", "red");
+				$(".dialog-header").css("font-weight", "bold");
+				$("#dialog-form").animate({ scrollTop: 0 }, "slow");
+			} else {
+	    		$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+	    		$('#dialog-form').css({top:dialogTop, left:dialogLeft}).show();
+	    		$(".profile-dialog-form label").autoWidth();
+	    		$("#firstname").val(userData.firstname);
+	    		$("#lastname").val(userData.lastname);
+	    		if(userData.gender!=undefined){$("#gender").val(userData.gender);}
+	    		if(userData.street!=undefined){$("#street").val(userData.street);}
+	    		if(userData.code!=undefined){$("#code").val(userData.code);}
+	    		if(userData.city!=undefined){$("#city").val(userData.city);}
+	    		if(userData.country!=undefined){$("#country").val(userData.country);}
+	    		if(userData.privMail!=undefined){$("#privMail").val(userData.privMail);}
+	    		if(userData.workMail!=undefined){$("#workMail").val(userData.workMail);}
+	    		if(userData.privPhone!=undefined){$("#privPhone").val(userData.privPhone);}
+	    		if(userData.mobPhone!=undefined){$("#mobPhone").val(userData.mobPhone);}
+	    		if(userData.workPhone!=undefined){$("#workPhone").val(userData.workPhone);}    		
+	    		if(userData.nationality!=undefined){$("#nationality").val(userData.nationality);}
+	    		if(userData.spouse!=undefined){$("#spouse").val(userData.spouse);}
+	    		if(userData.insurance!=undefined){$("#insurance").val(userData.insurance);}
+	    		if(userData.birthday!=undefined){$("#birthday").val(moment(userData.birthday, "DD-MM-YYYY").format("YYYY-MM-DD"));}
+	    	}
+		}
+
+		function save(){
+			if(userData==undefined){
+				$(".dialog-header").html("Could not load userData. There must be a connection problem.");
+				$(".dialog-header").css("color", "red");
+				$(".dialog-header").css("font-weight", "bold");
+				$("#dialog-form").animate({ scrollTop: 0 }, "slow");
+				return;
+			}
+			if($("#firstname").val()==undefined || $("#firstname").val().length<1 || $("#lastname").val()==undefined || $("#lastname").val().length<1 || $("#privMail").val()==undefined || $("#privMail").val().length<1)
+			{
+				$(".dialog-header").html("Please fill out all the fields with a (*)");
+				$(".dialog-header").css("color", "red");
+				$(".dialog-header").css("font-weight", "bold");
+				$("#dialog-form").animate({ scrollTop: 0 }, "slow");
+				return;
+			}
+			userData.firstname = $("#firstname").val();
+    		userData.lastname = $("#lastname").val();
+    		if($("#gender").val()!=undefined && $("#gender").val().length>0){userData.gender = $("#gender").val();}
+    		if($("#street").val()!=undefined && $("#street").val().length>0){userData.street = $("#street").val();}
+    		if($("#code").val()!=undefined && $("#code").val().length>0){userData.code = $("#code").val();}
+    		if($("#city").val()!=undefined && $("#city").val().length>0){userData.city = $("#city").val();}
+    		if($("#country").val()!=undefined && $("#country").val().length>0){userData.country = $("#country").val();}
+    		if($("#privMail").val()!=undefined && $("#privMail").val().length>0){userData.privMail = $("#privMail").val();}
+    		if($("#workMail").val()!=undefined && $("#workMail").val().length>0){userData.workMail = $("#workMail").val();}
+    		if($("#privPhone").val()!=undefined && $("#privPhone").val().length>0){userData.privPhone = $("#privPhone").val();}
+    		if($("#mobPhone").val()!=undefined && $("#mobPhone").val().length>0){userData.mobPhone = $("#mobPhone").val();}
+    		if($("#workPhone").val()!=undefined && $("#workPhone").val().length>0){userData.workPhone = $("#workPhone").val();}    		
+    		if($("#nationality").val()!=undefined && $("#nationality").val().length>0){userData.nationality = $("#nationality").val();}
+    		if($("#spouse").val()!=undefined && $("#spouse").val().length>0){userData.spouse = $("#spouse").val();}
+    		if($("#insurance").val()!=undefined && $("#insurance").val().length>0){userData.insurance = $("#insurance").val();}
+    		if($("#birthday").val()!=undefined && $("#birthday").val().length>0){userData.birthday = moment($('#birthday').val(),"YYYY-MM-DD").format("DD-MM-YYYY");}
+
+
+			updateUserData(userData, {
+				onSuccess: function(data){
+					$("#dialog-form, #dialog-overlay").hide(); 
+					getUserData({onSuccess: function(data){loadUserInfo(data);}});
+				}, 
+				onError: function(data){
+					$(".dialog-header").html("There was a problem on the server.");
+					$(".dialog-header").css("color", "red");
+					$(".dialog-header").css("font-weight", "bold");
+					$("#dialog-form").animate({ scrollTop: 0 }, "slow");
+				}
+			});
+		}
+
+		function savePW(){
+			if($("#curPW").val()==undefined || $("#curPW").val().length<1){
+				$(".dialog-header").css("color", "red");
+				$(".dialog-header").css("font-weight", "bold");
+				return;
+			} 
+			if(typeof(Storage)!=="undefined")
+			{
+				var credentials = localStorage.getItem("hb_cred");
+				var pw = $.base64.decode(credentials);
+				pw = pw.substring(pw.indexOf(":")+1);
+				if($("#curPW").val() != pw ){
+					$(".dialog-header").html("Current Password is not correct!");
+					$(".dialog-header").css("color", "red");
+					$(".dialog-header").css("font-weight", "bold");
+					return;
+				}
+				if($("#newPW").val()==undefined || $("#newPW").val().length<4 || $("#repPW").val()==undefined || $("#repPW").val().length<4 || $("#newPW").val() != $("#repPW").val()){
+					$(".dialog-header").html("Fill out all the fields and repeat the new password correctly. A password needs to have at least 4 characters.");
+					$(".dialog-header").css("color", "red");
+					$(".dialog-header").css("font-weight", "bold");
+					return;
+				}
+				updatePassword($("#newPW").val(), {
+					onSuccess: function(data){
+						$("#pw-dialog-form, #dialog-overlay").hide();
+						credentials = $.base64.decode(credentials);
+						credentials = credentials.substring(0,credentials.indexOf(":"))+":"+$("#newPW").val();
+						credentials = $.base64.encode(credentials);
+						localStorage.setItem("hb_cred", credentials);
+					}, 
+					onError: function(data){
+						$(".dialog-header").html("There was a problem on the server.");
+						$(".dialog-header").css("color", "red");
+						$(".dialog-header").css("font-weight", "bold");
+					}
+				});
+			} else {
+				window.location = WEB_URL+"login.html";
+				return;
+			}
+		}
+
+		function saveIcon(){
+			var file = document.getElementById("file").files[0];
+		    name = file.name;
+		    size = file.size;
+		    type = file.type;
+		    if(name==undefined || name.length<1){
+		    	$(".dialog-header").html("Please provide a file.");
+				$(".dialog-header").css("color", "red");
+				$(".dialog-header").css("font-weight", "bold");
+		    }
+		    if(type != "image/png" && type !="image/PNG"){
+		    	$(".dialog-header").html("Only png images are supported so far.");
+				$(".dialog-header").css("color", "red");
+				$(".dialog-header").css("font-weight", "bold");
+		    } 
+		    if(size > 100000){
+		    	$(".dialog-header").html("Only files smaller then 100kB are supported.");
+				$(".dialog-header").css("color", "red");
+				$(".dialog-header").css("font-weight", "bold");
+		    }
+			var formData = new FormData(document.getElementById('icon-form'));
+		    updateUserIcon(formData, {
+				onSuccess: function(data){
+					$("#userIcon-dialog-form, #dialog-overlay").hide(); 
+					getUserData({onSuccess: function(data){loadUserInfo(data);}});
+				}, 
+				onError: function(data){
+					$(".dialog-header").html("There was a problem on the server.");
+					$(".dialog-header").css("color", "red");
+					$(".dialog-header").css("font-weight", "bold");
+				}
+			});
+		}
+
+		$(document).ready(function() {
+			checkLogin();
+			setSearchAnimation();
+			getUserData({onSuccess: function(data){loadUserInfo(data);}});
+			$("#logoutButton").click(function(){
+				logout();
+				return false;
+			});
+			$( "#edit" ).click(function() {
+				popup();
+				return false;
+			});
+			$( "#close, #dialog-overlay" ).click(function() {
+				$("#dialog-form, #dialog-overlay").hide();
+				$("#pw-dialog-form, #dialog-overlay").hide();
+				$("#userIcon-dialog-form, #dialog-overlay").hide();
+				return false;
+			});
+			$( "#save" ).click(function() {
+				save();
+				return false;
+			});
+			$("#changePW").click(function(){
+				$('#pw-dialog-form').height("320px");
+				var maskHeight = $(document).height();  
+	    		var maskWidth = $(window).width();
+	    		var dialogTop =  (maskHeight/2) - ($('#pw-dialog-form').height()/2);  
+	    		var dialogLeft = (maskWidth/2) - ($('#pw-dialog-form').width()/2);
+	    		$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+	    		$('#pw-dialog-form').css({top:dialogTop, left:dialogLeft}).show();
+	    		$(".profile-dialog-form label").autoWidth();
+				return false;
+			});
+			$( "#closePW").click(function() {
+				$("#pw-dialog-form, #dialog-overlay").hide();
+				$("#dialog-form, #dialog-overlay").hide();
+				$("#userIcon-dialog-form, #dialog-overlay").hide();
+				return false;
+			});
+			$( "#savePW" ).click(function() {
+				savePW();
+				return false;
+			});
+			$("#userIcon").click(function(){
+				$('#userIcon-dialog-form').height("160px");
+				var maskHeight = $(document).height();  
+	    		var maskWidth = $(window).width();
+	    		var dialogTop =  (maskHeight/2) - ($('#userIcon-dialog-form').height()/2);  
+	    		var dialogLeft = (maskWidth/2) - ($('#userIcon-dialog-form').width()/2);
+	    		$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+	    		$('#userIcon-dialog-form').css({top:dialogTop, left:dialogLeft}).show();
+	    		$(".profile-dialog-form label").autoWidth();
+				if(typeof(Storage)!=="undefined") {
+					var mySession = localStorage.getItem("hb_session");
+					var credentials = localStorage.getItem("hb_cred");
+					$("#session").attr("value", mySession);
+					$("#credentials").attr("value", credentials);
+				}
+
+				return false;
+			});
+			$("#closeIcon").click(function(){
+				$("#userIcon-dialog-form, #dialog-overlay").hide();
+				$("#pw-dialog-form, #dialog-overlay").hide();
+				$("#dialog-form, #dialog-overlay").hide();
+				return false;
+			});
+			$("#saveIcon").click(function(){
+				saveIcon();
+				return false;
+			});
+			$("#userInfo").click(function(){
+				window.location = WEB_URL+"profile.html";
+			});
+			$(window).resize(function() {
+				if(!$("#dialog-form").is(":hidden")) popup();
+			});
+			$("#delete").click(function(){
+				alert("Not yet implemented!");
+			});
+			$("#download").click(function(){
+				alert("Not yet implemented!");
+			});
+			var availableTags = [
+		      	"Afghanistan",
+				"Albania",
+				"Algeria",
+				"Andorra",
+				"Angola",
+				"Antigua &amp; Deps",
+				"Argentina",
+				"Armenia",
+				"Australia",
+				"Austria",
+				"Azerbaijan",
+				"Bahamas",
+				"Bahrain",
+				"Bangladesh",
+				"Barbados",
+				"Belarus",
+				"Belgium",
+				"Belize",
+				"Benin",
+				"Bhutan",
+				"Bolivia",
+				"Bosnia Herzegovina",
+				"Botswana",
+				"Brazil",
+				"Brunei",
+				"Bulgaria",
+				"Burkina",
+				"Burundi",
+				"Cambodia",
+				"Cameroon",
+				"Canada",
+				"Cape Verde",
+				"Central African Rep",
+				"Chad",
+				"Chile",
+				"China",
+				"Colombia",
+				"Comoros",
+				"Congo",
+				"Congo {Democratic Rep}",
+				"Costa Rica",
+				"Croatia",
+				"Cuba",
+				"Cyprus",
+				"Czech Republic",
+				"Denmark",
+				"Djibouti",
+				"Dominica",
+				"Dominican Republic",
+				"Timor Leste",
+				"Ecuador",
+				"Egypt",
+				"El Salvador",
+				"Equatorial Guinea",
+				"Eritrea",
+				"Estonia",
+				"Ethiopia",
+				"Fiji",
+				"Finland",
+				"France",
+				"Gabon",
+				"Gambia",
+				"Georgia",
+				"Germany",
+				"Ghana",
+				"Greece",
+				"Grenada",
+				"Guatemala",
+				"Guinea",
+				"Guinea-Bissau",
+				"Guyana",
+				"Haiti",
+				"Honduras",
+				"Hungary",
+				"Iceland",
+				"India",
+				"Indonesia",
+				"Iran",
+				"Iraq",
+				"Ireland {Republic}",
+				"Israel",
+				"Italy",
+				"Ivory Coast",
+				"Jamaica",
+				"Japan",
+				"Jordan",
+				"Kazakhstan",
+				"Kenya",
+				"Kiribati",
+				"Korea North",
+				"Korea South",
+				"Kuwait",
+				"Kyrgyzstan",
+				"Laos",
+				"Latvia",
+				"Lebanon",
+				"Lesotho",
+				"Liberia",
+				"Libya",
+				"Liechtenstein",
+				"Lithuania",
+				"Luxembourg",
+				"Macedonia",
+				"Madagascar",
+				"Malawi",
+				"Malaysia",
+				"Maldives",
+				"Mali",
+				"Malta",
+				"Marshall Islands",
+				"Mauritania",
+				"Mauritius",
+				"Mexico",
+				"Micronesia",
+				"Moldova",
+				"Monaco",
+				"Mongolia",
+				"Montenegro",
+				"Morocco",
+				"Mozambique",
+				"Myanmar, {Burma}",
+				"Namibia",
+				"Nauru",
+				"Nepal",
+				"Netherlands",
+				"New Zealand",
+				"Nicaragua",
+				"Niger",
+				"Nigeria",
+				"Norway",
+				"Oman",
+				"Pakistan",
+				"Palau",
+				"Panama",
+				"Papua New Guinea",
+				"Paraguay",
+				"Peru",
+				"Philippines",
+				"Poland",
+				"Portugal",
+				"Qatar",
+				"Romania",
+				"Russian Federation",
+				"Rwanda",
+				"St Kitts &amp; Nevis",
+				"St Lucia",
+				"Saint Vincent &amp; the Grenadines",
+				"Samoa",
+				"San Marino",
+				"Sao Tome &amp; Principe",
+				"Saudi Arabia",
+				"Senegal",
+				"Serbia",
+				"Seychelles",
+				"Sierra Leone",
+				"Singapore",
+				"Slovakia",
+				"Slovenia",
+				"Solomon Islands",
+				"Somalia",
+				"South Africa",
+				"Spain",
+				"Sri Lanka",
+				"Sudan",
+				"Suriname",
+				"Swaziland",
+				"Sweden",
+				"Switzerland",
+				"Syria",
+				"Taiwan",
+				"Tajikistan",
+				"Tanzania",
+				"Thailand",
+				"Togo",
+				"Tonga",
+				"Trinidad &amp; Tobago",
+				"Tunisia",
+				"Turkey",
+				"Turkmenistan",
+				"Tuvalu",
+				"Uganda",
+				"Ukraine",
+				"United Arab Emirates",
+				"United Kingdom",
+				"United States of America",
+				"Uruguay",
+				"Uzbekistan",
+				"Vanuatu",
+				"Vatican City",
+				"Venezuela",
+				"Vietnam",
+				"Yemen",
+				"Zambia",
+				"Zimbabwe",
+		    ];
+		    $( "#country" ).autocomplete({
+		      source: availableTags,
+		      appendTo: "#autoC",
+		      autoFocus: true
+		    });
+			$("#search").keyup(function(event){
+			    if(event.keyCode == 13){
+			    	if($("#search").val()!=undefined && $("#search").val().length>0){
+			    		if(typeof(Storage)!=="undefined") {
+							localStorage.setItem("hb_query", $("#search").val());
+						}
+			        	window.location = WEB_URL + "queryResult.html?";
+			       	}
+			    }
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<div class="dialog-overlay" id="dialog-overlay"></div>
+	<div id="dialog-form" class="profile-dialog-form dialog-front" title="Edit user settings">
+		<p class="dialog-front dialog-header">All form fields with a (*) are required.</p>
+		<br/>
+		<form class="dialog-content dialog-front">
+			<div>
+				<label for="gender" class="label">Title</label>
+				<select id="gender" name="gender" class="input" placeholder="Mr." require>
+				  <option value="mr">Mr.</option>
+				  <option value="mrs">Mrs.</option>
+				</select>
+			</div>
+			<div>
+				<label class="label dialog-front" for="firstname">Firstname(*)</label>
+				<input class="input dialog-front" type="text" name="firstname" id="firstname"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="lastname">Lastname(*)</label>
+				<input class="input dialog-front" type="text" name="lastname" id="lastname"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="street">Street</label>
+				<input class="input dialog-front" type="text" name="street" id="street"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="code">Code</label>
+				<input class="input dialog-front" type="number" name="code" id="code"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="city">City</label>
+				<input class="input dialog-front" type="text" name="city" id="city"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="country">Country</label>
+				<input class="input dialog-front" type="text" name="country" id="country"/><br/>
+				<div id="autoC"></div>
+			</div>
+			<div>
+				<label class="label dialog-front" for="privMail">Email (priv.)(*)</label>
+				<input class="input dialog-front" type="email" name="privMail" id="privMail"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="workMail">Email (work)</label>
+				<input class="input dialog-front" type="email" name="workMail" id="workMail"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="privPhone">Phone (priv.)</label>
+				<input class="input dialog-front" type="tel" name="privPhone" id="privPhone"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="mobPhone">Phone (mobile)</label>
+				<input class="input dialog-front" type="tel" name="mobPhone" id="mobPhone"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="workPhone">Phone (work)</label>
+				<input class="input dialog-front" type="tel" name="workPhone" id="workPhone"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="nationality">Nationality</label>
+				<input class="input dialog-front" type="text" name="nationality" id="nationality"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="birthday">Birthday</label>
+				<input class="input dialog-front" type="date" name="birthday" id="birthday"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="spouse">Spouse</label>
+				<input class="input dialog-front" type="text" name="spouse" id="spouse"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="insurance">Insurance</label>
+				<input class="input dialog-front" type="text" name="insurance" id="insurance"/><br/>
+			</div>
+			<br/>
+			<div class="dialog-button dialog-front">
+				<button class="button dialogButton dialog-front" id="save">Save</button>
+				<button class="button dialogButton dialog-front" id="close">Close</button>
+			</div>
+		</form>
+	</div>
+	<div id="pw-dialog-form" class="profile-dialog-form dialog-front" title="Edit password">
+		<p class="dialog-front dialog-header">All form fields are required.</p>
+		<br/>
+		<form class="dialog-content dialog-front">
+			<div>
+				<label class="label dialog-front" for="curPW">Current Password</label>
+				<input class="input dialog-front" type="password" name="curPW" id="curPW"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="newPW">New Password</label>
+				<input class="input dialog-front" type="password" name="newPW" id="newPW"/><br/>
+			</div>
+			<div>
+				<label class="label dialog-front" for="repPW">Repeat</label>
+				<input class="input dialog-front" type="password" name="repPW" id="repPW"/><br/>
+			</div>
+			<div class="dialog-button dialog-front">
+				<button class="button dialogButton dialog-front" id="savePW">Save</button>
+				<button class="button dialogButton dialog-front" id="closePW">Close</button>
+			</div>
+		</form>
+	</div>
+	<div id="userIcon-dialog-form" class="profile-dialog-form dialog-front" title="Change User Icon">
+		<p class="dialog-front dialog-header">All form fields are required.</p>
+		<br/>
+		<form class="dialog-content dialog-front" id="icon-form" enctype="multipart/form-data" >
+			<div>
+				<label class="label dialog-front" for="file">File to upload</label>
+  				<input name="image_file" class="input dialog-front" id="file" type="file" onchange="fileSelected()"/><br/>
+			</div>
+			<input type="hidden" id="session" name="session"/>
+			<input type="hidden" id="credentials" name="credentials"/>
+			<div class="dialog-button dialog-front">
+				<button class="button dialogButton dialog-front" id="saveIcon">Save</button>
+				<button class="button dialogButton dialog-front" id="closeIcon">Close</button>
+			</div>
+		</form>
+	</div>
+
+
+	<!--Header-->
+	<h1 class="heading">Welcome to the Health Bank<sup>&copy;</sup></h1>
+	<!--END Header-->
+
+	<!--Page-->
+	<div id="hb-page">
+
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>Your Profile Settings</h1> 
+				<div class="page-actionbox">
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
+						<input id="search" type="text" x-webkit-speech/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li><a href="home.html">Home</a></li>
+					<li class="selectedLi"><a href="profile.html">Profile</a></li>
+					<li><a href="spaces/spaces.html">Spaces</a></li>
+					<li><a href="circles.html">Circles</a></li>
+					<li><a href="apps.html">Apps</a></li>
+					<li><a href="community.html">Community</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<div class="details">
+						<div class="detail-icon"></div>
+						<h2 class="detail-name">Name</h2>
+						<p class="detail-username">Username</p>
+						<p class="detail-address">Address</p>
+						<p class="detail-email">Email</p>
+						<p class="detail-phone">Phone</p>
+						<p class="detail-birthday">Birthday</p>
+						<p class="detail-nationality">Nationality</p>
+						<p class="detail-spouse">Spouse</p>
+						<p class="detail-insurance">Insurance</p>
+					</div>
+					<button class="big-button profileButton" id="edit">Edit</button>
+					<button class="big-button profileButton" id="changePW">Change Password</button>
+					<button class="big-button profileButton" id="userIcon">Change User Icon</button>
+					<button class="big-button profileButton" id="delete">Delete User Account</button>
+					<button class="big-button profileButton" id="download">Download all Data</button>
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+
+</body>
+</html>

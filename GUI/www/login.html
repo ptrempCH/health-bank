@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+	<title>Health Bank Login</title>
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script type="text/javascript" src="../js/jquery.base64.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+	<link href="../css/login.css" rel="stylesheet" type="text/css">
+	<!--Sliding icons-->
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$(".username").focus(function() {
+				$(".user-icon").css("left","-48px");
+			});
+			$(".username").blur(function() {
+				$(".user-icon").css("left","0px");
+			});
+			
+			$(".password").focus(function() {
+				$(".pass-icon").css("left","-48px");
+			});
+			$(".password").blur(function() {
+				$(".pass-icon").css("left","0px");
+			});
+		});
+		
+		function login() {
+			var username = $("#username").val();
+			var pw = $("#pw").val();
+			if(username==undefined || username.length<4 || pw==undefined || pw.length < 6){ 
+				$("#feedbackText").html("Username or password is either missing or too short. Username has to be at least 4, password at least 6 characters long"); 
+				$("#feedbackText").css("color","red"); 
+				return false;
+			}
+			var credentials = $.base64.encode(username+":"+pw);
+
+			$.ajax({
+				url: API_URL+"Login",
+				type: 'post',
+				dataType: 'json',
+				data: { username : encodeURIComponent(username), pw : encodeURIComponent(credentials) },
+				success: function(data){
+					if(data.result=="failed"){
+						$("#feedbackText").html(data.result+": "+data.error); 
+						$("#feedbackText").css("color","red"); 
+					} else {
+						if(typeof(Storage)!=="undefined")
+						{
+							localStorage.setItem("hb_session", data.session);
+							localStorage.setItem("hb_cred", credentials);
+						}
+						window.location = WEB_URL+"home.html";
+					}
+				},
+				error: function (request, status, error) {
+					console.log(request);
+					$("#feedbackText").html(request.status + " " + request.statusText + ": " + request.responseText); 
+					$("#feedbackText").css("color","red"); 
+				}
+			});
+				
+			return false;
+		}
+		
+		function register() {
+			window.location = WEB_URL+"register.html";
+		}
+		
+		$(document).ready(function() {
+			$("#loginButton").click(function(){
+				login();
+				return false;
+			});
+			$("#registerButton").click(function(){
+				register();
+				return false;
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<h1 class="heading">Welcome to the Health Bank<sup>&copy;</sup></h1>
+	<div id="wrapper">
+		<!--Sliding icons-->
+		<div class="user-icon"></div>
+		<div class="pass-icon"></div>
+		<!--END Sliding icons-->
+
+		<!--login form inputs-->
+		<form name="login-form" id="login-form" class="wrapper-form" action="" method="post">
+
+			<!--Header-->
+			<div class="wrapper-header">
+			<h1>Login Form</h1>
+			<span id="feedbackText">Please login by using this login form or if you dont have an account, you can Register!</span>
+			</div>
+			<!--END header-->
+			
+			<!--Input fields-->
+			<div class="wrapper-content">
+			<!--USERNAME--><input id="username" name="username" type="text" class="input username" placeholder="Username" /><!--END USERNAME-->
+			<!--PASSWORD--><input name="password" id="pw" type="password" class="input password" placeholder="Password" /><!--END PASSWORD-->
+			</div>
+			<!--END Input fields-->
+			
+			<!--Buttons-->
+			<div class="wrapper-footer">
+			<!--Login button--><input id="loginButton" type="submit" name="submit" value="Login" class="wrapper-button" /><!--END Login button-->
+			<!--Register button--><input id="registerButton" type="submit" name="submit" value="Register" class="register" /><!--END Register button-->
+			</div>
+			<!--END Buttons-->
+
+		</form>
+		<!--end login form-->
+
+	</div><!--end wrapper-->
+	
+	<!--bg gradient--><div class="gradient"></div><!--END bg gradient-->
+	
+	<!-- bottom bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+<!--bottom bar -->
+</body>
+</html>

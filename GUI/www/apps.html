@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+
+		function loadUserIcon(data){
+			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
+			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
+			$(".detail-icon").css("display", "block");
+		}
+
+		function loadUserInfo(data){
+			if(data==undefined){ 
+				/* Do nothing for the moment */ 
+				console.log("data undefined in loadUserInfo()");
+				return;
+			}
+			if(data.userIcon!=undefined){
+				$("#userInfo").html(decodeURIComponent(data.username));
+				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
+			} else {
+				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
+			}
+		}
+
+		$(document).ready(function() {
+			checkLogin();
+			setSearchAnimation();
+			getUserData({onSuccess: function(data){loadUserInfo(data);}});
+			$("#logoutButton").click(function(){
+				logout();
+				return false;
+			});
+			$("#userInfo").click(function(){
+				window.location = WEB_URL+"profile.html";
+			});
+			$("#search").keyup(function(event){
+			    if(event.keyCode == 13){
+			    	if($("#search").val()!=undefined && $("#search").val().length>0){
+			    		if(typeof(Storage)!=="undefined") {
+							localStorage.setItem("hb_query", $("#search").val());
+						}
+			        	window.location = WEB_URL + "queryResult.html?";
+			       	}
+			    }
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Header-->
+	<h1 class="heading">Welcome to the Health Bank<sup>&copy;</sup></h1>
+	<!--END Header-->
+
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>Your Applications</h1> 
+				<div class="page-actionbox">
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
+						<input id="search" type="text" x-webkit-speech/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li><a href="home.html">Home</a></li>
+					<li><a href="profile.html">Profile</a></li>
+					<li><a href="spaces/spaces.html">Spaces</a></li>
+					<li><a href="circles.html">Circles</a></li>
+					<li class="selectedLi"><a href="apps.html">Apps</a></li>
+					<li><a href="community.html">Community</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<!-- Your apps -->
+					<div id="yourapps" class="store-preview">
+						<h3>Apps you already have installed</h3>
+						<ul id="yourapps-list" class="store-preview-list">
+							<li>
+								<div>
+									<img class="store-preview-icon" src="../images/newRecord-icon.png"/>
+									<div class="store-preview-content">
+										<a href="apps/addRecordApp.html" style="text-decoration: none; color: black">
+											<h4 class="store-preview-header">General Records</h4>
+										</a>
+										<p class="store-preview-descr">Add a new general record to your database.</p>
+									</div>
+								</div>
+							</li>
+							<li>
+								<div>
+									<img class="store-preview-icon" src="../images/calories-icon.jpg"/>
+									<div class="store-preview-content">
+										<a href="apps/caloriesApp.html" style="text-decoration: none; color: black">
+											<h4 class="store-preview-header">Intake Calories Counter</h4>
+										</a>
+										<p class="store-preview-descr">Count how much calories you eat.</p>
+									</div>
+								</div>
+							</li>
+							<li>
+								<div>
+									<img class="store-preview-icon" src="../images/sports-icon.jpg"/>
+									<div class="store-preview-content">
+										<a href="apps/sportsApp.html" style="text-decoration: none; color: black">
+											<h4 class="store-preview-header">Activity Calories Counter</h4>
+										</a>
+										<p class="store-preview-descr">Count how many calories you burn.</p>
+									</div>
+								</div>
+							</li>
+						</ul>
+					</div>
+					<!--END your apps -->
+					<!-- Store Preview -->
+					<div class="store-preview">
+						<h3>Have you already seen these apps?</h3>
+						<ul id="store-preview-list" class="store-preview-list">
+							<li>
+								<div>
+									<img class="store-preview-icon" src="../images/runtasticIcon.jpg"/>
+									<div class="store-preview-content">
+										<h4 class="store-preview-header">Runtastic</h4>
+										<p class="store-preview-descr">A running app</p>
+									</div>
+								</div>
+							</li>
+							<li>
+								<div>
+									<img class="store-preview-icon" src="../images/nike-icon.png"/>
+									<div class="store-preview-content">
+										<h4 class="store-preview-header">Nike+</h4>
+										<p class="store-preview-descr">A sports app</p>
+									</div>
+								</div>
+							</li>
+							<li>
+								<div>
+									<img class="store-preview-icon" src="../images/fb-icon.jpg"/>
+									<div class="store-preview-content">
+										<h4 class="store-preview-header">Facebook</h4>
+										<p class="store-preview-descr">Import all your friends</p>
+									</div>
+								</div>
+							</li>
+							<li>
+								<div>
+									<img class="store-preview-icon" src="../images/gPluss-icon.jpg"/>
+									<div class="store-preview-content">
+										<h4 class="store-preview-header">Google Plus</h4>
+										<p class="store-preview-descr">Import your friends and share content.</p>
+									</div>
+								</div>
+							</li>
+						</ul>
+					</div>
+					<!--END Store Preview-->
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

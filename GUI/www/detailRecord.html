@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+
+		function loadUserIcon(data){
+			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
+			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
+			$(".detail-icon").css("display", "block");
+		}
+
+		function loadUserInfo(data){
+			if(data==undefined){ 
+				/* Do nothing for the moment */ 
+				console.log("data undefined in loadUserInfo()");
+				return;
+			}
+			if(data.userIcon!=undefined){
+				$("#userInfo").html(decodeURIComponent(data.username));
+				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
+			} else {
+				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
+			}
+		}
+
+		function loadID(data){
+			if(typeof(Storage)!=="undefined") {
+					var id = localStorage.getItem("hb_detailId");
+					if(data.size==0){
+						$(".detail-name").html("<center>No entries yet!</center>");
+					}
+					data.values.records.reverse();
+					$.each(data.values.records, function(item) {
+					    if(data.values.records[item]._id.$oid == id){
+					    	$(".detail-name").html("Name: "+decodeURIComponent(data.values.records[item].name));
+					    	$(".detail-id").html("<b>ID: </b>"+data.values.records[item]._id.$oid);
+					    	$(".detail-datetime").html("<b>Recorded at: </b>"+data.values.records[item].timedate);
+					    	$(".detail-descr").html("<b>Description: </b>"+decodeURIComponent(data.values.records[item].descr));
+					    	$(".detail-app").html("<b>App: </b>"+decodeURIComponent(data.values.records[item].app));
+					    	var s = "<b>Other values: </b><br/>";
+					    	$.each(data.values.records[item], function(key, value){
+					    		if(key!=undefined && key!="name" && key!="_id" && key!="timedate" && key!="descr" && key!="app" && key!="userID"){
+					    			s += "<p style=\"margin-left:10px\"><b>"+key+":</b>  "+decodeURIComponent(value)+"<p>"
+					    		}
+							});
+							if(s=="<b>Other values: </b><br/>"){s+="<p style=\"margin-left:10px\">None</p>";}
+							$(".detail-values").html(s);
+					    }
+					});
+			}
+		}
+		function loadRecordsError(){
+			console.log("There was an error with the request!");
+			// TODO: Give user feedback
+		}
+
+		$(document).ready(function() {
+			checkLogin();
+			setSearchAnimation();
+			getUserData({onSuccess: function(data){loadUserInfo(data);}});
+			loadRecords({onSuccess: function(data){loadID(data);}, onError: function(){console.log("onError"); loadRecordsError();}});
+			$("#logoutButton").click(function(){
+				logout();
+				return false;
+			});
+			$("#backButton").click(function(){
+				if(typeof(Storage)!=="undefined") {
+					var url = localStorage.getItem("hb_backlink");
+					if(url!=undefined && url.length >0){
+						window.location = WEB_URL + url;
+					} else {
+						window.location = WEB_URL+"spaces/spaces.html";
+					}
+				} else {
+					window.location = WEB_URL+"spaces/spaces.html";
+				}
+				return false;
+			});
+			$("#userInfo").click(function(){
+				window.location = WEB_URL+"profile.html";
+			});
+			$("#rec-button-dropdown").click(function(){
+				$("#rec-button-dropdown").hide();
+				$("#rec-buttons").show();
+			});
+			$(".rec-details, #rec-buttons").click(function(){
+				$("#rec-button-dropdown").show();
+				$("#rec-buttons").hide();
+			});
+			$("#editButton, #deleteButton, #spacesButton, #circlesButton").click(function(){
+				alert("Not yet implemented!");
+			});
+			$("#search").keyup(function(event){
+			    if(event.keyCode == 13){
+			    	if($("#search").val()!=undefined && $("#search").val().length>0){
+			    		if(typeof(Storage)!=="undefined") {
+							localStorage.setItem("hb_query", $("#search").val());
+						}
+			        	window.location = WEB_URL + "queryResult.html?";
+			       	}
+			    }
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Header-->
+	<h1 class="heading">Welcome to the Health Bank<sup>&copy;</sup></h1>
+	<!--END Header-->
+
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>Record Detail</h1> 
+				<div class="page-actionbox">
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
+						<input id="search" type="text x-webkit-speech"/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li><a href="home.html">Home</a></li>
+					<li><a href="profile.html">Profile</a></li>
+					<li class="selectedLi"><a href="spaces/spaces.html">Spaces</a></li>
+					<li><a href="circles.html">Circles</a></li>
+					<li><a href="apps.html">Apps</a></li>
+					<li><a href="community.html">Community</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<div class="rec-details">
+						<h2 class="detail-name">Name</h2>
+						<p class="detail-id">ID</p>
+						<p class="detail-app">App</p>
+						<p class="detail-datetime">Created at: Datetime</p>
+						<p class="detail-descr">Description</p>
+						<p class="detail-values">Other Values</p>
+						<input id="backButton" type="submit" name="submit" value="Back" class="button" />
+					</div>
+					<div class="rec-buttons">
+						<img src="../images/dropdown.png" id="rec-button-dropdown"/>
+						<div id="rec-buttons">
+							<button id="editButton" value="Edit" class="button edit-menu-button">Edit</button>
+							<button id="deleteButton" value="Delete" class="button edit-menu-button">Delete</button>
+							<button id="spacesButton" value="Spaces" class="button edit-menu-button" >Spaces</button>
+							<button id="circlesButton"value="Circles" class="button edit-menu-button" >Circles</button>
+						</div>
+					</div>
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>
