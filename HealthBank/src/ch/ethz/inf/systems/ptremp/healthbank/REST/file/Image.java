@@ -21,6 +21,9 @@ import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 
 /**
  * Servlet implementation class Image
+ * In this servlet we implement the functionality to query for images stored in the DB
+ * 
+ * @author Patrick Tremp
  */
 @WebServlet(
 		description = "Get images from the database", 
@@ -33,11 +36,25 @@ public class Image extends HttpServlet {
 	// Constants ----------------------------------------------------------------------------------
 
 	private static final long serialVersionUID = -2419172287586119980L;
+	
+	/**
+	 * Defines the default buffer size used throughout all the buffers used.
+	 */
     private static final int DEFAULT_BUFFER_SIZE = 10240; // 10KB.
-    private MongoDBConnector connector; 
+
+    /**
+	 *  Instance of the {@link MongoDBConnector}, which is responsible for the connection to the DB
+	 */
+	private MongoDBConnector connector; 
+	
+	/**
+	 * Instance of the {@link CoreManager}, which is responsible for some core functionalities used
+	 * in several different servlet.
+	 */
 	private CoreManager manager;
        
     /**
+     * Default Constructor
      * @see HttpServlet#HttpServlet()
      */
     public Image() {
@@ -51,6 +68,8 @@ public class Image extends HttpServlet {
      }
 
  	/**
+ 	 * This method will initialize the {@link MongoDBConnector} and {@link CoreManager} it they have not yet
+	 * been initialized via constructor. 
  	 * @see Servlet#init(ServletConfig)
  	 */
  	public void init(ServletConfig config) throws ServletException {
@@ -63,7 +82,15 @@ public class Image extends HttpServlet {
  	}
 
 	/**
+	 * The GET request allows the caller to retrieve an image from the database
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * - name: The name of the image to retrieve. If an image with this name can not be found, a 404 Error is returned.
+	 * 
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 * 
+	 * TODO: protect this with session and credentials. Only logged in users shall be allowed to see images AND the shall
+	 * be allowed to only see their images and images of users who allowed them to see those. 
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.addHeader("Access-Control-Allow-Origin", "*");

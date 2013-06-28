@@ -95,6 +95,8 @@ public class MongoDBConnector implements DBConnector {
 	public static String CIRCLES_COLLECTION_NAME;
 	/** The name of the messages collection in the DB to use. **/
 	public static String MESSAGES_COLLECTION_NAME;
+	/** The name of the news collection in the DB to use. **/
+	public static String NEWS_COLLECTION_NAME;
 	
 	
 	/**
@@ -312,7 +314,7 @@ public class MongoDBConnector implements DBConnector {
 				} else {
 					throw new IllegalArgumentException("Please provide a valid BasicDBObject as queryObject");
 				}
-				cursor = coll.find(query);
+				cursor = coll.find(query).sort(new BasicDBObject("timedate", 1));
 			}
 			if(cursor.count() == 0){ return null;} // maybe we should skip this line for performance reasons
 			return cursor;
@@ -455,7 +457,7 @@ public class MongoDBConnector implements DBConnector {
             }
             SPACES_COLLECTION_NAME = getTextValue(SPACES_COLLECTION_NAME, doc, "FOLDERS_COLLECTION_NAME");
             if (SPACES_COLLECTION_NAME == null || SPACES_COLLECTION_NAME.isEmpty()) {
-            	SPACES_COLLECTION_NAME = "folders";
+            	SPACES_COLLECTION_NAME = "spaces";
             }
             CIRCLES_COLLECTION_NAME = getTextValue(CIRCLES_COLLECTION_NAME, doc, "CIRCLES_COLLECTION_NAME");
             if (CIRCLES_COLLECTION_NAME == null || CIRCLES_COLLECTION_NAME.isEmpty()) {
@@ -464,6 +466,10 @@ public class MongoDBConnector implements DBConnector {
             MESSAGES_COLLECTION_NAME = getTextValue(MESSAGES_COLLECTION_NAME, doc, "MESSAGES_COLLECTION_NAME");
             if (MESSAGES_COLLECTION_NAME == null || MESSAGES_COLLECTION_NAME.isEmpty()) {
             	MESSAGES_COLLECTION_NAME = "messages";
+            }
+            NEWS_COLLECTION_NAME = getTextValue(NEWS_COLLECTION_NAME, doc, "NEWS_COLLECTION_NAME");
+            if (NEWS_COLLECTION_NAME == null || NEWS_COLLECTION_NAME.isEmpty()) {
+            	NEWS_COLLECTION_NAME = "news";
             }
             IPATH = getTextValue(IPATH, doc, "IPATH");
             if (IPATH == null || IPATH.isEmpty()) {

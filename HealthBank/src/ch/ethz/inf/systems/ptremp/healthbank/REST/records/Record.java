@@ -33,8 +33,13 @@ import ch.ethz.inf.systems.ptremp.healthbank.exceptions.NotConnectedException;
 import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 
 /**
- * Servlet implementation class Record
- */
+* Servlet implementation class Record
+* In this servlet we implement the functionality to create, edit and delete record entries.
+* A record is an entry of a user containing health information. Records can be shared with
+* other users via the association to circles.
+* 
+* @author Patrick Tremp
+*/
 @WebServlet(
 		description = "Create, Edit, Read and Delete a record in the system", 
 		urlPatterns = { 
@@ -45,10 +50,20 @@ import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 public class Record extends HttpServlet {
        
 	private static final long serialVersionUID = 3311407018317758139L;
+
+	/**
+	 *  Instance of the {@link MongoDBConnector}, which is responsible for the connection to the DB
+	 */
 	private MongoDBConnector connector; 
+	
+	/**
+	 * Instance of the {@link CoreManager}, which is responsible for some core functionalities used
+	 * in several different servlet.
+	 */
 	private CoreManager manager;
 
 	/**
+	 * Main constructor
      * @see HttpServlet#HttpServlet()
      */
     public Record() {
@@ -62,6 +77,9 @@ public class Record extends HttpServlet {
     }
 
 	/**
+	 * This method will initialize the {@link MongoDBConnector} and {@link CoreManager} it they have not yet
+	 * been initialized via constructor. 
+	 * 
 	 * @see Servlet#init(ServletConfig)
 	 */
 	public void init(ServletConfig config) throws ServletException {
@@ -74,7 +92,35 @@ public class Record extends HttpServlet {
 	}
 
 	/**
+	 * The GET request allows the caller to get information about existing records. There are three ways of calling this 
+	 * method. Either with or without an id and by another users id. With an id will result in getting the information about a 
+	 * single record. Without will return all the records of the given user. By providing an other users id, one can get the
+	 * records of the other user, if the other has the current in a circle.
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * Return all records of current user:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * Return all records of another user:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - userid: The user id of the other user.
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * Return a single records of current user:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - id: The id of the record
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 * 
+	 * TODO: 
+	 * 	- Query via id is not yet implemented. 
+	 * 	- Query for other users is not yet implemented. 
+	 * 	- The more it would be useful to just return 20-50 items at a time because of network issues.
 	 */
 	@SuppressWarnings("unchecked")
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -90,7 +136,8 @@ public class Record extends HttpServlet {
 		String callback = request.getParameter("callback");
 		String credentials = request.getParameter("credentials");
 		String session = request.getParameter("session");
-		String id = request.getParameter("userid");
+		String userId = request.getParameter("userid");
+		String id = request.getParameter("id");
 		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
 			errorMessage = "\"Please provide the parameters 'pw' and 'username' with the request.\"";
 			wasError = true;
@@ -99,7 +146,7 @@ public class Record extends HttpServlet {
 			credentials = URLDecoder.decode(credentials, "UTF-8");
 			session = URLDecoder.decode(session, "UTF-8");
 			credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
-			if(id!=null && id.length()>0){id = URLDecoder.decode(id, "UTF-8");}
+			if(userId!=null && userId.length()>0){userId = URLDecoder.decode(userId, "UTF-8");}
 			
 			// check DB connection
 			if(!connector.isConnected()){
@@ -113,7 +160,7 @@ public class Record extends HttpServlet {
 					wasError = true;
 					isLoggedIn = false;
 				} else {
-					if(id!=null && id.length()>0){
+					if(userId!=null && userId.length()>0){
 						// TODO check if request provided an id field and wants to query for a certain user. If not, query is for current user
 						// to do so: 
 						// 1) check if id is valid user id
@@ -185,7 +232,33 @@ public class Record extends HttpServlet {
 	}
 
 	/**
+	 * The POST request allows the caller to create new records, edit them and remove them again.
+	 * There are at the moment two different ways of calling this method. One for insertion and one for editing. 
+	 * Deletion will follow soon.
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * Insert: 
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - name: The name of the record
+	 * - descr: A description for the record
+	 * - values: A JSON string that contains additional values for the record
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * Editing:
+	 *  - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - id: The id of the record to edit
+	 * - circle: (either circle or space or both possible) A string containing the Id's of the associated circles separated by a space
+	 * - space: (either circle or space or both possible) A string containing the Id's of the associated spaces separated by a space
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * 
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * 
+	 * TODO:
+	 * 	- Implement deletion of entries
+	 * 	- File upload
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("application/json");
@@ -211,45 +284,59 @@ public class Record extends HttpServlet {
 			
 			// check record specific parameters
 			try {
-				id = request.getParameter("id");
-				if(id!=null && id.length()>0){ // update
-					String circle = request.getParameter("circle");
-					if(circle==null || circle.length()<2){
-						errorMessage = "\"Record doPost: Please provide the parameters 'circle' with the request, if you want to add a new circle.\"";
-						wasError = true;
-					} else {
+				// check if user is logged in and save the new value
+				if(!manager.isUserLoggedIn(session, credentials)){
+					errorMessage = "\"Record doPost: You need to be logged in to use this service\"";
+					wasError = true;
+					isLoggedIn = false;
+				} else {
+					id = request.getParameter("id");
+					if(id!=null && id.length()>0){ // update circles
+						id = URLDecoder.decode(id, "UTF-8");
+						String circle = request.getParameter("circle");
+						String space = request.getParameter("space");
 						HashMap<Object, Object> data = new HashMap<Object, Object>();
-						for(String s: circle.split(" ")){
-							data.put("circle", s);
-						}
-						BasicDBList list = new BasicDBList();
-						list.add(new ObjectId(id));
-						connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("circles", data)));
-					}
-				} else { // insert
-					name = request.getParameter("name");
-					String descr = request.getParameter("descr");
-					String values = request.getParameter("values");
-					if(name==null || name.length()<2 || values==null || values.length()<5 || descr==null || descr.length()<1){
-						errorMessage = "\"Record doPost: Please provide the parameters 'name', 'descr' and 'values' with the request.\"";
-						wasError = true;
-					}
-					if(!wasError){
-						name = URLDecoder.decode(name, "UTF-8");
-						descr = URLDecoder.decode(descr, "UTF-8");
-						values = URLDecoder.decode(values, "UTF-8");
-						
-						// check DB connection
-						if(!connector.isConnected()){
-							manager.reconnect();
-						}
-						
-						// check if user is logged in and save the new value
-						if(!manager.isUserLoggedIn(session, credentials)){
-							errorMessage = "\"Record doPost: You need to be logged in to use this service\"";
-							wasError = true;
-							isLoggedIn = false;
+						int i=0;
+						if(circle!=null){
+							circle = URLDecoder.decode(circle, "UTF-8");
+							for(String s: circle.split(" ")){
+								data.put("circle"+i, s);
+								i++;
+							}
+							BasicDBList list = new BasicDBList();
+							list.add(new ObjectId(id));
+							connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("circles", data)));
+						} else  if(space!=null){
+							space = URLDecoder.decode(space, "UTF-8");
+							for(String s: space.split(" ")){
+								data.put("space"+i, s);
+								i++;
+							}
+							BasicDBList list = new BasicDBList();
+							list.add(new ObjectId(id));
+							connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("spaces", data)));
 						} else {
+							errorMessage = "\"Record doPost: If you provide the attribute 'id' you need either to provide the attribute 'circle' or 'space' as well!\"";
+							wasError = true;
+						}
+					} else { // insert
+						name = request.getParameter("name");
+						String descr = request.getParameter("descr");
+						String values = request.getParameter("values");
+						if(name==null || name.length()<2 || values==null || values.length()<5 || descr==null || descr.length()<1){
+							errorMessage = "\"Record doPost: Please provide the parameters 'name', 'descr' and 'values' with the request.\"";
+							wasError = true;
+						}
+						if(!wasError){
+							name = URLDecoder.decode(name, "UTF-8");
+							descr = URLDecoder.decode(descr, "UTF-8");
+							values = URLDecoder.decode(values, "UTF-8");
+							
+							// check DB connection
+							if(!connector.isConnected()){
+								manager.reconnect();
+							}
+							
 							HashMap<Object, Object> data = new HashMap<Object, Object>();
 							data.put("name", name);
 							data.put("descr", descr);
@@ -306,16 +393,10 @@ public class Record extends HttpServlet {
 	}
 
 	/**
-	 * @see HttpServlet#doPut(HttpServletRequest, HttpServletResponse)
-	 */
-	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("application/json");
-		response.addHeader("Access-Control-Allow-Origin", "*");
-		response.getWriter().append("{ \"error\" : \"Not yet implemented\"");
-		// TODO
-	}
-
-	/**
+	 * Deletion of a record was first supposed to be done via this request. But there seem to be problems with allow origin via DELETE requests.
+	 * So maybe we need to deal with this in the POST request as well.
+	 * 
+	 * 
 	 * @see HttpServlet#doDelete(HttpServletRequest, HttpServletResponse)
 	 */
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

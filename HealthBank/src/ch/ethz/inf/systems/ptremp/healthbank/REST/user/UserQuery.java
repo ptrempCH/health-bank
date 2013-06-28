@@ -33,6 +33,11 @@ import com.mongodb.DBObject;
 
 /**
  * Servlet implementation class UserQuery
+ * In this servlet we implement the functionality to query for user information. 
+ * These information manly contain profile information. 
+ * This servlet only allows GET requests
+ * 
+ * @author Patrick Tremp
  */
 @WebServlet(
 		description = "Query for other users and get information about them", 
@@ -44,10 +49,20 @@ import com.mongodb.DBObject;
 public class UserQuery extends HttpServlet {
 	
 	private static final long serialVersionUID = -6550320453080211602L;
+
+	/**
+	 *  Instance of the {@link MongoDBConnector}, which is responsible for the connection to the DB
+	 */
 	private MongoDBConnector connector; 
+	
+	/**
+	 * Instance of the {@link CoreManager}, which is responsible for some core functionalities used
+	 * in several different servlet.
+	 */
 	private CoreManager manager;
 
 	/**
+	 * Main Constructor
      * @see HttpServlet#HttpServlet()
      */
     public UserQuery() {
@@ -61,6 +76,8 @@ public class UserQuery extends HttpServlet {
     }
 
 	/**
+	 * This method will initialize the {@link MongoDBConnector} and {@link CoreManager} it they have not yet
+	 * been initialized via constructor. 
 	 * @see Servlet#init(ServletConfig)
 	 */
 	public void init(ServletConfig config) throws ServletException {
@@ -73,6 +90,27 @@ public class UserQuery extends HttpServlet {
 	}
 
 	/**
+	 * The GET request allows the caller to query profile information of different users. There are two possibilities
+	 * on how to call this servlet. One is via an ID of a user, that will return the information about this particular
+	 * user if the ID was found in the DB. The other is via a query string, that will search in the DB for according
+	 * users using different patterns for lower case, upper case and wildcard searches.
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * Call via ID:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - id: The object id to search a user with
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * Call via query:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - query: A query string to search a user with
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * The resulting JSON string will have the user information in its 'values' field.
+	 * 
+	 * 
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	@SuppressWarnings("unchecked")
@@ -111,15 +149,65 @@ public class UserQuery extends HttpServlet {
 				if(manager.isUserLoggedIn(session, credentials)){
 					BasicDBList list = new BasicDBList();
 					DBCursor res;
-					if(userId!=null && userId.length()>0){
-						list.add(userId);
+					JSONArray resArray = new JSONArray();
+					JSONParser parser = new JSONParser();
+					DBObject obj;
+					JSONObject resObj;
+					if(userId!=null && userId.length()>0){ // search via id
+						list.add(new ObjectId(userId));
+						System.out.println(userId);
 						res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
 						if(res!=null && res.size()>0){
 							// TODO, here query is an id. We need to:
 							// 1) check if the current user is allowed to see anything (is in circle of other user)
 							// 2) retrieve info from other and send back to caller
+							 obj = res.next();
+							
+							resObj = (JSONObject) parser.parse(obj.toString());
+							HashMap<String, Object> items = new HashMap<String, Object>();
+							items.put("username", resObj.get("username"));
+							items.put("firstname", resObj.get("firstname"));
+							items.put("lastname", resObj.get("lastname"));
+							items.put("userId", resObj.get("_id"));
+							Object s = resObj.get("street");
+							if(s!=null){ items.put("street", s.toString());}
+							s = resObj.get("code");
+							if(s!=null){ items.put("code", s.toString());}
+							s = resObj.get("city");
+							if(s!=null){ items.put("city", s.toString());}
+							s = resObj.get("country");
+							if(s!=null){ items.put("country", s.toString());}
+							s = resObj.get("phoneP");
+							if(s!=null){ items.put("privPhone", s.toString());}
+							s = resObj.get("phoneM");
+							if(s!=null){ items.put("mobPhone", s.toString());}
+							s = resObj.get("phoneW");
+							if(s!=null){ items.put("workPhone", s.toString());}
+							s = resObj.get("emailP");
+							if(s!=null){ items.put("privMail", s.toString());}
+							s = resObj.get("emailW");
+							if(s!=null){ items.put("workMail", s.toString());}
+							s = resObj.get("nationality");
+							if(s!=null){ items.put("nationality", s.toString());}
+							s = resObj.get("birthday");
+							if(s!=null){ items.put("birthday", s.toString());}
+							s = resObj.get("spouse");
+							if(s!=null){ items.put("spouse", s.toString());}
+							s = resObj.get("insurance");
+							if(s!=null){ items.put("insurance", s.toString());}
+							s = resObj.get("gender");
+							if(s!=null){ items.put("gender", s.toString());}
+							s = resObj.get("userIcon");
+							if(s!=null){ items.put("userIcon", s.toString());}
+							resArray.add(new JSONObject(items));
+							resObj = new JSONObject();
+							resObj.put("users", resArray);
+							result = resObj.toJSONString();	
+						} else {
+							errorMessage = "\"No user found with this id. \"";
+							wasError = true;
 						}
-					} else if(query!=null && query.length()>0){
+					} else if(query!=null && query.length()>0){ // search via query
 						try{
 							ObjectId newId = new ObjectId(query);
 							list.add(newId);
@@ -146,13 +234,11 @@ public class UserQuery extends HttpServlet {
 						or.add(id);
 						DBObject queryObject = new BasicDBObject("$or", or);
 						int foundItemsCount = 0;
-						JSONArray resArray = new JSONArray();
 						res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, queryObject);
 						if(res!=null && res.size()>0){
-							JSONParser parser = new JSONParser();
 							while(res.hasNext()){
-								DBObject obj = res.next();
-								JSONObject resObj = (JSONObject) parser.parse(obj.toString());
+								obj = res.next();
+								resObj = (JSONObject) parser.parse(obj.toString());
 								HashMap<String, Object> items = new HashMap<String, Object>();
 								items.put("userIcon", resObj.get("userIcon"));
 								items.put("firstname", resObj.get("firstname"));
@@ -163,7 +249,7 @@ public class UserQuery extends HttpServlet {
 							}
 						} 
 						if(foundItemsCount>0){
-							JSONObject resObj = new JSONObject();
+							resObj = new JSONObject();
 							resObj.put("users", resArray);
 							result = resObj.toJSONString();						
 						} else {

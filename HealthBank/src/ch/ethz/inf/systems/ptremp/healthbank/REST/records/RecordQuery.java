@@ -30,6 +30,10 @@ import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 
 /**
  * Servlet implementation class RecordQuery
+ * In this servlet we implement the functionality to query for records. It therefore only supports
+ * GET requests.
+ * 
+ * @author Patrick Tremp
  */
 @WebServlet(
 		description = "Query for Records", 
@@ -41,10 +45,19 @@ import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 public class RecordQuery extends HttpServlet {
 
 	private static final long serialVersionUID = 3599963803086380098L;
+	/**
+	 *  Instance of the {@link MongoDBConnector}, which is responsible for the connection to the DB
+	 */
 	private MongoDBConnector connector; 
+	
+	/**
+	 * Instance of the {@link CoreManager}, which is responsible for some core functionalities used
+	 * in several different servlet.
+	 */
 	private CoreManager manager;
        
     /**
+     * Main Constructor
      * @see HttpServlet#HttpServlet()
      */
     public RecordQuery() {
@@ -58,6 +71,8 @@ public class RecordQuery extends HttpServlet {
     }
 
 	/**
+	 * This method will initialize the {@link MongoDBConnector} and {@link CoreManager} it they have not yet
+	 * been initialized via constructor. 
 	 * @see Servlet#init(ServletConfig)
 	 */
 	public void init(ServletConfig config) throws ServletException {
@@ -70,7 +85,26 @@ public class RecordQuery extends HttpServlet {
 	}
 
 	/**
+	 * The GET request allows the caller to query for one or multiple records. So far only queries to the records of
+	 * the provided user are possible. There are two ways of calling this method. Either with a query string or with
+	 * an object id of the record.
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * With query:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - query: A query string which should match records with similar strings in attributes name, descr, or app
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * With id:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - id: The id of a specific record
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 * 
+	 * TODO: Adapt for other users
 	 */
 	@SuppressWarnings("unchecked")
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -110,7 +144,7 @@ public class RecordQuery extends HttpServlet {
 					DBCursor res;
 					if(recordId!=null && recordId.length()>0){
 						list.add(recordId);
-						res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
+						res = (DBCursor) connector.query(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
 						if(res!=null && res.size()>0){
 							// TODO, here query is an id. We need to:
 							// 1) check if the current user is allowed to see anything (is in circle of other user)

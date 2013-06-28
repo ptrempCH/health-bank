@@ -57,12 +57,6 @@ function loadTodayCalItemsSucc(data) {
 	$("#age").val(age);
 	$("#weight").val(weight);
 	$("#tall").val(tall);
-	if(bmrSet){
-		$("#submitBMRButton").attr('disabled','disabled');
-		$("#submitBMRButton").css("border", "1px solid red");
-		$("#calApp-bmrfeedback").html("You can add your BMR only once a day!");
-		$("#calApp-bmrfeedback").css("color", "red");
-	}
 	$(".recordlist-itemheader").click(function(){ 
 		if(typeof(Storage)!=="undefined") {
 			localStorage.setItem("hb_detailId", entries[$(this).parent().index()]._id.$oid);
@@ -111,11 +105,17 @@ function loadTodaySportsItemsSucc(data) {
 		if(userData.birthday){
 			$("#age").val(Math.floor(moment().diff(moment(userData.birthday, "DD-MM-YYYY"), "days")/365));	
 		}
+		if(userData.weight!=undefined){
+			$("#weight").val(userData.weight);
+		}
+		if(userData.height!=undefined){
+			$("#tall").val(userData.height);
+		}
 	} else {
 		$("#age").val(age);
+		$("#weight").val(weight);
+		$("#tall").val(tall);
 	}
-	$("#weight").val(weight);
-	$("#tall").val(tall);
 	$(".recordlist-itemheader").click(function(){ 
 		if(typeof(Storage)!=="undefined") {
 			localStorage.setItem("hb_detailId", entries[$(this).parent().index()]._id.$oid);
@@ -250,7 +250,7 @@ function loadAllCalItemsSucc(data) {
 			if(item.comment!=undefined){
 				s = s+'<p>Comment: '+decodeURIComponent(item.comment)+'</p>';
 			}
-			s = s+'<button value="'+item._id.$oid+'" class=\"list-button calListSpaceBut\">Spaces</button><button value="'+item._id.$oid+'" class=\"list-button calListBut\">Circles</button></li>';
+			s = s+'<button value="'+item._id.$oid+'" class=\"list-button calListBut circleButton\">Circles</button><button value="'+item._id.$oid+'" class=\"list-button calListSpaceBut spaceButton\">Spaces</button></li>';
 			$("#recordentries").append(s);
 			if(iter==10){ return false;}
 		}
@@ -269,11 +269,17 @@ function loadAllCalItemsSucc(data) {
 	$("#totalDays").html(days.length+"d");
 	$(".recordlist-itemheader").click(function(){ 
 		if(typeof(Storage)!=="undefined") {
-			localStorage.setItem("hb_detailId", entries[$(this).parent().index()]._id.$oid);
+			localStorage.setItem("hb_detailId", $($(this).parent()).find("button")[0].value);
 			localStorage.setItem("hb_backlink", "spaces/caloriesTimeline.html");
 		}
 		window.location = WEB_URL+"detailRecord.html"; 
 	});
+	$(".circleButton").click(function(){
+		$( "#notYetImplementedDialog" ).dialog( "open" );
+    });
+    $(".spaceButton").click(function(){
+    	$( "#notYetImplementedDialog" ).dialog( "open" );
+    });
 }
 function loadCalItemsErr() {
 	$("#recordentries").html("<center style=\"color: red\">Either you have no entries yet or there was an error!</center>");
@@ -289,7 +295,7 @@ function loadMoreEntries(){
 		if(entries[item].app=="caloriesApp"){
 			iter++;
 			if(iter>entriesShown){
-				var s = '<li><h3 class="recordlist-itemheader">'+decodeURIComponent(entries[item].descr)+'</h3><i>Created at: '+moment(entries[item].timedate).format("HH:mm:ss")+'</i><p>Type: '+entries[item].mealtype+': ';
+				var s = '<li><h3 class="recordlist-itemheader ">'+decodeURIComponent(entries[item].descr)+'</h3><i>Created at: '+moment(entries[item].timedate).format("HH:mm:ss")+'</i><p>Type: '+entries[item].mealtype+': ';
 				if(entries[item].mealtype=="sports"){
 					s = s+ "burned ";
 				}else {
@@ -302,12 +308,25 @@ function loadMoreEntries(){
 				if(entries[item].comment!=undefined){
 					s = s+'<p>Comment: '+decodeURIComponent(entries[item].comment)+'</p>';
 				}
-				s = s+'<button value="'+entries[item]._id.$oid+'" class=\"list-button calListSpaceBut\">Spaces</button><button value="'+entries[item]._id.$oid+'" class=\"list-button calListBut\">Circles</button></li>';
+				s = s+'<button value="'+entries[item]._id.$oid+'" class=\"list-button calListBut circleButton\">Circles</button><button value="'+entries[item]._id.$oid+'" class=\"list-button calListSpaceBut spaceButton\">Spaces</button></li>';
 				$("#recordentries").append(s);
 				if(iter==entriesShown+10){ break;}
 			}
 		}
 	}
+	$(".recordlist-itemheader").click(function(){ 
+		if(typeof(Storage)!=="undefined") {
+			localStorage.setItem("hb_detailId", $($(this).parent()).find("button")[0].value);
+			localStorage.setItem("hb_backlink", "spaces/caloriesTimeline.html");
+		}
+		window.location = WEB_URL+"detailRecord.html"; 
+	});
+	$(".circleButton").click(function(){
+		$( "#notYetImplementedDialog" ).dialog( "open" );
+    });
+    $(".spaceButton").click(function(){
+    	$( "#notYetImplementedDialog" ).dialog( "open" );
+    });
 	entriesShown += (iter-entriesShown);
 }
 

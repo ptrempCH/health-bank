@@ -29,6 +29,11 @@ import com.mongodb.DBObject;
 
 /**
  * Servlet implementation class Login
+ * In this servlet we implement the functionality to log a user in via a POST request.
+ * The more a it serves for checking if a user is still logged in via a GET request. This will 
+ * refresh the "session_expires" field in the database.
+ * 
+ * @author Patrick Tremp
  */
 @WebServlet(
 		description = "Login to the system as a user.", 
@@ -39,10 +44,20 @@ import com.mongodb.DBObject;
 public class Login extends HttpServlet {
 	
 	private static final long serialVersionUID = 6670295932140153609L;
+
+	/**
+	 *  Instance of the {@link MongoDBConnector}, which is responsible for the connection to the DB
+	 */
 	private MongoDBConnector connector; 
+	
+	/**
+	 * Instance of the {@link CoreManager}, which is responsible for some core functionalities used
+	 * in several different servlet.
+	 */
 	private CoreManager manager;
        
     /**
+     * Main Constructor
      * @see HttpServlet#HttpServlet()
      */
     public Login() {
@@ -52,6 +67,15 @@ public class Login extends HttpServlet {
     }
 
 	/**
+	 * The GET request allows the caller to check whether the user is still logged in or not.
+	 * If the user is still logged in, this call will automatically update the expiration time of the
+	 * session by one hour from the current time. 
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -133,6 +157,13 @@ public class Login extends HttpServlet {
 	}
 
 	/**
+	 * The POST request allows the caller to log a user into the system.
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * - username: This is the user name for the user to be logged in.
+	 * - pw: This is the password for the user in a hashed form for security. (So far we use Base64, which is not particularly save...)
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -142,7 +173,7 @@ public class Login extends HttpServlet {
 		boolean wasError = false;
 		
 		// check parameters
-		String callback = request.getParameter("jsonp_callback");
+		String callback = request.getParameter("callback");
 		String pw = request.getParameter("pw");
 		String username = request.getParameter("username");
 		if(pw==null || pw.length()<6 || username==null || username.length()<4){
@@ -178,6 +209,7 @@ public class Login extends HttpServlet {
 					if(user.get("password").equals(md5)){
 						DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 						Date date = new Date((new Date()).getTime() + (60L*60L*1000L));  // get time plus an hour
+						// the session key is a combination of the current date and time, the IP address of the caller, the Bytes of the credentials and the MAC address of the system, this is running on
 						sessionKey = dateFormat.format(new Date())
 								+request.getRemoteAddr()
 								+StringUtils.newStringUtf8(Base64.encodeBase64(credentials.getBytes()))
@@ -224,6 +256,10 @@ public class Login extends HttpServlet {
 		} 
 	}
 	
+	/**
+	 * Retrieve the MAC address of the system, this servlet is running on.
+	 * @return A {@link String} that contains the current MAC address. If there was an error, this will return <code>null</code>
+	 */
 	private String getMACAddress() {
 		InetAddress ip;
 		try {

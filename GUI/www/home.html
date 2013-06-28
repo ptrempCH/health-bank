@@ -3,97 +3,33 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
-	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script src="../js/healthbank.js"></script>
+	<script src="../js/underscore-min.js"></script>
+	<script src="../js/moment.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 
 	<script type="text/javascript">
 
-		var records;
+		var news;
 
-		function loadUserIcon(data){
-			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
-			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
-			$(".detail-icon").css("display", "block");
-		}
-
-		function loadUserInfo(data){
-			if(data==undefined){ 
-				/* Do nothing for the moment */ 
-				console.log("data undefined in loadUserInfo()");
-				return;
+		function loadUserInfoIndividual(data){
+			if(data.type=="admin"){
+				$("#addnews").show();
 			}
-			if(data.userIcon!=undefined){
-				$("#userInfo").html(decodeURIComponent(data.username));
-				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
-			} else {
-				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
-			}
-			if(data.type=="institute"){
-				$("#navApps").hide();
-			}
-		}
-
-		function loadLatestNews(data) { /*Not yet implemented*/ }
-
-		function loadLatestRecords(data) {
-			$("#recordentries").html("");
-			if(data.size==0){
-				$("#recordentries").append("<center>No entries yet!</center>");
-			}
-
-			records = data.values.records;
-			data.values.records.reverse();
-			$.each(data.values.records, function(i, item) {
-			    $("#recordentries").append('<li><h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '+item.timedate+'</i></li>');
-			    if(i==4){
-			    	return false;
-			    }
-			});
-			$("#chronic-section #recordentries li").click(function(){ 
-				if(typeof(Storage)!=="undefined") {
-					localStorage.setItem("hb_detailId", records[$(this).index()]._id.$oid);
-					localStorage.setItem("hb_backlink", "home.html");
-				}
-				window.location = WEB_URL+"detailRecord.html"; 
-			});
-		}
-		function loadRecordsError() {
-			$("#recordentries").html("<center style=\"color: red\">Either you have no entries yet or there was an error!</center>");
 		}
 
 		$(document).ready(function() {
-			checkLogin();
-			setSearchAnimation();
-			getUserData({onSuccess: function(data){loadUserInfo(data);}});
-			$("#logoutButton").click(function(){
-				logout();
-				return false;
-			});
-			loadNews(5, {onSuccess: function(data){loadLatestNews(data);}});
-			loadRecords({onSuccess: function(data){loadLatestRecords(data);}, onError: function(){console.log("onError"); loadRecordsError();}});
-			$("#userInfo").click(function(){
-				window.location = WEB_URL+"profile.html";
-			});
-			$("#search").keyup(function(event){
-			    if(event.keyCode == 13){
-			    	if($("#search").val()!=undefined && $("#search").val().length>0){
-			    		if(typeof(Storage)!=="undefined") {
-							localStorage.setItem("hb_query", $("#search").val());
-						}
-			        	window.location = WEB_URL + "queryResult.html?";
-			       	}
-			    }
-			});
+			initialize();
+			initializeSpaces("home.html", "", 5);
+			loadNews({onSuccess: function(data){loadLatestNews(data, 5);}, onError: function(){loadNewsError();}});
 		});
 		
 	</script>
 </head>
 <body>
-	<!--Header-->
-	<h1 class="heading">Welcome to the Health Bank<sup>&copy;</sup></h1>
-	<!--END Header-->
-
 	<!--Page-->
 	<div id="hb-page">
 		<div class="page-container">
@@ -127,48 +63,12 @@
 				<!--Content-->
 				<div class="page-content">
 					<div id="news-section">
-						<h3>Latest news</h3>
+						<h3>Latest news <a href="news/allNews.html" id="moreNews" class="button morenews">more...</a><a href="news/addNews.html" id="addnews" class="button addnews">Add new</a></h3>
 						<ul id="newsentries" class="newsentries">
-							<li>
-								<div>
-									<img class="newsicon" src="../images/news-icon.jpg"/>
-									<div class="newscontentbox">
-										<h4 class="newsheader">New Version 0.2 of Healthbank is out!</h4>
-										<p class="newscontent">Implemented search. Updated Circle page. Fixed many bugs incl. calories space statistics images. New App to add general records.</p>
-									</div>
-								</div>
-							</li>
-							<li>
-								<div>
-									<img class="newsicon" src="../images/news-icon.jpg"/>
-									<div class="newscontentbox">
-										<h4 class="newsheader">New Version 0.1 of Healthbank is out!</h4>
-										<p class="newscontent">Adapted CSS design. Added first draft of spaces. Implemented people search in <a href="circles.html">Circles page</a>. Split calories app to calories consumtion and sports app.</p>
-									</div>
-								</div>
-							</li>
-							<li>
-								<div>
-									<img class="newsicon" src="../images/news-icon.jpg"/>
-									<div class="newscontentbox">
-										<h4 class="newsheader">New cancer treatment</h4>
-										<p class="newscontent">ETH Zurich has discovered a new way to treat cancer...</p>
-									</div>
-								</div>
-							</li>
-							<li>
-								<div>
-									<img class="newsicon" src="../images/news-icon.jpg"/>
-									<div class="newscontentbox">
-										<h4 class="newsheader">New cancer treatment</h4>
-										<p class="newscontent">ETH Zurich has discovered a new way to treat cancer...</p>
-									</div>
-								</div>
-							</li>
 						</ul>
 					</div>
 					<div id="chronic-section">
-						<h3>Your latest records</h3>
+						<h3>Your latest records <a href="spaces/spaces.html" id="moreRecords" class="button morenews">more...</a></h3>
 						<ul id="recordentries" class="recordentries">
 							<center>
 								<img style="height:60px; float:center; display: block; margin-left: auto; margin-right: auto;" src="../images/loading.gif"></img>

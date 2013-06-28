@@ -3,7 +3,7 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
-	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script src="../../js/healthbank.js"></script>
 	<script src="../../js/moment.min.js"></script>
 	<script src="../../js/apps/caloriesApp.js"></script>
@@ -11,44 +11,13 @@
 
 	<script type="text/javascript">
 
-		var userData;
-
-		function loadUserIcon(data){
-			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
-			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
-			$(".detail-icon").css("display", "block");
-		}
-
-		function loadUserInfo(data){
-			if(data==undefined){ 
-				/* Do nothing for the moment */ 
-				console.log("data undefined in loadUserInfo()");
-				return;
-			}
-			if(data.userIcon!=undefined){
-				$("#userInfo").html(decodeURIComponent(data.username));
-				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
-			} else {
-				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
-			}
-			userData = data;
-		}
-
 		$(document).ready(function() {
-			checkLogin();
-			setSearchAnimationApp();
-			getUserData({onSuccess: function(data){loadUserInfo(data);}});
+			initialize();
 			loadTodaySportsItems();
-			$("#logoutButton").click(function(){
-				logout();
-				return false;
-			});
 			$("#addNewButton").click(function(){
 				$("#calApp-addnew-box").css("display", "block");
 				$("#calApp-addnew-box .label").css("width", "150px");
 				$("#addNewButton").css("display", "none");
-				$("#addBMRButton").css("display", "none");
-				$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
 				if(bmrSet){
 					$("#mealtype").val("sports");
 					$("#gender").parent().hide();
@@ -60,21 +29,23 @@
 					$("#cal").parent().hide();
 					$("#descr").parent().hide();
 				}
-				if(userData.gender=="mr"){
+				if(user.gender=="mr"){
 					$("#gender").val("m");
 					$("#gender").parent().hide();
-				} else if(userData.gender=="mrs"){
+				} else if(user.gender=="mrs"){
 					$("#gender").val("f");
 					$("#gender").parent().hide();
 				}
-				if(userData.birthday!=undefined){
+				if(user.birthday!=undefined){
 					$("#age").parent().hide();
 				}
 				$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+				$("#calApp-feedback").html("You can set your weight and height to be used here in your <a href=\"../profile.html\">profile</a>!");
 				return false;
 			});
 			$("#cancelButton").click(function(){
 				$("#calApp-addnew-box").css("display", "none");
+				$("#addNewButton").css("display", "block");
 				return false;
 			});
 			$("#submitButton").click(function(){
@@ -98,7 +69,6 @@
 					$("#weight").parent().hide();
 					$("#activity").parent().hide();
 					$("#tall").parent().hide();
-					$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
 				} else {
 					if(bmrSet){
 						$("#calApp-feedback").html("You can add your BMR only once a day!");
@@ -109,27 +79,14 @@
 					if($("#gender").parent().is(":hidden")){
 						$("#cal").parent().hide();
 						$("#descr").parent().hide();
-						if(userData.gender=="undefined"){$("#gender").parent().show();}
-						if(userData.birthday=="undefined"){$("#age").parent().show();}
+						if(user.gender=="undefined"){$("#gender").parent().show();}
+						if(user.birthday=="undefined"){$("#age").parent().show();}
 						$("#weight").parent().show();
 						$("#activity").parent().show();
 						$("#tall").parent().show();
-						$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
 					}
 				}
-			});
-			$("#userInfo").click(function(){
-				window.location = WEB_URL+"profile.html";
-			});
-			$("#search").keyup(function(event){
-			    if(event.keyCode == 13){
-			    	if($("#search").val()!=undefined && $("#search").val().length>0){
-			    		if(typeof(Storage)!=="undefined") {
-							localStorage.setItem("hb_query", $("#search").val());
-						}
-			        	window.location = WEB_URL + "queryResult.html?";
-			       	}
-			    }
+				$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
 			});
 		});
 	</script>
@@ -249,49 +206,6 @@
 							<div class="addRec-footer">
 								<input id="submitButton" type="submit" name="submit" value="Add" class="big-button calAppFormButton" />
 								<input id="cancelButton" type="submit" name="submit" value="Cancel" class="big-button calAppFormButton" />
-							</div>
-							<!--END Buttons-->
-						</form>
-					</div>
-					<div class="calApp-addnew-box" id="calApp-addbmr-box">
-						<h3 class="calApp-header-text">Add a new entry with your daily BMR (<a href="http://en.wikipedia.org/wiki/Harris-Benedict_equation" target='_blank'>Basal Metabolic Rate</a>).</h3>
-						<div id="calApp-bmrfeedback" class="callApp-feedback">Please fill out all the fields with a *.</div>
-						<form name="calApp-form" id="calAppBMR-form" class="calApp-form" action="" method="post">
-							<!--Input fields-->
-							<div>
-								<label for="gender" id="genderLabel" class="label">&#9794; or &#9792; ?(*)</label>
-								<select id="gender" name="gender" class="select" require>
-								  <option value="m">Men</option>
-								  <option value="f">Women</option>
-								</select>
-							</div>
-							<div>
-								<label for="activity" id="activityLabel" class="label">How much activity do you have during the day?(*)</label>
-								<select id="activity" name="activity" class="select" require>
-								  <option value="little">Little to no exercise</option>
-								  <option value="light">Light exercise</option>
-								  <option value="moderate">Moderate exercise</option>
-								  <option value="heavy">Heavy exercise</option>
-								  <option value="veryHeavy">Very heavy exercise</option>
-								</select>
-							</div>
-							<div>
-								<label for="age" id="ageLabel" class="label">How old are you?(*)</label> 
-								<input id="age" name="age" type="number" class="input age" placeholder="21" step="1" min="0" value="21" required />
-							</div>
-							<div>
-								<label for="weight" id="weightLabel" class="label">How much do you weight (in kg)(*)</label> 
-								<input id="weight" name="weight" type="number" class="input weight" placeholder="75" step="0.1" min="0" value="75" required />
-							</div>
-							<div>
-								<label for="tall" id="tallLabel" class="label">How tall are you (in cm)?(*)</label> 
-								<input id="tall" name="tall" type="number" class="input tall" placeholder="170" step="1" min="0" value="170" />
-							</div>
-							<!--END Input fields-->
-							<!--Buttons-->
-							<div class="addRec-footer">
-								<input id="submitBMRButton" type="submit" name="submit" value="Add" class="callApp-submit-button" />
-								<input id="cancelBMRButton" type="submit" name="submit" value="Cancel" class="callApp-submit-button" />
 							</div>
 							<!--END Buttons-->
 						</form>

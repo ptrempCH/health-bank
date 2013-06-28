@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+
+	<script type="text/javascript">
+
+		// The user ID we are dealing with in this file. This id is different from the current logged in user
+		var id; 
+
+		/** 
+		* Load the retrieved data of the user we want to see details about to the right place in the page. 
+		* This is not the current logged in users data!
+		*/
+		function loadUser(data){ 
+			if(data==undefined || data.values.users[0].firstname==undefined){
+				$(".detail-name").html("<center>No information found!</center>");
+				return false;
+			}
+			data = data.values.users[0]; // JSON structure
+			if(data.gender!=undefined){
+				data.gender=decodeURIComponent(data.gender);
+				if(data.gender=="mr"){ data.gender = "Mr.";} else { data.gender = "Mrs.";}
+				$(".detail-name").html("Name: "+data.gender+" "+decodeURIComponent(data.firstname)+" "+decodeURIComponent(data.lastname));
+			} else {
+				$(".detail-name").html("Name: "+decodeURIComponent(data.firstname)+" "+decodeURIComponent(data.lastname));
+			}
+	    	$(".detail-username").html("<b>Username: </b>"+decodeURIComponent(data.username));
+	    	if(data.street!=undefined && data.code!=undefined && data.city!=undefined){
+	    		$(".detail-address").html("<b>Address: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.street)+",</br>"+decodeURIComponent(data.code)+" "+decodeURIComponent(data.city)+",</br>"+decodeURIComponent(data.country)+"</div>");
+	    		$(".detail-address").css("display", "block");
+	    	}
+	    	if(data.privMail!=undefined && data.workMail!=undefined){
+	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.privMail)+"</div><div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.workMail)+"</div>");
+	    		$(".detail-email").css("display", "block");
+	    	} else if (data.privMail!=undefined) {
+	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.privMail))+"</div>";
+	    		$(".detail-email").css("display", "block");
+	    	} else if (data.workMail!=undefined) {
+	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.workMail)+"</div>");
+	    		$(".detail-email").css("display", "block");
+	    	}
+	    	if(data.privPhone!=undefined || data.workPhone!=undefined || data.mobPhone!=undefined){
+	    		var s = "<b>Phone: </b><br/>";
+	    		$(".detail-phone").css("display", "block");
+	    		if (data.privPhone!=undefined) {
+		    		s += "<div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.privPhone)+"</div>";
+		    	}
+		    	if (data.workPhone!=undefined) {
+		    		s += "<div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.workPhone)+"</div>";
+		    	} 
+		    	if (data.mobPhone!=undefined) {
+		    		s += "<div style=\"margin-left:10px\">Mobile: "+decodeURIComponent(data.mobPhone)+"</div>";
+		    	}
+		    	$(".detail-phone").html(s);
+	    	}
+	    	if(data.nationality!=undefined){
+	    		$(".detail-nationality").html("<b>Nationality: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.nationality)+"</div>");
+	    		$(".detail-nationality").css("display", "block");
+	    	}
+	    	if(data.weight!=undefined || data.height!=undefined){
+	    		var s = "<b>Body information:</b></br>";
+	    		if(data.weight!=undefined){
+	    			s += "<div style=\"margin-left:10px\">Weight: "+decodeURIComponent(data.weight)+" kg</div>";
+	    		}
+	    		if(data.height!=undefined){
+	    			s += "<div style=\"margin-left:10px\">Height: "+decodeURIComponent(data.height)+" cm</div>"
+	    		}
+	    		$(".detail-body").html(s);
+	    		$(".detail-body").css("display", "block");
+	    	}
+	    	if(data.spouse!=undefined){
+	    		$(".detail-spouse").html("<b>Spouse: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.spouse)+"</div>");
+	    		$(".detail-spouse").css("display", "block");
+	    	}
+	    	if(data.insurance!=undefined){
+	    		$(".detail-insurance").html("<b>Insurance: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.insurance)+"</div>");
+	    		$(".detail-insurance").css("display", "block");
+	    	}
+	    	if(data.birthday!=undefined){
+	    		$(".detail-birthday").html("<b>Birthday: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.birthday)+"</div>");
+	    		$(".detail-birthday").css("display", "block");
+	    	}
+		}
+
+		/** 
+		* Wait until all external HTML code snippets have been loaded asynchronically and set click handlers on these elements once they exist.
+		* This method will be repeatedly called whenever a new external HTML element is correctly loaded. circleItemsLoaded will count the function
+		* calls to this function and help to start assigning click handlers only when everything is loaded successfully. 
+		*/
+		var circleItemsLoaded=0;
+		function loadedExtHTMLCircle(){
+			circleItemsLoaded++;
+			if(circleItemsLoaded<2){
+				return false;
+			}
+			$( "#closeCircles, #dialog-overlay" ).click(function() {
+				$("#circles-form, #dialog-overlay").hide();
+				return false;
+			});
+			$( "#saveCircles" ).click(function() {
+				saveUsersCircles();
+				$("#circles-form, #dialog-overlay").hide();
+				return false;
+			});
+		}
+
+		/** 
+		* This function will be called, when the user changes the circle association of the displayed other user in the circle dialog. 
+		* For each circle we will inspect if the corresponding checkbox is checked or not and if it was checked before or not. For every
+		* change we send an AJAX request to the server to notify the backend about the users decision.
+		*/
+		function saveUsersCircles(){ 
+			$.each(circles, function(i, item){
+				found = false;
+				if(item.users!=undefined){
+					$.each(item.users, function(j,u){
+						if(u.userId==id){
+							found = true;
+							return false;
+						}
+					});
+				}
+				if($("#"+item._id.$oid).is(":checked")){
+					if(!found){ // was newly checked and was not before
+						addUserToCircle(item._id.$oid, id, {
+							onSuccess: function(data){
+								loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
+							}, 
+							onError: function(data){
+								console.log(data.error);
+							}
+						});
+					}
+				} else {
+					if(found){ // was checked before but is not anymore
+						removeUserFromCircle(item._id.$oid, id, {
+							onSuccess: function(data){
+								loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
+							}, 
+							onError: function(data){
+								console.log(data.error);
+							}
+						});
+					}
+				}
+			});
+		}
+
+		/** 
+		* This will be called when the page has finished loading. It will initialize certain components and set event listeners for different buttons, etc. 
+		* The more it will load external, reusable HTML snippets
+		*/
+		$(document).ready(function() {
+			initialize();
+			loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
+			$.get(WEB_URL+'dialogs/not-implemented.html').success(function(data){$('body').append(data); loadedNotYetImplemented();});
+			$.get(WEB_URL+'dialogs/circles-form.html').success(function(data){$('body').append(data); loadedExtHTMLCircle();});
+			$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data); loadedExtHTMLCircle();});
+			if(typeof(Storage)!=="undefined") { // check what userID we have been given via local storage to display information about here
+				$("#backButton").click(function(){
+						var url = localStorage.getItem("hb_backlink");
+						if(url!=undefined && url.length >0){
+							window.location = url;
+						} else {
+							window.location = WEB_URL+"circles.html";
+						}
+					return false;
+				});
+				id = localStorage.getItem("hb_detailId");
+				if(id!=undefined && id.length>0){
+					loadUserById(id, {onSuccess: function(data) {loadUser(data);}, onError: function(data){$(".detail-name").html("<center>No information found!</center>");}});
+				}
+				$("#circleButton").click(function(){
+					$('#circles-form').height("320px");
+					var maskHeight = $(document).height();  
+					var maskWidth = $(window).width();
+					var dialogTop =  (maskHeight/2) - ($('#circles-form').height()/2);  
+					var dialogLeft = (maskWidth/2) - ($('#circles-form').width()/2);
+					$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+					$('#circles-form').css({top:dialogTop, left:dialogLeft}).show();
+					$("#circle").contents().remove();
+					$.each(circles, function(i, item){
+						var circleName = item.name.replace(" ", "");
+						$("#circle").append("<input type=\"checkbox\" id=\""+item._id.$oid+"\" name=\""+circleName+"\" value=\""+circleName+"\">"+item.name+"</input></br>");
+						if(item.users!=undefined){
+							$.each(item.users, function(j,u){
+								if(u.userId==id){
+									$("#"+item._id.$oid).prop('checked', true);
+									return false;
+								}
+							});
+						}
+					});
+					return false;
+				});
+				$("#recordsButton").click(function(){
+					// $( "#notYetImplementedDialog" ).dialog( "open" );
+					window.location = WEB_URL+"spaces/spaces.html?userId="+id;
+					return false;
+				});
+			} else {
+				window.location = WEB_URL+"circles.html";
+			}
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1 id="title">User Detail</h1> 
+				<div class="page-actionbox">
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
+						<input id="search" type="text"/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li class="selectedLi"><a href="home.html">Home</a></li>
+					<li><a href="profile.html">Profile</a></li>
+					<li><a href="spaces/spaces.html">Spaces</a></li>
+					<li><a href="circles.html">Circles</a></li>
+					<li><a href="apps.html">Apps</a></li>
+					<li><a href="community.html">Community</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<div class="details">
+						<div class="detail-icon"></div>
+						<h2 class="detail-name">Name</h2>
+						<p class="detail-username">Username</p></br>
+						<p class="detail-address">Address</p></br>
+						<p class="detail-email">Email</p></br>
+						<p class="detail-phone">Phone</p></br>
+						<p class="detail-birthday">Birthday</p></br>
+						<p class="detail-nationality">Nationality</p></br>
+						<p class="detail-spouse">Spouse</p></br>
+						<p class="detail-insurance">Insurance</p>
+					</div>
+					<input id="backButton" type="submit" name="submit" value="Back" class="button" />
+					<button id="circleButton" class="button detailUserButton">Circles</button>
+					<button id="recordsButton" class="button detailUserButton">View Records</button>
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

@@ -3,52 +3,22 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
-	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<script src="../js/healthbank.js"></script>
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 
 	<script type="text/javascript">
 
-		function loadUserIcon(data){
-			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
-			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
-			$(".detail-icon").css("display", "block");
-		}
-
-		function loadUserInfo(data){
-			if(data==undefined){ 
-				/* Do nothing for the moment */ 
-				console.log("data undefined in loadUserInfo()");
-				return;
-			}
-			if(data.userIcon!=undefined){
-				$("#userInfo").html(decodeURIComponent(data.username));
-				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
-			} else {
-				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
-			}
-		}
-
 		$(document).ready(function() {
-			checkLogin();
-			setSearchAnimation();
-			getUserData({onSuccess: function(data){loadUserInfo(data);}});
-			$("#logoutButton").click(function(){
-				logout();
-				return false;
+			initialize();
+			$.get(WEB_URL+'dialogs/not-implemented.html').success(function(data){$('body').append(data); loadedNotYetImplemented();});
+			$("#appstoreButton").click(function(){
+				$( "#notYetImplementedDialog" ).dialog( "open" );
 			});
-			$("#userInfo").click(function(){
-				window.location = WEB_URL+"profile.html";
-			});
-			$("#search").keyup(function(event){
-			    if(event.keyCode == 13){
-			    	if($("#search").val()!=undefined && $("#search").val().length>0){
-			    		if(typeof(Storage)!=="undefined") {
-							localStorage.setItem("hb_query", $("#search").val());
-						}
-			        	window.location = WEB_URL + "queryResult.html?";
-			       	}
-			    }
+			$(".gearImage").click(function(){
+				$( "#notYetImplementedDialog" ).dialog( "open" );
 			});
 		});
 		
@@ -99,33 +69,36 @@
 								<div>
 									<img class="store-preview-icon" src="../images/newRecord-icon.png"/>
 									<div class="store-preview-content">
-										<a href="apps/addRecordApp.html" style="text-decoration: none; color: black">
-											<h4 class="store-preview-header">General Records</h4>
+										<a href="apps/addMedicalRecordApp.html" class="appLink">
+											<h4 class="store-preview-header">Medical Records</h4>
 										</a>
-										<p class="store-preview-descr">Add a new general record to your database.</p>
+										<p class="store-preview-descr">Add a new medical record to your database.</p>
 									</div>
+									<img class="gearImage" src="../images/gear.png" width="18px"/>
 								</div>
 							</li>
 							<li>
 								<div>
 									<img class="store-preview-icon" src="../images/calories-icon.jpg"/>
 									<div class="store-preview-content">
-										<a href="apps/caloriesApp.html" style="text-decoration: none; color: black">
+										<a href="apps/caloriesApp.html" class="appLink">
 											<h4 class="store-preview-header">Intake Calories Counter</h4>
 										</a>
 										<p class="store-preview-descr">Count how much calories you eat.</p>
 									</div>
+									<img class="gearImage" src="../images/gear.png" width="18px"/>
 								</div>
 							</li>
 							<li>
 								<div>
 									<img class="store-preview-icon" src="../images/sports-icon.jpg"/>
 									<div class="store-preview-content">
-										<a href="apps/sportsApp.html" style="text-decoration: none; color: black">
+										<a href="apps/sportsApp.html" class="appLink">
 											<h4 class="store-preview-header">Activity Calories Counter</h4>
 										</a>
 										<p class="store-preview-descr">Count how many calories you burn.</p>
 									</div>
+									<img class="gearImage" src="../images/gear.png" width="18px"/>
 								</div>
 							</li>
 						</ul>
@@ -173,6 +146,7 @@
 							</li>
 						</ul>
 					</div>
+					<p>Visit our <a href="#" id="appstoreButton">Appstore</a> for more apps and visualizations. </p>
 					<!--END Store Preview-->
 				</div>
 				<!--END Content-->

@@ -3,7 +3,7 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
-	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
   	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<script src="../js/healthbank.js"></script>
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
@@ -17,24 +17,13 @@
 			$("#"+userId).attr("height", "30px");
 		}
 
-		function loadUserInfo(data){
-			if(data==undefined){ 
-				/* Do nothing for the moment */ 
-				console.log("data undefined in loadUserInfo()");
-				return;
-			}
-			if(data.userIcon!=undefined){
-				$("#userInfo").html(decodeURIComponent(data.username));
-				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
+		function loadUserInfoIndividual(data){
+			if(data.allowResearch!=undefined && data.allowResearch=="y"){
+				$("#allowResearch").prop('checked', true);
+				$("#researchCircle").css("display", "block");
 			} else {
-				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
+				$("#allowResearch").prop('checked', false);
 			}
-		}
-
-		function loadUserIcon(data){
-			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
-			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
-			$(".detail-icon").css("display", "block");
 		}
 
 		function loadQueryResult(data) {
@@ -42,30 +31,47 @@
 			if(data.values.users==0){
 				$("#usersearchresults").append("<center>No users found for this query!</center>");
 			}
-
+			$("#usersearchresults").css("border", "1px solid black");
 			records = data.values.users;
 			$("#usersearchresults").remove(".usersearch-box");
+			j=0;
 			$.each(data.values.users, function(i, item) {
 				var userId = decodeURIComponent(item.userId.$oid);
-			    if(item.userIcon!=undefined){
-					loadImage(item.userIcon, userId, {onSuccess: function(result, id){loadUsersIcon(result, id);}, onError: function(result){if(result.loggedOut==true){}}});
-					$("#usersearchresults").append('<div userid="'+userId+'" class="usersearch-box"><img id="'+userId+'" class="usersearch-itemImage"/><h3 class="usersearch-itemheader">'+decodeURIComponent(item.firstname)+' '+decodeURIComponent(item.lastname)+'</div></li>'); 
-				} else {
-					$("#usersearchresults").append('<div class="usersearch-box" userid="'+userId+'"><h3 class="usersearch-itemheader">'+decodeURIComponent(item.firstname)+' '+decodeURIComponent(item.lastname)+'</div></li>'); 
+				if(userId != user._id.$oid){
+				    if(item.userIcon!=undefined){
+						loadImage(item.userIcon, userId, {onSuccess: function(result, id){loadUsersIcon(result, id);}, onError: function(result){if(result.loggedOut==true){}}});
+						$("#usersearchresults").append('<div userid="'+userId+'" class="usersearch-box"><img id="'+userId+'" class="usersearch-itemImage"/><h3 class="usersearch-itemheader">'+decodeURIComponent(item.firstname)+' '+decodeURIComponent(item.lastname)+'</div></li>'); 
+					} else {
+						$("#usersearchresults").append('<div class="usersearch-box" userid="'+userId+'"><img id="'+userId+'" class="usersearch-itemImage" src="'+WEB_URL+'../images/defaultUserIcon.png"/><h3 class="usersearch-itemheader">'+decodeURIComponent(item.firstname)+' '+decodeURIComponent(item.lastname)+'</div></li>'); 
+					}
+					j++;
+				    if(j==10){
+				    	return false;
+				    }
 				}
-			    if(i==10){
-			    	return false;
-			    }
 			});
-			$("#usersearchresults div").draggable({
-				containment: '.page-content',
-				cursor: 'move',
-				snap: '.page-content',
-				helper: 'clone'
-			} );
-			$("#usersearchresults div").click(function(){ 
-				// TODO
-			});
+			if($("#usersearchresults div").length==0){
+				$("#usersearchresults").append("<center>No users found for this query!</center>");
+			} else {
+				$("#usersearchresults div").draggable({
+					revert: true,
+					containment: '.page-content',
+					cursor: 'move',
+					snap: '.page-content',
+					helper: 'clone'
+				} );
+				$("#usersearchresults div").click(function(){ 
+					if ($(this).is('.ui-draggable-dragging')) {
+		                return false;
+		            }
+					if(typeof(Storage)!=="undefined") {
+						localStorage.setItem("hb_detailId", $(this).attr("userid"));
+						localStorage.setItem("hb_backlink", WEB_URL+"circles.html");
+					}
+					window.location = WEB_URL+"detailUser.html"; 
+					return false;
+				});
+			}
 			$("#loader").hide();
 		}
 		function loadQueryResultError() {
@@ -74,15 +80,17 @@
 
 		function handleDropEvent( event, ui, ele ){
 			var draggable = ui.draggable;
-			if(ele.attr("id")=="addCircle"){
-				$( "#notYetImplementedDialog" ).dialog( "open" );
+			if(ele.attr("id")=="addCircle" || ele.attr("id")=="researchCircle"){
+				// nothing to do here
 			} else {
-				//alert( 'The square with ID "' + draggable.attr('userid') + '" was dropped onto the circle "'+ele.attr('id')+'"!' );
 				$.each(circles, function(i, item){
 					if(ele.attr("name")==item.name){
-						addItemToCircle(item._id.$oid, draggable.attr('userid'), {
+						addUserToCircle(item._id.$oid, draggable.attr('userid'), {
 							onSuccess: function(data){
 								loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
+							}, 
+							onError: function(data){
+								alert(data.error);
 							}
 						});
 						return false;
@@ -98,8 +106,11 @@
 			if(data.values.circles.size==0){
 				return false;
 			}
+			if($("#circles .circle5").length>0){$("#circles .circle5").remove();}
+			if($("#circles .circle6").length>0){$("#circles .circle6").remove();}
 			usersInCircles = [];
 			circles = data.values.circles;
+			additionalCircles = 0;
 			$.each(circles, function(i, item){
 				switch(item.name){
 					case "Family":
@@ -115,6 +126,12 @@
 						wel=(item.users!=undefined)?item.users.length:0;
 						break;
 					default:
+						if(additionalCircles==0){
+							$("#circles").append("<div class=\"circle circle5 deg90\" id=\""+item.name.replace(/\s+/g, '')+"\" name=\""+item.name+"\"><div><span>"+item.name+" 0</span></div></div>");
+						} else {
+							$("#circles").append("<div class=\"circle circle6 deg225\" id=\""+item.name.replace(/\s+/g, '')+"\" name=\""+item.name+"\"><div><span>"+item.name+" 0</span></div></div>");
+						}
+						additionalCircles++;
 						break;
 				}
 				var user;
@@ -152,6 +169,68 @@
 					});
 				}
 			});
+
+		    $('.circle').mouseover(function() {
+		        $("#"+this.id).addClass('circle-hover');
+		    });
+		    $('.circle').mouseout(function() {
+		        $("#"+this.id).removeClass('circle-hover');
+		    });
+		    $('.circle').click(function() {
+		        if($(this).attr('id')=="addCircle"){
+					if(circles.length + 2 < 8){
+						$('#addCircle-form').height("250px");
+						var maskHeight = $(document).height();  
+						var maskWidth = $(window).width();
+						var dialogTop =  (maskHeight/2) - ($('#addCircle-form').height()/2);  
+						var dialogLeft = (maskWidth/2) - ($('#addCircle-form').width()/2);
+						var recordId = $(this).val();
+						$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+						$('#addCircle-form').css({top:dialogTop, left:dialogLeft}).show();
+						$("#addCircle-form label").autoWidth();
+						$("#theCircleId").val("");
+		        		return false;
+					} else {
+						alert("You have already reached the maximum amount of circles allowed for your account.");
+		        		return false;
+					}
+		        } else if($(this).attr('id')=="researchCircle"){
+		        	$("#usersearchresults").html("<center>Thank you very much for allow researchers to acccess your data. You can change this behaviour with the checkbox on the left.</center>");
+					$("#usersearchresults").css("border", "1px solid black");
+		        	return false;
+		        } else {
+		        	addUserImagesToCircle($(this).attr("name"));
+		        	return false;
+		        }
+		        return false;
+		    });
+		    $('.circle').droppable( {
+		    	
+				drop: function(event, ui) {
+					handleDropEvent(event, ui, $(this));
+					setCirclesText();
+				}
+			} );
+			$(".circle").hover(function(){
+				var mat = $(this).css("transform");
+				var matArr = mat.substr(7, mat.length - 8).split(', ');
+				matArr[0] = 2;
+				matArr[3] = 2;
+				mat = "matrix(" + matArr[0] + ", " + matArr[1] + ", " + matArr[2] + ", " + matArr[3] + ", " + matArr[4] + ", " + matArr[5] + ")";
+				$(this).css("transform", mat);
+				$(this).css("-webkit-transform", mat);
+				$(this).css("-moz-transform", mat);
+			}, function() {
+				var mat = $(this).css("transform");
+				var matArr = mat.substr(7, mat.length - 8).split(', ');
+				matArr[0] = 1;
+				matArr[3] = 1;
+				mat = "matrix(" + matArr[0] + ", " + matArr[1] + ", " + matArr[2] + ", " + matArr[3] + ", " + matArr[4] + ", " + matArr[5] + ")";
+				$(this).css("transform", mat);
+				$(this).css("-webkit-transform", mat);
+				$(this).css("-moz-transform", mat);
+				setCirclesText();
+			});
 			setCirclesText();
 		}
 
@@ -160,128 +239,338 @@
 			$("#friendsCircle span").html("Friends "+fri);
 			$("#medicalCircle span").html("Medical Prof. "+med);
 			$("#wellnessCircle span").html("Wellness Prof. "+wel);
-			$("#addCircle span").html('<svg xmlns="http://www.w3.org/2000/svg" version="1.1"><rect x="28" y="2" rx="5" ry="20" width="12" height="64" style="fill:#8B814C;stroke:black;stroke-width:2;opacity:0.9" /><rect x="2" y="26" rx="20" ry="5" width="64" height="12" style="fill:#8B814C;stroke:black;stroke-width:2;opacity:0.9" /></svg>')
+			$("#addCircle span").html('<svg xmlns="http://www.w3.org/2000/svg" version="1.1"><rect x="32" y="1" rx="5" ry="20" width="8" height="46" style="fill:#8B814C;stroke:black;stroke-width:2;opacity:0.9" /><rect x="12" y="20" rx="20" ry="5" width="46" height="8" style="fill:#8B814C;stroke:black;stroke-width:2;opacity:0.9" /></svg>');
+			$("#researchCircle span").html("Research");
+			$.each(circles, function(i, item){
+				if(item.name!="Family" && item.name!="Friends" &&item.name!="Medical Professionals" &&item.name!="Wellness Professionals"){
+					$("#"+item.name.replace(/\s+/g, '')+" span").html(item.name + " " + ((item.users!=undefined)?item.users.length:"0"));
+				}
+			});
 		}
 
 		function addUserImagesToCircle(name){
 			$("#loader").show();
 			$("#usersearchresults").html("<center>Users in Circle "+name+":</center><button value='"+name+"' id='spacesButton' class=\"list-button spaceButton\">Spaces</button>");
+			
+			if(name=="Family"){
+				$("#usersearchresults").css("border", "4px solid #F60");
+			} else if(name=="Friends"){
+				$("#usersearchresults").css("border", "4px solid #B13E0F");
+			} else if(name=="Medical Professionals"){
+				$("#usersearchresults").css("border", "4px solid #E47833");
+			} else if(name=="Wellness Professionals"){
+				$("#usersearchresults").css("border", "4px solid #C76114");
+			} else if($("#"+name.replace(/\s+/g, '')).hasClass("circle5")){
+				$("#usersearchresults").css("border", "4px solid #630");
+				$("#usersearchresults").append("<button value='"+name+"' id='deleteCircleButton' class=\"list-button spaceButton\">Delete Circle</button>");
+				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
+			} else if($("#"+name.replace(/\s+/g, '')).hasClass("circle6")){
+				$("#usersearchresults").css("border", "4px solid #F30");
+				$("#usersearchresults").append("<button value='"+name+"' id='deleteCircleButton' class=\"list-button spaceButton\">Delete Circle</button>");
+				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
+			}	
+
 			if(usersInCircles.length==0){
 				$("#usersearchresults").append("<center>You have no users in your circles yet!</center>");
 			}
 			$.each(usersInCircles, function(i, item){
 				$.each(item["circles"], function(j, circle){
 					if(circle==name){
-						$("#usersearchresults").append('<div userid="'+item["id"]+'" class="usersearch-box"><img id="'+item["id"]+'" src="data:image/png;base64,'+item["img"]+'" class="usersearch-itemImage"/><h3 class="usersearch-itemheader">'+item["firstname"]+' '+item["lastname"]+'</div></li>');
+						$("#usersearchresults").append('<div userid="'+item["id"]+'" class="usersearch-box"><img id="'+item["id"]+'" src="'+((item["img"]!=undefined)?'data:image/png;base64,'+item["img"]:WEB_URL+'../images/defaultUserIcon.png')+'" class="usersearch-itemImage"/><h3 class="usersearch-itemheader">'+item["firstname"]+' '+item["lastname"]+'</div>');
 					}
 				});
 			});
+
+
 			$("#usersearchresults div").draggable({
 				containment: '.page-content',
 				cursor: 'move',
 				snap: '.page-content',
-				helper: 'clone'
+				revert: true,
+				helper: 'clone',
+				start: function(event, ui){ 
+					$("#removeFromCircle").css("display", "block"); 
+				},
+				stop: function(event, ui) { 
+					$("#removeFromCircle").css("display", "none");
+				}
 			} );
+
+			$("#usersearchresults").append('<div id="removeFromCircle" class="usersearch-box right standardRemoveFromCircle"><h3 class="removeFromCircle">Remove from Circle</div>');
+			$("#removeFromCircle").css("display", "none");
+			$("#removeFromCircle").droppable( {
+		    	over: function(event, ui) {
+					$("#removeFromCircle").addClass("highlightRemoveFromCircle");
+					$("#removeFromCircle").removeClass("standardRemoveFromCircle");
+		    	},
+		    	out: function(event, ui) {
+					$("#removeFromCircle").removeClass("highlightRemoveFromCircle");
+					$("#removeFromCircle").addClass("standardRemoveFromCircle");
+		    	},
+				drop: function(event, ui) {
+					$.each(circles, function(i, item){
+						if($("#spacesButton").val()==item.name){
+							removeUserFromCircle(item._id.$oid, ui.draggable.attr('userid'), {
+								onSuccess: function(data){
+									loadCircles({
+										onSuccess: function(data){
+											tmpCircle = $("#spacesButton").val();
+											loadedCircles(data); 
+										}, onError: function(){
+											console.log("Error while loading circles...");
+										}
+									});
+								}
+							});
+							setTimeout(function(){ui.draggable.fadeOut(300, function(){ $(this).remove();});}, 500);
+							return false;
+						}
+					});
+				}
+			} );
+
 			$("#usersearchresults div").click(function(){ 
-				// TODO
+				if ($(this).is('.ui-draggable-dragging')) {
+	                return false;
+	            }
+				if(typeof(Storage)!=="undefined") {
+					localStorage.setItem("hb_detailId", $(this).attr("userid"));
+					localStorage.setItem("hb_backlink", WEB_URL+"circles.html");
+				}
+				window.location = WEB_URL+"detailUser.html"; 
+				return false;
+
+			});
+			$("#spacesButton").click(function(){				
+				$('#spaces-form').height("320px");
+				var maskHeight = $(document).height();  
+				var maskWidth = $(window).width();
+				var dialogTop =  (maskHeight/2) - ($('#spaces-form').height()/2);  
+				var dialogLeft = (maskWidth/2) - ($('#spaces-form').width()/2);
+				var circleId = $(this).val();
+				$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+				$('#spaces-form').css({top:dialogTop, left:dialogLeft}).show();
+				$(".spaces-form label").autoWidth();
+				$("#space").contents().remove();
+				$.each(circles, function(i, item){
+					if(circleId==item.name){
+						circleId = item._id.$oid; 
+						$("#recordS-name").html(item.name+" Circle");
+						return false;
+					}
+				});
+				$("#SrecordID").val(circleId);
+				$("#spaces-form p").html("All record of this circle will be visible in the selected space(s).")
+				$.each(spaces, function(i, item){
+					var spaceName = item.name.replace(" ", "");
+					$("#space").append("<input type=\"checkbox\" id=\""+item._id.$oid+"\" name=\""+spaceName+"\" value=\""+spaceName+"\">"+item.name+"</input></br>");
+					if(item.circles!=undefined){
+						$.each(item.circles, function(j,cir){
+							if(cir == circleId){ $("#"+item._id.$oid).prop('checked', true); }
+						});
+					}
+				});
+				return false;
+			});
+			$("#deleteCircleButton").click(function(){				
+				$("#dialog-confirm").dialog("open");
+				return false;
+			});
+			$("#editCircleButton").click(function(){				
+				$('#addCircle-form').height("250px");
+				var maskHeight = $(document).height();  
+				var maskWidth = $(window).width();
+				var dialogTop =  (maskHeight/2) - ($('#addCircle-form').height()/2);  
+				var dialogLeft = (maskWidth/2) - ($('#addCircle-form').width()/2);
+				var recordId = $(this).val();
+				$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+				$('#addCircle-form').css({top:dialogTop, left:dialogLeft}).show();
+				$("#addCircle-form label").autoWidth();
+				$("#addCircleTitle").html("Edit Circle "+$("#editCircleButton").val())
+				$.each(circles, function(i, item){
+					if(item.name==$("#editCircleButton").val()){
+						$("#newCircleName").val(item.name);
+						$("#newCircleDescr").val(item.descr);
+						$("#theCircleId").val(item._id.$oid);
+						return false;
+					}
+				});
+				return false;
 			});
 			$("#loader").hide();
-			$("#spacesButton").click(function(){				
-				$( "#notYetImplementedDialog" ).dialog( "open" );
-			});
 		}
 
-		function setCirclePos() {
-			$(".fam").offset({ top: $(".me").offset().top-60, left: $(".me").offset().left-30});
-			$(".friend").offset({ top: $(".me").offset().top-50, left: $(".me").offset().left+ 1/2*$(".me").width()+10});
-			$(".med").offset({ top: $(".me").offset().top+1/3*$(".me").height(), left: $(".me").offset().left-70});
-			$(".wel").offset({ top: $(".me").offset().top+1/2*$(".me").height()-20, left: $(".me").offset().left+1/2*$(".me").width()+50});
-			$(".aNew").offset({ top: $(".me").offset().top+$(".me").height()-40, left: $(".me").offset().left+1/6*$(".me").width()});
+		var addCircleInit = 0;
+		function addCircleInitialized(){
+			addCircleInit++;
+			if(addCircleInit<3){
+				return false;
+			}
+			$( "#close, #dialog-overlay, #closeSpaces" ).click(function() {
+				$("#addCircle-form, #dialog-overlay, #spaces-form").hide();
+				$("#addCircleTitle").html("Add a new circle");
+				$("#newCircleName").val("");
+				$("#newCircleDescr").val("");
+				$("#theCircleId").val("");
+				return false;
+			});
+			$( "#saveCircle" ).click(function() {
+				var name = $("#newCircleName").val();
+				var descr = $("#newCircleDescr").val();
+				var id = $("#theCircleId").val();
+				if(name==undefined || name.length<2 || descr==undefined || descr.length<2){
+					$("#addCircleFeedback").html("Please fill out both fields below!");
+					$("#addCircleFeedback").css("color", "red");
+					return false;
+				}
+
+				if(id==undefined || id.length<1){
+					addCircle(name, descr, {
+						onSuccess: function(data){
+							$("#close").click();
+							loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
+						}, onError: function(){
+							console.log("Error while loading circles...");
+						}
+					});
+					return false;
+				} else {
+					editCircle(id, name, descr, {
+						onSuccess: function(data){
+							$("#close").click();
+							loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
+						}, onError: function(){
+							console.log("Error while loading circles...");
+						}
+					});
+					return false;
+				}
+				return false;
+			});
+
+			$( "#saveSpaces" ).click(function() {
+				//$( "#notYetImplementedDialog" ).dialog( "open" );
+				$.each($("#space input"), function(i, item){ 
+					$.each(spaces, function(j, spa) {
+						if(spa._id.$oid == $(item).attr("id")){
+							found = false;
+							s = "";
+							if(spa.circles!=undefined) {
+								$.each(spa.circles, function(l, cir){
+									if($("#SrecordID").val()==cir){ found = true; return false;}
+									else { s += cir + " "; }
+								});
+							}
+							if(!found){
+								if($(item).is(":checked")){
+									s += $("#SrecordID").val();
+									updateCirclesOfSpace(spa._id.$oid, s, {
+										onSuccess: function(data){
+											loadSpaces({onSuccess: function(data){loadedSpaces(data);}, onError: function(){console.log("Error while loading spaces...");}});
+											$("#closeSpaces").click();
+										}, onError: function(){
+											console.log("Error while updating circles of space...");
+										}
+									});
+								} 
+							} else {
+								if(!$(item).is(":checked")){
+									s = "";
+									$.each(spa.circles, function(l, cir){
+										if($("#SrecordID").val()!=cir){ s += cir + " "; }
+									});
+									s = s.substring(0,s.length-1);
+									updateCirclesOfSpace(spa._id.$oid, s, {
+										onSuccess: function(data){
+											loadSpaces({onSuccess: function(data){loadedSpaces(data);}, onError: function(){console.log("Error while loading spaces...");}});
+											$("#closeSpaces").click();
+										}, onError: function(){
+											console.log("Error while updating circles of space...");
+										}
+									});
+								}
+							}
+							return false;
+						}
+					});
+				});
+				return false;
+			});
 		}
 
 		$(document).ready(function() {
-			checkLogin();
-			setSearchAnimation();
-			getUserData({onSuccess: function(data){loadUserInfo(data);}});
+			initialize();
+			$.get(WEB_URL+'dialogs/not-implemented.html').success(function(data){$('body').append(data); loadedNotYetImplemented();});
+			$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data); addCircleInitialized();});
+			$.get(WEB_URL+'dialogs/dialog-addCircle.html').success(function(data){$('body').append(data); addCircleInitialized();});
+			$.get(WEB_URL+'dialogs/spaces-form.html').success(function(data){$('body').append(data); addCircleInitialized();});
+			loadSpaces({onSuccess: function(data){loadedSpaces(data);}, onError: function(){console.log("Error while loading spaces...");}});
 			loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
-			$("#logoutButton").click(function(){
-				logout();
-				return false;
-			});
-			$("#userInfo").click(function(){
-				window.location = WEB_URL+"profile.html";
-			});
-		    $('.circle').mouseover(function() {
-		        $("#"+this.id).addClass('circle-hover');
-		    });
-		    $('.circle').mouseout(function() {
-		        $("#"+this.id).removeClass('circle-hover');
-		    });
-		    $('.circle').click(function() {
-		        if($(this).attr('id')!="addCircle"){
-		        	addUserImagesToCircle($(this).attr("name"));
-		        }
-		    });
-		    $('.circle').droppable( {
-		    	over: function(event, ui) {
-		    		$("#"+$(this).attr('id')).addClass('circle-hover');
-		    		if($(this).attr('id')!="addCircle"){
-		    			$("#"+$(this).attr('id')+" span").html("Add user!");
-		    		} else {
-		    			$("#"+$(this).attr('id')+" span").html("New circle!");
-		    		}
-		    	},
-		    	out: function(event, ui) {
-		    		setCirclesText();
-		    	},
-				drop: function(event, ui) {
-					handleDropEvent(event, ui, $(this));
-					setCirclesText();
-				}
-			} );
 		    $("#searchButton").click(function(){
 				var query = $("#usersearchbar").val();
 				$("#loader").show();
 		    	queryUsers(query, {onSuccess: function(data){loadQueryResult(data);}, onError: function(){console.log("onError"); loadQueryResultError();}});
+				return false;
+
 		    });
 		    $("#usersearchbar").keyup(function(event){
 			    if(event.keyCode == 13){
 			        $("#searchButton").click();
 			    }
 			});
-			$("#search").keyup(function(event){
-			    if(event.keyCode == 13){
-			    	if($("#search").val()!=undefined && $("#search").val().length>0){
-			    		if(typeof(Storage)!=="undefined") {
-							localStorage.setItem("hb_query", $("#search").val());
-						}
-			        	window.location = WEB_URL + "queryResult.html?";
-			       	}
+			$("#allowResearch").change(function() {
+			    if(this.checked) {
+			        console.log("Checked");
+			        user.allowResearch = "y";
+			        updateUserData(user, {}); 
+					$("#researchCircle").css("display", "block");
+			    } else {
+			    	console.log("Unchecked");
+			        user.allowResearch = "n";
+			        updateUserData(user, {}); 
+					$("#researchCircle").css("display", "none");
 			    }
 			});
-			$( "#notYetImplementedDialog" ).dialog({
+			$( document ).tooltip({ tooltipClass: "hbTooltip" });
+			$( "#dialog-confirm" ).dialog({
 				autoOpen: false,
-				show: {
-					effect: "slide",
-					duration: 500
-				},
-				hide: {
-					effect: "scale",
-					duration: 500
+				resizable: false,
+				height:200,
+				width: 450,
+				modal: true,
+				buttons: {
+					"Delete": function() {
+						$.each(circles, function(i, item){
+							if(item.name==$("#deleteCircleButton").val()){
+								deleteCircle(item._id.$oid, {
+									onSuccess: function(data){
+										$("#close").click();
+										loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
+									}, onError: function(){
+										console.log("Error while loading circles...");
+									}
+								});
+								return false;
+							}
+						});
+						$("#usersearchresults").html("<center>Use the search bar above to search for users.</center>");
+						$("#usersearchresults").css("border", "1px solid black");
+						$( this ).dialog( "close" );
+					},
+					Cancel: function() {
+						$( this ).dialog( "close" );
+					}
 				}
-			});
-			$("#addCircle").click(function(){
-				$( "#notYetImplementedDialog" ).dialog( "open" );
-			});
-			setCirclePos();
-			$(window).resize(function() {
-			  setCirclePos();
 			});
 		});
 		
 	</script>
 </head>
 <body>
+	<div id="dialog-confirm" title="Delete this circle?">
+		<p><span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>This circle will be permanently deleted and cannot be recovered. Are you sure?</p>
+	</div>
+
 	<!--Header-->
 	<h1 class="heading">Welcome to the Health Bank<sup>&copy;</sup></h1>
 	<!--END Header-->
@@ -342,19 +631,25 @@
 						</tr>
 						<tr class="circleTr">
 							<td>
+								<div id="research">
+									<input type="checkbox" name="allowResearch" id="allowResearch"/>
+									<label for="allowResearch" id="allowResearchLabel" title="This will allow our research partners to view your data in an anonymized manner. Allowing researchers to view this data gives them great oportunities to learn more about diseases and to find new and optimize existing medication. Thank you for your support.">Allow researchers to have access to your data for studies</label>
+								</div>
 								<div id="circles">
 									<div class="me" id="meCircle"><span style="line-height: 250px;">Me</span></div>
-									<div class="circle fam" id="familyCircle" name="Family"><span>Family 0</span></div>
-									<div class="circle friend" id="friendsCircle" name="Friends"><span>Friends 0</span></div>
-									<div class="circle med" id="medicalCircle" name="Medical Professionals"><span>Medical Prof. 0</span></div>
-									<div class="circle wel" id="wellnessCircle" name="Wellness Professionals"><span>Wellness Prof. 0</span></div>
-									<div class="circle aNew" id="addCircle">
-										<span>
+									<div class="circle fam deg315" id="familyCircle" name="Family"><div><span>Family 0</span></div></div>
+									<div class="circle friend deg0" id="friendsCircle" name="Friends"><div><span>Friends 0</span></div></div>
+									<div class="circle med deg45" id="medicalCircle" name="Medical Professionals"><div><span>Medical Prof. 0</span></div></div>
+									<div class="circle wel deg270" id="wellnessCircle" name="Wellness Professionals"><div><span>Wellness Prof. 0</span></div></div>
+									<div class="circle research deg135" id="researchCircle" name="Research"><div><span>Research</span></div></div>
+									<div class="circle aNew deg180" id="addCircle">
+										<div><span>
 											<svg xmlns="http://www.w3.org/2000/svg" version="1.1">
-												<rect x="28" y="2" rx="5" ry="20" width="12" height="64" style="fill:#8B814C;stroke:black;stroke-width:2;opacity:0.9" />
-												<rect x="2" y="26" rx="20" ry="5" width="64" height="12" style="fill:#8B814C;stroke:black;stroke-width:2;opacity:0.9" />
+												<rect x="32" y="1" rx="5" ry="20" width="8" height="32" style="fill:#8B814C;stroke:black;stroke-width:2;opacity:0.9" />
+												<rect x="12" y="20" rx="20" ry="5" width="32" height="8" style="fill:#8B814C;stroke:black;stroke-width:2;opacity:0.9" />
+												<rect x="28" y="26" width="12" height="12" sytle="fill:#8B814C;stroke:black;stroke-width:2;opacity:0.9"/>
 											</svg>
-										</span>
+										</span></div>
 									</div>
 								</div>
 							</td>
@@ -381,11 +676,5 @@
     	<div class="clr"></div>
     </div>
 	<!--END Bottom Bar -->
-
-	<!-- DIALOGS -->
-	<div id="notYetImplementedDialog" title="Not yet implemented!">
-		<p>We are very sorry, but this feature is not yet implemented. Stay tuned to find it working hopefully pretty soon. </p>
-	</div>
-	<!-- END DIALOGS-->
 </body>
 </html>

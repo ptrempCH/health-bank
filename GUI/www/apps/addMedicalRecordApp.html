@@ -3,31 +3,11 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
-	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script src="../../js/healthbank.js"></script>
 	<link href="../../css/healthbank.css" rel="stylesheet" type="text/css">
 
 	<script type="text/javascript">
-
-		function loadUserIcon(data){
-			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
-			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
-			$(".detail-icon").css("display", "block");
-		}
-
-		function loadUserInfo(data){
-			if(data==undefined){ 
-				/* Do nothing for the moment */ 
-				console.log("data undefined in loadUserInfo()");
-				return;
-			}
-			if(data.userIcon!=undefined){
-				$("#userInfo").html(decodeURIComponent(data.username));
-				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
-			} else {
-				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
-			}
-		}
 
 		function addRecordCompleted(data){
 			$("#addRec-feedback").html(data.message+"<br/>To see all your records click <a href=\"../spaces/spaces.html\">here</a>.");
@@ -76,13 +56,7 @@
 		}
 
 		$(document).ready(function() {
-			checkLogin();
-			setSearchAnimation();
-			getUserData({onSuccess: function(data){loadUserInfo(data);}});
-			$("#logoutButton").click(function(){
-				logout();
-				return false;
-			});
+			initialize();
 			$("#submitButton").click(function(){
 				submit();
 				return false;
@@ -97,19 +71,6 @@
 			});
 			$("#descr").click(function() {
 				$("#descr").select();
-			});
-			$("#userInfo").click(function(){
-				window.location = WEB_URL+"profile.html";
-			});
-			$("#search").keyup(function(event){
-			    if(event.keyCode == 13){
-			    	if($("#search").val()!=undefined && $("#search").val().length>0){
-			    		if(typeof(Storage)!=="undefined") {
-							localStorage.setItem("hb_query", $("#search").val());
-						}
-			        	window.location = WEB_URL + "queryResult.html?";
-			       	}
-			    }
 			});
 			$("#addRec-feedback").html("All fields marked with a (*) are required.");
 			$("#addRec-form").attr("action", API_URL+"Record");
@@ -147,7 +108,7 @@
 					<li><a href="../profile.html">Profile</a></li>
 					<li><a href="../spaces/spaces.html">Spaces</a></li>
 					<li><a href="../circles.html">Circles</a></li>
-					<li  class="../selectedLi"><a href="apps.html">Apps</a></li>
+					<li  class="selectedLi"><a href="../apps.html">Apps</a></li>
 					<li><a href="../community.html">Community</a></li>
 					<li><a href="../about.html">About</a></li>
 				</ul>

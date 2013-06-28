@@ -22,6 +22,11 @@ import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 
 /**
  * Servlet implementation class Logout
+ * 
+ * In this servlet we implement the functionality to log a user out via a POST request.
+ * 
+ * @author Patrick Tremp
+ *
  */
 @WebServlet(
 		description = "Logout off the system as a user.", 
@@ -32,10 +37,20 @@ import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 public class Logout extends HttpServlet {
        
 	private static final long serialVersionUID = 1046607983902042202L;
+	
+	/**
+	 *  Instance of the {@link MongoDBConnector}, which is responsible for the connection to the DB
+	 */
 	private MongoDBConnector connector; 
+	
+	/**
+	 * Instance of the {@link CoreManager}, which is responsible for some core functionalities used
+	 * in several different servlet.
+	 */
 	private CoreManager manager;
 
 	/**
+	 * Main constructor
      * @see HttpServlet#HttpServlet()
      */
     public Logout() {
@@ -45,6 +60,11 @@ public class Logout extends HttpServlet {
     }
 
 	/**
+	 * The GET request is not defined for this servlet. It will send the caller a message, that the POST request has to be used instead
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -64,6 +84,14 @@ public class Logout extends HttpServlet {
 	}
 
 	/**
+	 * The POST request allows the caller to log the user out of the system. This will reset the session key and expires time.
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * 
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

@@ -11,10 +11,18 @@ import ch.ethz.inf.systems.ptremp.healthbank.db.MongoDBConnector;
 import ch.ethz.inf.systems.ptremp.healthbank.exceptions.IllegalQueryException;
 import ch.ethz.inf.systems.ptremp.healthbank.exceptions.NotConnectedException;
 
+/**
+ * This class was build with the intention to test the connection to the database server. 
+ * @author Patrick Tremp
+ *
+ */
 public class ConsoleOutputTest {
 
 	/**
-	 * @param args
+	 * In the main method we try to get a connection to the MongoDB, then insert a new entry into the collection
+	 * "things". Next we query the "things" collection to retrieve the stored element(s) and display them in the
+	 * console. Finally we update one entry in the DB and display the collection again by querying it again. 
+	 * @param args This method does not need any external arguments
 	 */
 	public static void main(String[] args) {
 		try {

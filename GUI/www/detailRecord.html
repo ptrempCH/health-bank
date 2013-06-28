@@ -3,37 +3,22 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
-	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script src="../js/healthbank.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 
 	<script type="text/javascript">
 
-		function loadUserIcon(data){
-			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
-			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
-			$(".detail-icon").css("display", "block");
-		}
-
-		function loadUserInfo(data){
-			if(data==undefined){ 
-				/* Do nothing for the moment */ 
-				console.log("data undefined in loadUserInfo()");
-				return;
-			}
-			if(data.userIcon!=undefined){
-				$("#userInfo").html(decodeURIComponent(data.username));
-				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
-			} else {
-				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
-			}
-		}
+		var entry;
 
 		function loadID(data){
 			if(typeof(Storage)!=="undefined") {
 					var id = localStorage.getItem("hb_detailId");
 					if(data.size==0){
 						$(".detail-name").html("<center>No entries yet!</center>");
+						return false;
 					}
 					data.values.records.reverse();
 					$.each(data.values.records, function(item) {
@@ -45,30 +30,150 @@
 					    	$(".detail-app").html("<b>App: </b>"+decodeURIComponent(data.values.records[item].app));
 					    	var s = "<b>Other values: </b><br/>";
 					    	$.each(data.values.records[item], function(key, value){
-					    		if(key!=undefined && key!="name" && key!="_id" && key!="timedate" && key!="descr" && key!="app" && key!="userID"){
+					    		if(key!=undefined && key!="name" && key!="_id" && key!="timedate" && key!="descr" && key!="app" && key!="userID" && key!="spaces" && key!="circles"){
 					    			s += "<p style=\"margin-left:10px\"><b>"+key+":</b>  "+decodeURIComponent(value)+"<p>"
 					    		}
 							});
 							if(s=="<b>Other values: </b><br/>"){s+="<p style=\"margin-left:10px\">None</p>";}
 							$(".detail-values").html(s);
+							entry = data.values.records[item];
 					    }
 					});
 			}
 		}
 		function loadRecordsError(){
 			console.log("There was an error with the request!");
-			// TODO: Give user feedback
+		}
+
+		function loadedExtHTML() {
+			spacesIter++;
+			if(spacesIter==3){
+				$( "#closeCircles, #dialog-overlay, #closeSpaces" ).click(function() {
+					$("#circles-form, #spaces-form, #dialog-overlay").hide();
+					return false;
+				});
+				$( "#saveCircles" ).click(function() {
+					saveCirclesOfThisRecord($("#recordID").val());
+					return false;
+				});
+				$( "#saveSpaces" ).click(function() {
+					saveSpacesOfThisRecord($("#SrecordID").val());
+					return false;
+				});
+			}
+		}
+
+		function saveCirclesOfThisRecord(recordId){
+			var selectedCircles = [];
+			var iter = 0;
+			var s = "";
+			$.each(circles, function(i, item){
+				if($("#"+item._id.$oid).is(":checked")){
+					selectedCircles[iter] = item._id.$oid;
+					iter++;
+				}
+			});
+			$.each(selectedCircles, function(i, item){
+				s += item+" ";
+			});
+			s = s.substring(0,s.length-1);
+			updateRecordCircles(
+				recordId, 
+				s, 
+				{
+					onSuccess: function(data){
+						$("#circles-form, #dialog-overlay").hide();
+						loadRecords({onSuccess: function(data){loadID(data);}, onError: function(){console.log("onError"); loadRecordsError();}});
+					}, 
+					onError: function(){
+						d=document.createElement('div');
+						$(d).html("<p style=\"color:red\">There was an error assigning your circles. We are terribly sorry</p>")
+							.dialog({
+								autoOpen: false,
+								show: {
+									effect: "slide",
+									duration: 200
+								},
+								hide: {
+									effect: "scale",
+									duration: 200
+								}
+							});
+						$(d).dialog("open");
+					}
+				}
+			);
+		}
+
+		function saveSpacesOfThisRecord(recordId){
+			var selectedSpaces = [];
+			var iter = 0;
+			var s = "";
+			if(spaces!=undefined){
+				$.each(spaces, function(i, item){
+					if($("#"+item._id.$oid).is(":checked")){
+						selectedSpaces[iter] = item._id.$oid;
+						iter++;
+					}
+				});
+				$.each(selectedSpaces, function(i, item){
+					s += item+" ";
+				});
+				s = s.substring(0,s.length-1);
+				updateRecordSpaces(
+					recordId, 
+					s, 
+					{
+						onSuccess: function(data){
+							$("#circles-form, #dialog-overlay, #spaces-form").hide();
+							loadRecords({onSuccess: function(data){loadID(data);}, onError: function(){console.log("onError"); loadRecordsError();}});
+						}, 
+						onError: function(){
+							d=document.createElement('div');
+							$(d).html("<p style=\"color:red\">There was an error assigning your spaces. We are terribly sorry</p>")
+								.dialog({
+									autoOpen: false,
+									show: {
+										effect: "slide",
+										duration: 200
+									},
+									hide: {
+										effect: "scale",
+										duration: 200
+									}
+								});
+							$(d).dialog("open");
+						}
+					}
+				);
+			} else {
+				d=document.createElement('div');
+				$(d).css("z-index", "1000");
+				$(d).html("<p style=\"color:red\">There was an error assigning your spaces. We are terribly sorry</p>")
+					.dialog({
+						autoOpen: false,
+						show: {
+							effect: "slide",
+							duration: 200
+						},
+						hide: {
+							effect: "scale",
+							duration: 200
+						}
+					});
+				$(d).dialog("open");
+			}
 		}
 
 		$(document).ready(function() {
-			checkLogin();
-			setSearchAnimation();
-			getUserData({onSuccess: function(data){loadUserInfo(data);}});
+			initialize();
 			loadRecords({onSuccess: function(data){loadID(data);}, onError: function(){console.log("onError"); loadRecordsError();}});
-			$("#logoutButton").click(function(){
-				logout();
-				return false;
-			});
+			loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
+			loadSpaces({onSuccess: function(data){loadedSpaces(data);}, onError: function(){console.log("Error while loading spaces...");}});
+			$.get(WEB_URL+'dialogs/not-implemented.html').success(function(data){$('body').append(data); loadedNotYetImplemented();});
+			$.get(WEB_URL+'dialogs/circles-form.html').success(function(data){$('body').append(data); loadedExtHTML();});
+			$.get(WEB_URL+'dialogs/spaces-form.html').success(function(data){$('body').append(data); loadedExtHTML();});
+			$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data); loadedExtHTML();});
 			$("#backButton").click(function(){
 				if(typeof(Storage)!=="undefined") {
 					var url = localStorage.getItem("hb_backlink");
@@ -82,9 +187,6 @@
 				}
 				return false;
 			});
-			$("#userInfo").click(function(){
-				window.location = WEB_URL+"profile.html";
-			});
 			$("#rec-button-dropdown").click(function(){
 				$("#rec-button-dropdown").hide();
 				$("#rec-buttons").show();
@@ -93,18 +195,58 @@
 				$("#rec-button-dropdown").show();
 				$("#rec-buttons").hide();
 			});
-			$("#editButton, #deleteButton, #spacesButton, #circlesButton").click(function(){
-				alert("Not yet implemented!");
+			$("#editButton, #deleteButton").click(function(){
+				$( "#notYetImplementedDialog" ).dialog( "open" );
+				return false;
 			});
-			$("#search").keyup(function(event){
-			    if(event.keyCode == 13){
-			    	if($("#search").val()!=undefined && $("#search").val().length>0){
-			    		if(typeof(Storage)!=="undefined") {
-							localStorage.setItem("hb_query", $("#search").val());
-						}
-			        	window.location = WEB_URL + "queryResult.html?";
-			       	}
-			    }
+			$("#spacesButton").click(function(){
+				$('#spaces-form').height("320px");
+				var maskHeight = $(document).height();  
+				var maskWidth = $(window).width();
+				var dialogTop =  (maskHeight/2) - ($('#spaces-form').height()/2);  
+				var dialogLeft = (maskWidth/2) - ($('#spaces-form').width()/2);
+				var recordId = $(".detail-id").html();
+				$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+				$('#spaces-form').css({top:dialogTop, left:dialogLeft}).show();
+				$(".spaces-form label").autoWidth();
+				$("#SrecordID").val(recordId.substring(recordId.lastIndexOf(">")+1));
+				$("#space").contents().remove();
+				$.each(spaces, function(i, item){
+					var spaceName = item.name.replace(" ", "");
+					$("#space").append("<input type=\"checkbox\" id=\""+item._id.$oid+"\" name=\""+spaceName+"\" value=\""+spaceName+"\">"+item.name+"</input></br>");
+				});
+				$("#recordS-name").html(entry.name);
+				if(entry.spaces!=undefined){
+					$.each(entry.spaces, function(j,s){
+						$("#"+s).prop('checked', true);
+					});
+				}
+				return false;
+			});
+			$("#circlesButton").click(function(){
+				$('#circles-form').height("320px");
+				var maskHeight = $(document).height();  
+				var maskWidth = $(window).width();
+				var dialogTop =  (maskHeight/2) - ($('#circles-form').height()/2);  
+				var dialogLeft = (maskWidth/2) - ($('#circles-form').width()/2);
+				var recordId =  $(".detail-id").html();
+				$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+				$('#circles-form').css({top:dialogTop, left:dialogLeft}).show();
+				$(".circles-form label").autoWidth();
+				$("#recordID").val(recordId.substring(recordId.lastIndexOf(">")+1));
+				$("#circle").contents().remove();
+				$.each(circles, function(i, item){
+					var circleName = item.name.replace(" ", "");
+					$("#circle").append("<input type=\"checkbox\" id=\""+item._id.$oid+"\" name=\""+circleName+"\" value=\""+circleName+"\">"+item.name+"</input></br>");
+				});
+				
+				$("#record-name").html(entry.name);
+				if(entry.circles!=undefined){
+					$.each(entry.circles, function(j,c){
+						$("#"+c).prop('checked', true);
+					});
+				}
+				return false;
 			});
 		});
 		

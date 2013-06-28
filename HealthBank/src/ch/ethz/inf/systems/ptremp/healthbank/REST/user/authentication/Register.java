@@ -28,6 +28,9 @@ import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 
 /**
  * Servlet implementation class Register
+ * In this servlet we implement the functionality to register a new user via a POST request.
+ * 
+ * @author Patrick Tremp
  */
 @WebServlet(
 		description = "Register to the system as a user.", 
@@ -39,11 +42,20 @@ import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 public class Register extends HttpServlet {
 
 	private static final long serialVersionUID = 2356378203795161460L;
+	/**
+	 *  Instance of the {@link MongoDBConnector}, which is responsible for the connection to the DB
+	 */
 	private MongoDBConnector connector; 
+	
+	/**
+	 * Instance of the {@link CoreManager}, which is responsible for some core functionalities used
+	 * in several different servlet.
+	 */
 	private CoreManager manager;
 	
        
     /**
+     * Main Constructor
      * @see HttpServlet#HttpServlet()
      */
     public Register() {
@@ -53,6 +65,11 @@ public class Register extends HttpServlet {
     }
 
 	/**
+	 * The GET request is not defined for this servlet. It will send the caller a message, that the POST request has to be used instead
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -72,7 +89,26 @@ public class Register extends HttpServlet {
 	}
 
 	/**
+	 * The POST request allows the caller to register a new user in the system. 
+	 * 
+	 * For a successful call the following parameters need to be present in the URL. At the moment there are two different
+	 * possibilities for this POST call. One for 'normal' users and one for institutes. 
+	 * Users:
+	 * - pw: This is the chosen password for the user in a hashed form for security. (So far Base64, which is not that secure...)
+	 * - username: This is the chosen user name. If the name already exists, an error message is returned to the caller
+	 * - firstname: The first name of the user
+	 * - lastname: The last name of the user
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * Institutes:
+	 * - pw: This is the chosen password for the user in a hashed form for security. (So far Base64, which is not that secure...)
+	 * - username: This is the chosen user name. If the name already exists, an error message is returned to the caller
+	 * - companyname: The name of the company
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * 
+	 * TODO: Once the companies / institute have been better defined. We need to redefine this method to correctly deal with it.
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("application/json");
@@ -156,8 +192,9 @@ public class Register extends HttpServlet {
 	                /**END USER ICON **/
 					
 					ObjectId userid = (ObjectId) connector.insert(MongoDBConnector.USER_COLLECTION_NAME, data);
-					// Finally add the default circles to the user
+					// Finally add the default circles and spaces to the user
 					manager.createCoreCircles(userid.toString());
+					manager.createCoreSpaces(userid.toString());
 				}
 			} catch (IllegalQueryException e) {
 				errorMessage = "\"There was an error with the provided query. Please call an administrator. "+e.getMessage();

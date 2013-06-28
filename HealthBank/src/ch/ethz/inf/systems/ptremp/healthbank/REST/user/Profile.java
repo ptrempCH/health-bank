@@ -20,6 +20,7 @@ import org.apache.tomcat.util.http.fileupload.FileItem;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -38,6 +39,11 @@ import com.mongodb.gridfs.GridFSInputFile;
 
 /**
  * Servlet implementation class Profile
+ * In this servlet we implement the functionality to query information about the provided user via
+ * a GET request, edit its values via a POST request and delete the account via a DELETE request.
+ * The profile contains all information about the user including the user icon. 
+ * 
+ * @author Patrick Tremp
  */
 @WebServlet(
 		description = "Get and Set information about a user", 
@@ -50,10 +56,20 @@ import com.mongodb.gridfs.GridFSInputFile;
 public class Profile extends HttpServlet {
 
 	private static final long serialVersionUID = -2817543681075077536L;
+
+	/**
+	 *  Instance of the {@link MongoDBConnector}, which is responsible for the connection to the DB
+	 */
 	private MongoDBConnector connector; 
+	
+	/**
+	 * Instance of the {@link CoreManager}, which is responsible for some core functionalities used
+	 * in several different servlet.
+	 */
 	private CoreManager manager;
        
     /**
+     * Main constructor
      * @see HttpServlet#HttpServlet()
      */
     public Profile() {
@@ -67,6 +83,9 @@ public class Profile extends HttpServlet {
     }
 
 	/**
+	 * This method will initialize the {@link MongoDBConnector} and {@link CoreManager} it they have not yet
+	 * been initialized via constructor. 
+	 * 
 	 * @see Servlet#init(ServletConfig)
 	 */
 	public void init(ServletConfig config) throws ServletException {
@@ -79,8 +98,18 @@ public class Profile extends HttpServlet {
 	}
 
 	/**
+	 * The GET request allows the caller to query all the profile data of the provided user. 
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 * 
+	 * The user data is stored in the 'values.user' field of the returning JSON
 	 */
+	@SuppressWarnings("unchecked")
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("application/json");
 		response.addHeader("Access-Control-Allow-Origin", "*");
@@ -119,41 +148,63 @@ public class Profile extends HttpServlet {
 					}
 					if(!wasError){
 						JSONParser parser = new JSONParser();
-						DBObject obj = res.next();
-						JSONObject resObj = (JSONObject) parser.parse(obj.toString());
-						userData = "\"username\" : \""+resObj.get("username")+"\", \"firstname\" : \""+resObj.get("firstname")+"\", \"lastname\" : \""+resObj.get("lastname")+"\"";
-						Object s = resObj.get("street");
-						if(s!=null){ userData += ", \"street\" : \""+s.toString()+"\"";}
-						s = resObj.get("code");
-						if(s!=null){ userData += ", \"code\" : \""+s.toString()+"\"";}
-						s = resObj.get("city");
-						if(s!=null){ userData += ", \"city\" : \""+s.toString()+"\"";}
-						s = resObj.get("country");
-						if(s!=null){ userData += ", \"country\" : \""+s+"\"";}
-						s = resObj.get("phoneP");
-						if(s!=null){ userData += ", \"privPhone\" : \""+s.toString()+"\"";}
-						s = resObj.get("phoneM");
-						if(s!=null){ userData += ", \"mobPhone\" : \""+s.toString()+"\"";}
-						s = resObj.get("phoneW");
-						if(s!=null){ userData += ", \"workPhone\" : \""+s.toString()+"\"";}
-						s = resObj.get("emailP");
-						if(s!=null){ userData += ", \"privMail\" : \""+s.toString()+"\"";}
-						s = resObj.get("emailW");
-						if(s!=null){ userData += ", \"workMail\" : \""+s.toString()+"\"";}
-						s = resObj.get("nationality");
-						if(s!=null){ userData += ", \"nationality\" : \""+s.toString()+"\"";}
-						s = resObj.get("birthday");
-						if(s!=null){ userData += ", \"birthday\" : \""+s.toString()+"\"";}
-						s = resObj.get("spouse");
-						if(s!=null){ userData += ", \"spouse\" : \""+s.toString()+"\"";}
-						s = resObj.get("insurance");
-						if(s!=null){ userData += ", \"insurance\" : \""+s.toString()+"\"";}
-						s = resObj.get("gender");
-						if(s!=null){ userData += ", \"gender\" : \""+s.toString()+"\"";}
-						s = resObj.get("userIcon");
-						if(s!=null){ userData += ", \"userIcon\" : \""+s.toString()+"\"";}
-						s = resObj.get("type");
-						if(s!=null){ userData += ", \"type\" : \""+s.toString()+"\"";}
+						JSONArray resArray = new JSONArray();
+						while(res.hasNext()){
+							DBObject obj = res.next();
+							JSONObject resObj = (JSONObject) parser.parse(obj.toString());
+							resArray.add(resObj);
+						}
+						JSONObject result = new JSONObject();
+						result.put("user", resArray);
+						userData = result.toJSONString();
+						/*
+						 * This is deprecated code:
+						 * 
+							JSONParser parser = new JSONParser();
+							DBObject obj = res.next();
+							JSONObject resObj = (JSONObject) parser.parse(obj.toString());
+							userData = "\"username\" : \""+resObj.get("username")+"\", \"firstname\" : \""+resObj.get("firstname")+"\", \"lastname\" : \""+resObj.get("lastname")+"\"";
+							Object s = resObj.get("street");
+							if(s!=null){ userData += ", \"street\" : \""+s.toString()+"\"";}
+							s = resObj.get("code");
+							if(s!=null){ userData += ", \"code\" : \""+s.toString()+"\"";}
+							s = resObj.get("city");
+							if(s!=null){ userData += ", \"city\" : \""+s.toString()+"\"";}
+							s = resObj.get("country");
+							if(s!=null){ userData += ", \"country\" : \""+s+"\"";}
+							s = resObj.get("phoneP");
+							if(s!=null){ userData += ", \"privPhone\" : \""+s.toString()+"\"";}
+							s = resObj.get("phoneM");
+							if(s!=null){ userData += ", \"mobPhone\" : \""+s.toString()+"\"";}
+							s = resObj.get("phoneW");
+							if(s!=null){ userData += ", \"workPhone\" : \""+s.toString()+"\"";}
+							s = resObj.get("emailP");
+							if(s!=null){ userData += ", \"privMail\" : \""+s.toString()+"\"";}
+							s = resObj.get("emailW");
+							if(s!=null){ userData += ", \"workMail\" : \""+s.toString()+"\"";}
+							s = resObj.get("nationality");
+							if(s!=null){ userData += ", \"nationality\" : \""+s.toString()+"\"";}
+							s = resObj.get("birthday");
+							if(s!=null){ userData += ", \"birthday\" : \""+s.toString()+"\"";}
+							s = resObj.get("height");
+							if(s!=null){ userData += ", \"height\" : \""+s.toString()+"\"";}
+							s = resObj.get("weight");
+							if(s!=null){ userData += ", \"weight\" : \""+s.toString()+"\"";}
+							s = resObj.get("spouse");
+							if(s!=null){ userData += ", \"spouse\" : \""+s.toString()+"\"";}
+							s = resObj.get("insurance");
+							if(s!=null){ userData += ", \"insurance\" : \""+s.toString()+"\"";}
+							s = resObj.get("gender");
+							if(s!=null){ userData += ", \"gender\" : \""+s.toString()+"\"";}
+							s = resObj.get("userIcon");
+							if(s!=null){ userData += ", \"userIcon\" : \""+s.toString()+"\"";}
+							s = resObj.get("type");
+							if(s!=null){ userData += ", \"type\" : \""+s.toString()+"\"";}
+							s = resObj.get("allowResearch");
+							if(s!=null){ userData += ", \"allowResearch\" : \""+s.toString()+"\"";}
+							s = resObj.get("_id");
+							if(s!=null){ userData += ", \"_id\" : \""+s.toString()+"\"";}
+						*/
 					}
 				} else {
 					errorMessage = "\"Either your session timed out or you forgot to send me the session and credentials.\"";
@@ -176,7 +227,7 @@ public class Profile extends HttpServlet {
 		if(callback!=null && callback.length()>0){
 			callback = URLDecoder.decode(callback, "UTF-8");
 			if(!wasError) {
-				response.getOutputStream().println(callback+"( { \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Here are the user's data.\", "+userData+" } );");
+				response.getOutputStream().println(callback+"( { \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Here are the user's data.\", \"values\" : "+userData+" } );");
 				if(MongoDBConnector.DEBUG){System.out.println("Gave profile info to user with sessionKey: "+session+"!");}
 			}
 			else {
@@ -185,7 +236,7 @@ public class Profile extends HttpServlet {
 			}
 		} else {
 			if(!wasError) {
-				response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Here are the user's data.\", "+userData+" }");
+				response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Here are the user's data.\", \"values\" : "+userData+" }");
 				if(MongoDBConnector.DEBUG){System.out.println("Gave profile info to user with sessionKey: "+session+"!");}
 			}
 			else {
@@ -196,7 +247,48 @@ public class Profile extends HttpServlet {
 	}
 
 	/**
+	 * The POST request allows the caller to edit information of the provided user. There are two ways of calling this request.
+	 * Either via a multipart request for updating the user icon, or via a 'normal' request for editing user information. To change
+	 * the password of a user, the caller may use the 'normal' edit request with parameter 'password'
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * Edit user info:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * (The following parameter do not need to be present all together. Calls with one, multiple or all the parameters are allowed)
+	 * - gender: The gender of the user "Mr" or "Mrs"
+	 * - firstname: The first name of the user
+	 * - lastname: The surname of the user
+	 * - street: The street and number the user is living
+	 * - code: The postal code of the city the user lives in
+	 * - city: The name of the city the user lives in
+	 * - country: The country the user lives in
+	 * - privPhone: The private phone number of the user
+	 * - workPhone: The phone number at work of the user
+	 * - mobPhone: The mobile phone number of the user
+	 * - privMail: The private email address of the user
+	 * - workMail: The work email address of the user
+	 * - nationality: The user's nationality
+	 * - spouse: The spouse of the user
+	 * - insurance: The insurance company the user is registered with
+	 * - password: For updating the password, use this parameter
+	 * - birthday:  The date of birth of the user
+	 * - height: The height of the user in cm
+	 * - weight: The weight of the user in kg
+	 * - allowResearch: Wheater or not the user allows research companies to inspect his account ('y' or 'n')
+	 * 
+	 * Multipart call:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - image data of a file upload such as filecontent, filname, content type, etc. 
+	 * 
+	 * 
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * 
+	 * TODO: 
+	 * - refactor to have a single try-catch block and check logged in just once
+	 * - refactor to not have to deal with all these parameters at the same time, but directly with JSON strings
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("application/json");
@@ -327,6 +419,9 @@ public class Profile extends HttpServlet {
 				String insurance = request.getParameter("insurance");
 				String password = request.getParameter("password");
 				String birthday = request.getParameter("birthday");
+				String height = request.getParameter("height");
+				String weight = request.getParameter("weight");
+				String allowResearch = request.getParameter("allowResearch");
 				gender = (gender!=null)?URLDecoder.decode(gender, "UTF-8"):null;
 				firstname = (firstname!=null)?URLDecoder.decode(firstname, "UTF-8"):null;
 				lastname = (lastname!=null)?URLDecoder.decode(lastname, "UTF-8"):null;
@@ -343,6 +438,9 @@ public class Profile extends HttpServlet {
 				spouse = (spouse!=null)?URLDecoder.decode(spouse, "UTF-8"):null;
 				insurance = (insurance!=null)?URLDecoder.decode(insurance, "UTF-8"):null;
 				birthday = (birthday!=null)?URLDecoder.decode(birthday, "UTF-8"):null;
+				height = (height!=null)?URLDecoder.decode(height, "UTF-8"):null;
+				weight = (weight!=null)?URLDecoder.decode(weight, "UTF-8"):null;
+				allowResearch = (allowResearch!=null)?URLDecoder.decode(allowResearch, "UTF-8"):null;
 				
 				String md5 = "";
 				if(password!=null){
@@ -380,6 +478,9 @@ public class Profile extends HttpServlet {
 						if(insurance!=null){data.put("insurance", insurance);}
 						if(password!=null){data.put("password", md5);}
 						if(birthday!=null){data.put("birthday", birthday);}
+						if(height!=null){data.put("height", height);}
+						if(weight!=null){data.put("weight", weight);}
+						if(allowResearch!=null){data.put("allowResearch", allowResearch);}
 						
 						connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));
 					}
@@ -421,6 +522,15 @@ public class Profile extends HttpServlet {
 	}
 
 	/**
+	 * The DELETE request allows the caller to delete the entire profile. This needs more discussion and is far more complex since it 
+	 * involves deleting of records, spaces, circles, images and possibly more. The more DELETE request do not seem to be supported at the moment
+	 * and result in allow-origin errors. Therefore take with care and do not use until further information.
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
 	 * @see HttpServlet#doDelete(HttpServletRequest, HttpServletResponse)
 	 */
 	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

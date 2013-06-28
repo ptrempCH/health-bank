@@ -34,6 +34,10 @@ import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 
 /**
  * Servlet implementation class Space
+ * In this servlet we implement the functionality to get information about certain spaces via a GET
+ * request and to store and edit individual spaces via the POST request.
+ * 
+ * @author Patrick Tremp
  */
 @WebServlet(
 		description = "Get and set information on user spaces", 
@@ -44,10 +48,20 @@ import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 public class Space extends HttpServlet {
 
 	private static final long serialVersionUID = -8550082360551645345L;
+	
+	/**
+	 *  Instance of the {@link MongoDBConnector}, which is responsible for the connection to the DB
+	 */
 	private MongoDBConnector connector; 
+	
+	/**
+	 * Instance of the {@link CoreManager}, which is responsible for some core functionalities used
+	 * in several different servlet.
+	 */
 	private CoreManager manager;
        
     /**
+     * Main Constructor
      * @see HttpServlet#HttpServlet()
      */
     public Space() {
@@ -61,6 +75,8 @@ public class Space extends HttpServlet {
     }
 
 	/**
+	 * This method will initialize the {@link MongoDBConnector} and {@link CoreManager} it they have not yet
+	 * been initialized via constructor. 
 	 * @see Servlet#init(ServletConfig)
 	 */
 	public void init(ServletConfig config) throws ServletException {
@@ -73,6 +89,30 @@ public class Space extends HttpServlet {
 	}
 
 	/**
+	 * This GET request allows the caller in three different ways to get information about one or multiple spaces belonging to the 
+	 * user with the given session key and credentials. One can get information via a space name, an object id or by retrieving all
+	 * spaces of the given user at once.
+	 * 
+	 * For a successful call the following parameters need to be present in the URL:
+	 * Via Name:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - name: The name of the space to search information from. 
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * Via id:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - id: The id of the space to search information from. 
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 *  Return all spaces of the given user:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * If the call was successful, the information will be in the 'values' attribute of the resulting JSON string 
+	 * 
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	@SuppressWarnings("unchecked")
@@ -88,7 +128,7 @@ public class Space extends HttpServlet {
 		String callback = request.getParameter("callback");
 		String credentials = request.getParameter("credentials");
 		String session = request.getParameter("session");
-		String id = request.getParameter("spaceId");
+		String id = request.getParameter("id");
 		String name = request.getParameter("name");
 		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
 			errorMessage = "\"Please provide the parameters 'pw' and 'username' with the request.\"";
@@ -105,7 +145,7 @@ public class Space extends HttpServlet {
 				manager.reconnect();
 			}
 			
-			// check if user is logged in and get the records 
+			// check if user is logged in and get the spaces 
 			try {
 				if(!manager.isUserLoggedIn(session, credentials)){
 					errorMessage = "\"Space doGet: You need to be logged in to use this service\"";
@@ -114,18 +154,23 @@ public class Space extends HttpServlet {
 				} else {
 					BasicDBList list = new BasicDBList();
 					DBCursor res = null;
-					if(name!=null && name.length()>0){
+					if(name!=null && name.length()>0){ // search via name
+						list.add(manager.getUserID(credentials));
 						BasicDBObject q1 = new BasicDBObject("userID", new BasicDBObject("$in", list));
 						BasicDBObject q2 = new BasicDBObject("name", name);
 						list.add(q1);
 						list.add(q2);
 						res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("$and", list));
-					} else if(id!=null && id.length()>0){
+					} else if(id!=null && id.length()>0){ // search via id
 						list.add(new ObjectId(id));
 						res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
-					} else {
+					} else { // return all the spaces of the given user
 						list.add(manager.getUserID(credentials));
 						res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("userID", new BasicDBObject("$in", list)));
+						if(res==null){ // maybe due to some issues, the user does not have the basic spaces registered. So register them for him and try again.
+							manager.createCoreSpaces(manager.getUserID(credentials));
+							res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("userID", new BasicDBObject("$in", list)));
+						}
 					}
 					if(res==null){
 						errorMessage = "\"Space doGet: There was an error, we did not find any spaces. Did you provide the correct sessionKey and credentials?\"";
@@ -183,7 +228,41 @@ public class Space extends HttpServlet {
 	}
 
 	/**
+	 * The POST request allows the caller to add new spaces, edit them and add or remove circles to/from it.
+	 * There are three different possibilities for this call. One to add new spaces, one to edit them and one
+	 * for the manipulation of circles in the space.
+	 * 
+	 * For a successful call, the following parameters need to be present in the URL:
+	 * Adding a new space:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - name: The name of the space to add
+	 * - descr: The description of the space
+	 * - url: The URL of the space. Defines where to load it from
+	 * - hidden: (optional)Defines if the space is visible for the user or hidden. defaults to 'false'
+	 * 
+	 * Editing an existing space:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - id: The id of the space to edit
+	 * - name: (optional, but either name, descr, url or hidden must be set) The name of the space to edit
+	 * - descr: (optional, but either name, descr, url or hidden must be set) The description of the space
+	 * - url: (optional, but either name, descr, url or hidden must be set) The URL of the space. Defines where to load it from
+	 * - hidden: (optional, but either name, descr, url or hidden must be set) Defines if the space is visible for the user or hidden. 
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * Changing the circles associated with a space
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - id: The id of the space to edit
+	 * - circles: A string containing the circles ID's separated by a space
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+	 * 
+	 * 
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 * 
+	 * TODO:
+	 * - implement deletion of a space
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("application/json");
@@ -191,12 +270,13 @@ public class Space extends HttpServlet {
 		String errorMessage = "";
 		boolean wasError = false;
 		boolean isLoggedIn = true;
-		String name = "";
+		String name = "", id="";
 		
 		// check parameters user specific parameters
 		String callback = request.getParameter("callback");
 		String credentials = request.getParameter("credentials");
 		String session = request.getParameter("session");
+		
 		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
 			errorMessage = "\"Circle doPost: Please provide the parameters 'session' and 'credentials' with the request.\"";
 			wasError = true;
@@ -209,156 +289,107 @@ public class Space extends HttpServlet {
 			// check record specific parameters
 			name = request.getParameter("name");
 			String descr = request.getParameter("descr");
-			if(name==null || name.length()<2 || descr==null || descr.length()<1){
-				errorMessage = "\"Space doPost: Please provide the parameters 'name' and 'descr' with the request.\"";
-				wasError = true;
-			}
-			if(!wasError){
-				name = URLDecoder.decode(name, "UTF-8");
-				descr = URLDecoder.decode(descr, "UTF-8");
-				
-				// check DB connection
-				if(!connector.isConnected()){
-					manager.reconnect();
-				}
-				
-				// check if user is logged in and save the new value
-				try {
-					if(!manager.isUserLoggedIn(session, credentials)){
-						errorMessage = "\"Space doPost: You need to be logged in to use this service\"";
-						wasError = true;
-						isLoggedIn = false;
-					} else {
-						HashMap<Object, Object> data = new HashMap<Object, Object>();
-						data.put("name", name);
-						data.put("descr", descr);
-						DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-						data.put("timedate", dateFormat.format(new Date()));
-						data.put("userID", manager.getUserID(credentials));
-						
-						connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
-					}
-				} catch (NotConnectedException e) {
-					errorMessage = "\"Space doPost: We lost connection to the DB. Please try again later. Sorry for that.\"";
-					wasError = true;
-				} catch (IllegalQueryException e) {
-					errorMessage = "\"Space doPost: There was an internal error. Please contact an administrator and provide him/her with this message: "+e.getMessage()+"\"";
-					wasError = true;
-				}
-			}
-		}
-		
-		// Finally give the user feedback
-		if(callback!=null && callback.length()>0){
-			callback = URLDecoder.decode(callback, "UTF-8");
-			if(!wasError) {
-				response.getOutputStream().println(callback+"( { \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Space stored successfully\" } );");
-				if(MongoDBConnector.DEBUG){System.out.println("Stored space with name "+name+" to the user with sessionKey "+session);}
-			}
-			else {
-				response.getOutputStream().println(callback+"( { \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\" : \""+errorMessage+"\" } );");
-				if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage);}
-			}
-		} else {
-			if(!wasError) {
-				response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Space stored successfully\" }");
-				if(MongoDBConnector.DEBUG){System.out.println("Stored space with name "+name+" to the user with sessionKey "+session);}
-			}
-			else {
-				response.getOutputStream().println("{ \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\" : \""+errorMessage+"\" }");
-				if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage);}
-			}
-		} 
-	}
-
-	/**
-	 * @see HttpServlet#doPut(HttpServletRequest, HttpServletResponse)
-	 */
-	protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("application/json");
-		response.addHeader("Access-Control-Allow-Origin", "*");
-		String errorMessage = "";
-		boolean wasError = false;
-		boolean isLoggedIn = true;
-		String session = "", credentials = "";
-		
-		// check DB connection
-		if(!connector.isConnected()){
-			manager.reconnect();
-		}
-
-		String name = "", descr="", newCircleId = "", id = "";
-		
-		// check parameters user specific parameters
-		String callback = request.getParameter("callback");
-		credentials = request.getParameter("credentials");
-		session = request.getParameter("session");
-		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
-			errorMessage = "\"Space doPut: Please provide the parameters 'pw' and 'username' with the request.\"";
-			wasError = true;
-		}
-		if(!wasError){
-			credentials = URLDecoder.decode(credentials, "UTF-8");
-			session = URLDecoder.decode(session, "UTF-8");
-			credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
-			
-			// check profile specific parameters
-			name = request.getParameter("name");
-			descr = request.getParameter("descr");
-			newCircleId = request.getParameter("circleId");
+			String url = request.getParameter("url");
+			String hidden = request.getParameter("hidden");
+			String circle = request.getParameter("circle");
 			id = request.getParameter("id");
 			
-			if(id==null){
-				errorMessage = "\"Space doPut: Please provide the parameters 'id' for the space to update with the request.\"";
-				wasError = true;
-			}
-			if(!wasError){
-				name = (name!=null)?URLDecoder.decode(name, "UTF-8"):null;
-				descr = (descr!=null)?URLDecoder.decode(descr, "UTF-8"):null;	
-				newCircleId = (newCircleId!=null)?URLDecoder.decode(newCircleId, "UTF-8"):null;	
-				id = URLDecoder.decode(id, "UTF-8");		
-				
-				// check if user is logged in and save the new value
-				try {
+			// check if user is logged in and save the new value
+			try {
+				if(!manager.isUserLoggedIn(session, credentials)){
+					errorMessage = "\"Space doPost: You need to be logged in to use this service\"";
+					wasError = true;
+					isLoggedIn = false;
+				} else {
+					name = (name!=null)?URLDecoder.decode(name, "UTF-8"):null;
+					descr = (descr!=null)?URLDecoder.decode(descr, "UTF-8"):null;
+					url = (url!=null)?URLDecoder.decode(url, "UTF-8"):null;
+					hidden = (hidden!=null)? URLDecoder.decode(hidden, "UTF-8"): null;
+					id = (id!=null)?URLDecoder.decode(id, "UTF-8"): null;
+					circle = (circle!=null)?URLDecoder.decode(circle, "UTF-8"): null;
+					
+					// check DB connection
+					if(!connector.isConnected()){
+						manager.reconnect();
+					}
+
 					HashMap<Object, Object> data = new HashMap<Object, Object>();
-					if(!manager.isUserLoggedIn(session, credentials)){
-						errorMessage = "\"Space doPut: You need to be logged in to use this service\"";
-						wasError = true;
-						isLoggedIn = false;
-					} else {
-		                BasicDBList list = new BasicDBList();
-						list.add(new ObjectId(id));
-						
-						if(name!=null || descr!=null){
-							if(name!=null){data.put("name", name);}
-							if(descr!=null){data.put("descr", descr);}
-							connector.update(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));
+					BasicDBList list = new BasicDBList();
+					if(id==null) { // add new space
+						if(name==null || name.length()<2 || descr==null || descr.length()<1 || url==null || url.length()<1){
+							errorMessage = "\"Space doPost: Please provide the parameters 'name', 'descr' and 'url' with the request.\"";
+							wasError = true;
 						}
-						if(newCircleId!=null){
-							BasicDBObject user = new BasicDBObject("userId", newCircleId);
-							connector.update(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$push", new BasicDBObject( "circles", user )));
+						if(!wasError){
+							data.put("name", name);
+							data.put("descr", descr);
+							data.put("url", url);
+							hidden = (hidden==null)?"false":hidden;
+							data.put("hidden", hidden);
+							DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+							data.put("timedate", dateFormat.format(new Date()));
+							data.put("userID", manager.getUserID(credentials));
+							
+							// check if exists
+							// TODO
+							/*list.add(manager.getUserID(credentials));
+							BasicDBObject q1 = new BasicDBObject("userID", new BasicDBObject("$in", list));
+							BasicDBObject q2 = new BasicDBObject("name", name);
+							list.add(q1);
+							list.add(q2);
+							DBCursor res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("$and", list));
+							System.out.println(MongoDBConnector.SPACES_COLLECTION_NAME);
+							if(!res.hasNext()){
+								
+							} else {
+								errorMessage = "\"Space doPost: A space with this name already exists.\"";
+								wasError = true;
+							}*/
+							connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
+						}
+					} else {
+						if(id.length()<2){
+							errorMessage = "\"Space doPost: Please provide a correct id argument.\"";
+							wasError = true;
+						}
+						if(!wasError){
+							list.add(new ObjectId(id));
+							if(circle!=null){ // add/remove circle
+								// TODO: apply to all records with this circle
+								circle = URLDecoder.decode(circle, "UTF-8");
+								int i=0;
+								for(String s: circle.split(" ")){
+									if(s.length()>0){
+										data.put("circle"+i, s);
+										i++;
+									}
+								}
+								connector.update(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("circles", data))); 
+							} else if(name!=null || descr!=null || url!=null || hidden!=null){ // update space
+								if(name!=null){data.put("name", name);}
+								if(descr!=null){data.put("descr", descr);}
+								if(url!=null){data.put("url", url);}
+								if(hidden!=null){data.put("hidden", hidden);}
+								connector.update(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));
+							}
 						}
 					}
-				} catch (NotConnectedException e) {
-					errorMessage = "\"Space doPut: We lost connection to the DB. Please try again later. Sorry for that.\"";
-					wasError = true;
-				} catch (IllegalQueryException e) {
-					errorMessage = "\"Space doPut: There was an internal error. Please contact an administrator and provide him/her with this message: "+e.getMessage()+"\"";
-					wasError = true;
-				} catch (IllegalArgumentException e){
-					errorMessage = "\"Space doPut: There was an internal error. Please contact an administrator and provide him/her with this message: "+e.getMessage()+"\"";
-					wasError = true;
 				}
+			} catch (NotConnectedException e) {
+				errorMessage = "\"Space doPost: We lost connection to the DB. Please try again later. Sorry for that.\"";
+				wasError = true;
+			} catch (IllegalQueryException e) {
+				errorMessage = "\"Space doPost: There was an internal error. Please contact an administrator and provide him/her with this message: "+e.getMessage()+"\"";
+				wasError = true;
 			}
 		}
 		
-	
 		// Finally give the user feedback
 		if(callback!=null && callback.length()>0){
 			callback = URLDecoder.decode(callback, "UTF-8");
 			if(!wasError) {
 				response.getOutputStream().println(callback+"( { \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Space stored successfully\" } );");
-				if(MongoDBConnector.DEBUG){System.out.println("Updated space "+name+" of user with sessionKey "+session);}
+				if(MongoDBConnector.DEBUG){System.out.println("Stored space with name "+name+" to the user with sessionKey "+session);}
 			}
 			else {
 				response.getOutputStream().println(callback+"( { \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\" : \""+errorMessage+"\" } );");
@@ -367,102 +398,11 @@ public class Space extends HttpServlet {
 		} else {
 			if(!wasError) {
 				response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Space stored successfully\" }");
-				if(MongoDBConnector.DEBUG){System.out.println("Updated space "+name+" of user with sessionKey "+session);}
+				if(MongoDBConnector.DEBUG){System.out.println("Stored space with name "+name+" to the user with sessionKey "+session);}
 			}
 			else {
 				response.getOutputStream().println("{ \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\" : \""+errorMessage+"\" }");
 				if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage);}
-			}
-		} 
-	}
-
-	/**
-	 * @see HttpServlet#doDelete(HttpServletRequest, HttpServletResponse)
-	 */
-	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("application/json");
-		response.addHeader("Access-Control-Allow-Origin", "*");
-		String errorMessage = "";
-		boolean wasError = false;
-		boolean isLoggedIn = true;
-		String message = "Space got deleted successfully.";
-		
-		// check parameters
-		String callback = request.getParameter("callback");
-		String credentials = request.getParameter("credentials");
-		String session = request.getParameter("session");
-		String id = request.getParameter("id");
-		String circleId = request.getParameter("circleId");
-		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
-			errorMessage = "\"Please provide the parameters 'credentials' and 'session' with the request.\"";
-			wasError = true;
-		}
-		if(!wasError){
-			credentials = URLDecoder.decode(credentials, "UTF-8");
-			session = URLDecoder.decode(session, "UTF-8");
-			credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
-			id = (id!=null)?URLDecoder.decode(id, "UTF-8"):null;
-			circleId = URLDecoder.decode(circleId, "UTF-8");
-			if(id==null || id.length() < 1){
-				errorMessage = "\"Please provide the parameter 'id' with the request.\"";
-				wasError = true;
-			}
-			
-			if(!wasError){
-				// check DB connection
-				if(connector==null || !connector.isConnected()){
-					manager.reconnect();
-				}
-				
-				// check if user is logged in
-				try {
-					if(manager.isUserLoggedIn(session, credentials)){
-						BasicDBList list = new BasicDBList();
-						if(circleId==null){
-							list.add(new ObjectId(id));
-							if(!connector.delete(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)))){
-								errorMessage = "\"There was an error deleting the space. Did you provide the correct sessionKey and credentials?\"";
-								wasError = true;
-							}	
-						} else {
-							BasicDBObject user = new BasicDBObject("circleId", circleId);
-							connector.update(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$pull", new BasicDBObject( "circles", user ))); // TODO, does not seem to work
-							message = "Removed circle from space successfully.";
-						}
-					} else {
-						errorMessage = "\"Either your session timed out or you forgot to send me the session and credentials.\"";
-						wasError = true;
-						isLoggedIn = false;
-					}
-				} catch (IllegalQueryException e) {
-					errorMessage = "\"There was an error. Did you provide the correct username and password? Error: "+e.getMessage()+"\"";
-					wasError = true;
-				} catch (NotConnectedException e) {
-					errorMessage = "\"We lost connection to the DB. Please try again later. Sorry for that.\"";
-					wasError = true;
-				}
-			}
-		}
-				
-		
-		if(callback!=null && callback.length()>0){
-			callback = URLDecoder.decode(callback, "UTF-8");
-			if(!wasError) {
-				response.getOutputStream().println(callback+"( { \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \""+message+"\" } );");
-				if(MongoDBConnector.DEBUG){System.out.println("Deleted space with id: "+id+"!");}
-			}
-			else {
-				response.getOutputStream().println(callback+"( { \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\": "+errorMessage+" } );");
-				if(MongoDBConnector.DEBUG){System.out.println("Space doDelete: There was an error: "+errorMessage+"!");}
-			}
-		} else {
-			if(!wasError) {
-				response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \""+message+"\" }");
-				if(MongoDBConnector.DEBUG){System.out.println("Deleted space with id: "+id+"!");}
-			}
-			else {
-				response.getOutputStream().println("{ \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\": "+errorMessage+" }");
-				if(MongoDBConnector.DEBUG){System.out.println("Space doDelete: There was an error: "+errorMessage+"!");}
 			}
 		} 
 	}

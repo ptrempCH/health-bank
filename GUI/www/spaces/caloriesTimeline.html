@@ -3,10 +3,12 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
-	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script src="../../js/healthbank.js"></script>
 	<script src="../../js/moment.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<script src="../../js/apps/caloriesApp.js"></script>
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 	<link href="../../css/healthbank.css" rel="stylesheet" type="text/css">
 	<script type="text/javascript" src="https://www.google.com/jsapi"></script>
     <script type="text/javascript">
@@ -15,35 +17,23 @@
 
 	<script type="text/javascript">
 
-		function loadUserIcon(data){
-			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
-			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
-			$(".detail-icon").css("display", "block");
-		}
-
-		function loadUserInfo(data){
-			if(data==undefined){ 
-				/* Do nothing for the moment */ 
-				console.log("data undefined in loadUserInfo()");
-				return;
-			}
-			if(data.userIcon!=undefined){
-				$("#userInfo").html(decodeURIComponent(data.username));
-				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
-			} else {
-				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
-			}
+		function loadedExtHTML() {
+			$("#saveSpacesTab").click(function() {
+				$( "#notYetImplementedDialog" ).dialog( "open" );
+			});
+			$( "#dialog-overlay, #closeSpacesTab" ).click(function() {
+				$("#dialog-overlay, #newSpace-form").hide();
+				return false;
+			});
 		}
 
 		$(document).ready(function() {
-			checkLogin();
-			setSearchAnimationApp();
-			getUserData({onSuccess: function(data){loadUserInfo(data);}});
+			initialize();
+			$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data); });
+			$.get(WEB_URL+'dialogs/not-implemented.html').success(function(data){$('body').append(data); loadedNotYetImplemented();});
+			loadSpaces({onSuccess: function(data){loadedSpaces(data);}, onError: function(){console.log("Error while loading spaces...");}});
+			$.get(WEB_URL+'dialogs/newSpace-form.html').success(function(data){$('body').append(data); loadedExtHTML();});
 			loadAllCalItems();
-			$("#logoutButton").click(function(){
-				logout();
-				return false;
-			});
 			$("#statsButton").click(function(){
 				$("#statsButton").hide();
 				$("#statistics").show();
@@ -52,43 +42,45 @@
 				$("#statsButton").show();
 				$("#statistics").hide();
 			});
-			$("#userInfo").click(function(){
-				window.location = WEB_URL+"profile.html";
-			});
 			$(".page-content").scroll(function() {
 			   if ($(this)[0].scrollHeight - $(this).scrollTop() <= $(this).outerHeight()+50) {
 			        loadMoreEntries();
 			    }
 			});
 			$("#newTabIcon").click(function(){
-				alert("Not yet implemented. \nWhen this is done, you shall see a dialog to create a new spaces tab and fill it with content.");
+				$('#newSpace-form').height("300px");
+				$('#newSpace-form').width("600px");
+				var maskHeight = $(document).height();  
+				var maskWidth = $(window).width();
+				var dialogTop =  (maskHeight/2) - ($('#newSpace-form').height()/2);  
+				var dialogLeft = (maskWidth/2) - ($('#newSpace-form').width()/2);
+				var recordId = $(this).val();
+				$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+				$('#newSpace-form').css({top:dialogTop, left:dialogLeft}).show();
+				$("#currentSpaces").contents().remove();
+				$("#currentSpaces").append("<li>All Entries</li>");
+				$.each(spaces, function(i, item){
+					var spaceName = item.name.replace(" ", "");
+					if(spaceName=="Medical" || spaceName=="Wellness"){
+						$("#currentSpaces").append("<li id=\""+item._id.$oid+"\" name=\""+spaceName+"\" value=\""+spaceName+"\">"+item.name+"<button class='button hideSpaceButton'>Hide</button></li></br>");
+					} else {
+						$("#currentSpaces").append("<li id=\""+item._id.$oid+"\" name=\""+spaceName+"\" value=\""+spaceName+"\">"+item.name+"<button class='button hideSpaceButton'>Hide</button><button class='button hideSpaceButton'>Remove</button></li></br>");
+					}
+				});
+				return false;
 			});
       		google.setOnLoadCallback(drawVisualization);
-			$("#search").keyup(function(event){
-			    if(event.keyCode == 13){
-			    	if($("#search").val()!=undefined && $("#search").val().length>0){
-			    		if(typeof(Storage)!=="undefined") {
-							localStorage.setItem("hb_query", $("#search").val());
-						}
-			        	window.location = WEB_URL + "queryResult.html?";
-			       	}
-			    }
-			});
 		});
 		
 	</script>
 </head>
 <body>
-	<!--Header-->
-	<h1 class="heading">Welcome to the Health Bank<sup>&copy;</sup></h1>
-	<!--END Header-->
-
 	<!--Page-->
 	<div id="hb-page">
 		<div class="page-container">
 			<!--Header-->
 			<div class="page-header">
-				<h1>Your health record - calories</h1> 
+				<h1>Health record - calories</h1> 
 				<div class="page-actionbox">
 					<span id="userInfo" class="userInfo"></span>
 					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
@@ -114,17 +106,17 @@
 				<!--END Navi-->
 
 				<!--Content-->
-				<div id="tabs" class="tabs">
-					<div id="all" class="tab"><a href="spaces.html">All Entries</a></div>
-					<div id="medical" class="tab"><a href="medicalTimeline.html">Medical</a></div>
-					<div id="wellness" class="tab"><a href="wellnessTimeline.html">Wellness</a></div>
-					<div id="calories" class="tab tab-highlight"><a href="caloriesTimeline.html">Calories</a></div>
-					<div id="newtab" class="tab new-tab"><img src="../../images/plus.png" id="newTabIcon" width="18px"/></div>
-				</div>
 				<div class="page-content spaces-page-content">
-					<div id="chronic-section">
+					<div id="tabs" class="tabs">
+						<div id="all" class="tab"><a href="spaces.html">All Entries</a></div>
+						<div id="medical" class="tab"><a href="medicalTimeline.html">Medical</a></div>
+						<div id="wellness" class="tab"><a href="wellnessTimeline.html">Wellness</a></div>
+						<div id="calories" class="tab tab-highlight"><a href="caloriesTimeline.html">Calories</a></div>
+						<div id="newtab" class="tab new-tab"><img src="../../images/plus.png" id="newTabIcon" width="18px"/></div>
+					</div>
+					<div id="spaces-chronic-section">
 						<div>
-							<h3 id="chronic-section-header">Timeline of your calories related records</h3>
+							<h3 id="chronic-section-header">Timeline of the calories related records</h3>
 						</div>
 						<button class="big-button" id="statsButton">Statistics</button>
 						<div id="statistics">

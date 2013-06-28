@@ -3,33 +3,14 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
-	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script src="../js/healthbank.js"></script>
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
 
 	<script type="text/javascript">
 
-			var records;
+		var queryRecords;
 
-		function loadUserIcon(data){
-			$("#userInfo").html("<img src=\"data:image/png;base64,"+data+"\" height=\"25px\"/>"+$("#userInfo").html());
-			$(".detail-icon").html("<img src=\"data:image/png;base64,"+data+"\" width=\"50px\"/>");
-			$(".detail-icon").css("display", "block");
-		}
-
-		function loadUserInfo(data){
-			if(data==undefined){ 
-				/* Do nothing for the moment */ 
-				console.log("data undefined in loadUserInfo()");
-				return;
-			}
-			if(data.userIcon!=undefined){
-				$("#userInfo").html(decodeURIComponent(data.username));
-				loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
-			} else {
-				$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
-			}
-		}
 
 		function loadQueryResult(data) {
 			$("#resultentries").html("");
@@ -37,13 +18,13 @@
 				$("#resultentries").append("<center>No entries yet!</center>");
 			}
 
-			records = data.values.records;
+			queryRecords = data.values.records;
 			$.each(data.values.records, function(i, item) {
 				$("#resultentries").append('<li><h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '+item.timedate+'</i></li>');
 			});
 			$("#resultentries li").click(function(){ 
 				if(typeof(Storage)!=="undefined") {
-					localStorage.setItem("hb_detailId", records[$(this).index()]._id.$oid);
+					localStorage.setItem("hb_detailId", queryRecords[$(this).index()]._id.$oid);
 					localStorage.setItem("hb_backlink", "queryResult.html?q="+$("#entrysearchbar").val());
 				}
 				window.location = WEB_URL+"detailRecord.html";  
@@ -55,16 +36,7 @@
 		}
 
 		$(document).ready(function() {
-			checkLogin();
-			setSearchAnimation();
-			getUserData({onSuccess: function(data){loadUserInfo(data);}});
-			$("#logoutButton").click(function(){
-				logout();
-				return false;
-			});
-			$("#userInfo").click(function(){
-				window.location = WEB_URL+"profile.html";
-			});
+			initialize();
 			$("#searchButton").click(function(){
 				var query = $("#entrysearchbar").val();
 		    	queryEntries(query, {onSuccess: function(data){loadQueryResult(data);}, onError: function(){loadQueryResultError();}});
@@ -84,16 +56,6 @@
 					$("#searchButton").click();
 				}
 			}
-			$("#search").keyup(function(event){
-			    if(event.keyCode == 13){
-			    	if($("#search").val()!=undefined && $("#search").val().length>0){
-			    		if(typeof(Storage)!=="undefined") {
-							localStorage.setItem("hb_query", $("#search").val());
-						}
-			        	window.location = WEB_URL + "queryResult.html?";
-			       	}
-			    }
-			});
 		});
 		
 	</script>

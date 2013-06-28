@@ -7,8 +7,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 
-import org.bson.types.ObjectId;
-
 import ch.ethz.inf.systems.ptremp.healthbank.db.MongoDBConnector;
 import ch.ethz.inf.systems.ptremp.healthbank.exceptions.IllegalQueryException;
 import ch.ethz.inf.systems.ptremp.healthbank.exceptions.NotConnectedException;
@@ -19,6 +17,12 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MongoException;
 
+/**
+ * This class provides some core functions used by multiple servlet's to reduce redundancy and the
+ * excessive use of the copy and paste pattern.
+ * 
+ * @author Patrick Tremp
+ */
 public class CoreManager {
 
 	private MongoDBConnector connector; 
@@ -183,7 +187,9 @@ public class CoreManager {
 		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		data.put("timedate", dateFormat.format(new Date()));
 		data.put("userID", userid);
-		connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data);
+		if(connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data)==null){
+			return false;
+		}
 		// Friends
 		data = new HashMap<Object, Object>();
 		data.put("name", "Friends");
@@ -191,7 +197,9 @@ public class CoreManager {
 		dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		data.put("timedate", dateFormat.format(new Date()));
 		data.put("userID", userid);
-		connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data);
+		if(connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data)==null){
+			return false;
+		}
 		// Medical Professionals
 		data = new HashMap<Object, Object>();
 		data.put("name", "Medical Professionals");
@@ -199,7 +207,9 @@ public class CoreManager {
 		dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		data.put("timedate", dateFormat.format(new Date()));
 		data.put("userID", userid);
-		connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data);
+		if(connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data)==null){
+			return false;
+		}
 		// Wellness Professionals
 		data = new HashMap<Object, Object>();
 		data.put("name", "Wellness Professionals");
@@ -207,7 +217,49 @@ public class CoreManager {
 		dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		data.put("timedate", dateFormat.format(new Date()));
 		data.put("userID", userid);
-		connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data);
+		if(connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data)==null){
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Create the two initial spaces for a newly added user. The "All Entries" space is always visible and needs no entry in the DB
+	 * These two spaces are: 'Medical' and 'Wellness'.
+	 * @param userid The user id of the user to set the spaces to as {@link String}. 
+	 * @return boolean True if all went well, false when no spaces were created due to a problem
+	 * @throws NotConnectedException 
+	 * @throws IllegalQueryException 
+	 */
+	public boolean createCoreSpaces(String userid) throws NotConnectedException, IllegalArgumentException {
+		if(connector==null || !connector.isConnected()){ throw new NotConnectedException("We are not connected to a database, try to connect first."); }
+		if(userid==null){ return false;}
+		
+		HashMap<Object, Object> data = new HashMap<Object, Object>();
+		// Medical
+		data.put("name", "Medical");
+		data.put("descr", "All your medical data");
+		data.put("url", "medicalTimeline.html");
+		data.put("hidden", "false");
+		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+		data.put("timedate", dateFormat.format(new Date()));
+		data.put("userID", userid);
+		if(connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data)==null){
+			return false;
+		}
+		// Wellness
+		data = new HashMap<Object, Object>();
+		data.put("name", "Wellness");
+		data.put("descr", "All your wellness data");
+		data.put("url", "wellnessTimeline.html");
+		data.put("hidden", "false");
+		dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+		data.put("timedate", dateFormat.format(new Date()));
+		data.put("userID", userid);
+		if(connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data)==null){
+			return false;
+		}
 
 		return true;
 	}
