@@ -4,8 +4,11 @@ import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+
+import org.bson.types.ObjectId;
 
 import ch.ethz.inf.systems.ptremp.healthbank.db.MongoDBConnector;
 import ch.ethz.inf.systems.ptremp.healthbank.exceptions.IllegalQueryException;
@@ -167,7 +170,60 @@ public class CoreManager {
 		
 		return user.get("_id").toString();
 	}
-
+	
+	/**
+	 * Get all the circles of another user which the other user assigned the current user to. 
+	 * @param myUserId The user id of the current logged in user
+	 * @param otherUserId The user id of the other user, we are searching the circles 
+	 * @return An {@link ArrayList} containing the ids of the circles of the other user, the current user is assigned to 
+	 * @throws IllegalQueryException
+	 * @throws NotConnectedException
+	 */
+	public ArrayList<String> getCirclesIAmInOfAUser(String myUserId, String otherUserId) throws IllegalQueryException, NotConnectedException
+	{
+		try {
+			ArrayList<String> result = new ArrayList<>();
+			BasicDBList list = new BasicDBList();
+			DBCursor res;
+			list.add(new ObjectId(otherUserId));
+			res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
+			if(res!=null && res.hasNext()){
+				DBObject obj = res.next();
+				boolean found = false;
+				BasicDBList usersWhoHaveHim = (BasicDBList) obj.get("haveMeInCircle");
+				if(usersWhoHaveHim!=null && !usersWhoHaveHim.isEmpty()){
+					for (int i=0;i<usersWhoHaveHim.size();i++) { 
+						if(usersWhoHaveHim.get(i).toString().contains(myUserId)){ 
+							found = true; 
+							break;
+						}
+					} 
+				} 
+				if(found){ // so far we know that the provided user has us in a circle
+					BasicDBList cList = new BasicDBList();
+					cList.add(otherUserId);
+					res = (DBCursor) connector.query(MongoDBConnector.CIRCLES_COLLECTION_NAME, new BasicDBObject("userID", new BasicDBObject("$in", cList)));
+					if(res!=null && res.hasNext()){
+						while (res.hasNext()) {
+							DBObject aCircle = res.next();
+							BasicDBList aCirclesUsers = (BasicDBList) aCircle.get("users");
+							if(aCirclesUsers!=null && !aCirclesUsers.isEmpty()){
+								for (int i=0;i<aCirclesUsers.size();i++) { 
+									if(aCirclesUsers.get(i).toString().contains(myUserId)){ 
+										result.add(((ObjectId) aCircle.get("_id")).toString());
+										break;
+									}
+								} 
+							} 
+						}
+					}
+				}
+			}
+			return result;
+		} catch (IllegalQueryException | NotConnectedException e) {
+			throw e;
+		}
+	}
 	/**
 	 * Create the four initial circles for a newly added user. 
 	 * These four circles are: 'Family', 'Friends', 'Medical Professionals' and 'Wellness Professionals'.
@@ -187,6 +243,7 @@ public class CoreManager {
 		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		data.put("timedate", dateFormat.format(new Date()));
 		data.put("userID", userid);
+		data.put("color", "#FF6600");
 		if(connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data)==null){
 			return false;
 		}
@@ -197,6 +254,7 @@ public class CoreManager {
 		dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		data.put("timedate", dateFormat.format(new Date()));
 		data.put("userID", userid);
+		data.put("color", "#B13E0F");
 		if(connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data)==null){
 			return false;
 		}
@@ -207,6 +265,7 @@ public class CoreManager {
 		dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		data.put("timedate", dateFormat.format(new Date()));
 		data.put("userID", userid);
+		data.put("color", "#E47833");
 		if(connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data)==null){
 			return false;
 		}
@@ -217,6 +276,7 @@ public class CoreManager {
 		dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		data.put("timedate", dateFormat.format(new Date()));
 		data.put("userID", userid);
+		data.put("color", "#C76114");
 		if(connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, data)==null){
 			return false;
 		}

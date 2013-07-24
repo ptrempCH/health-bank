@@ -3,6 +3,7 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
   	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<script src="../js/healthbank.js"></script>
@@ -40,7 +41,15 @@
 				if(userId != user._id.$oid){
 				    if(item.userIcon!=undefined){
 						loadImage(item.userIcon, userId, {onSuccess: function(result, id){loadUsersIcon(result, id);}, onError: function(result){if(result.loggedOut==true){}}});
-						$("#usersearchresults").append('<div userid="'+userId+'" class="usersearch-box"><img id="'+userId+'" class="usersearch-itemImage"/><h3 class="usersearch-itemheader">'+decodeURIComponent(item.firstname)+' '+decodeURIComponent(item.lastname)+'</div></li>'); 
+						textToAppend  = '<div userid="'+userId+'" class="usersearch-box"><img id="'+userId+'" class="usersearch-itemImage"/><h3 class="usersearch-itemheader">';
+						if(item.firstname && item.lastname){
+							textToAppend += decodeURIComponent(item.firstname)+' '+decodeURIComponent(item.lastname)+'</div></li>';
+						} else if(item.companyname){
+							textToAppend += decodeURIComponent(item.companyname)+'</div></li>';
+						} else {
+							textToAppend += 'No Name</div></li>';
+						}
+						$("#usersearchresults").append(textToAppend); 
 					} else {
 						$("#usersearchresults").append('<div class="usersearch-box" userid="'+userId+'"><img id="'+userId+'" class="usersearch-itemImage" src="'+WEB_URL+'../images/defaultUserIcon.png"/><h3 class="usersearch-itemheader">'+decodeURIComponent(item.firstname)+' '+decodeURIComponent(item.lastname)+'</div></li>'); 
 					}
@@ -115,21 +124,28 @@
 				switch(item.name){
 					case "Family":
 						fam=(item.users!=undefined)?item.users.length:0;
+						if(item.color!=undefined){$("#familyCircle").css("background-color", item.color+" !important");}
 						break;
 					case "Friends":
 						fri=(item.users!=undefined)?item.users.length:0;
+						if(item.color!=undefined){$("#friendsCircle").css("background-color", item.color+" !important");}
 						break;
 					case "Medical Professionals":
 						med=(item.users!=undefined)?item.users.length:0;
+						if(item.color!=undefined){$("#medicalCircle").css("background-color", item.color+" !important");}
 						break;
 					case "Wellness Professionals":
 						wel=(item.users!=undefined)?item.users.length:0;
+						if(item.color!=undefined){$("#wellnessCircle").css("background-color", item.color+" !important");}
+						break;
+					case "Research":
+						// Ignore. 
 						break;
 					default:
 						if(additionalCircles==0){
-							$("#circles").append("<div class=\"circle circle5 deg90\" id=\""+item.name.replace(/\s+/g, '')+"\" name=\""+item.name+"\"><div><span>"+item.name+" 0</span></div></div>");
+							$("#circles").append("<div class=\"circle circle5 deg90\" style=\"background-color:"+item.color+" !important\" id=\""+item.name.replace(/\s+/g, '')+"\" name=\""+item.name+"\"><div><span>"+item.name+" 0</span></div></div>");
 						} else {
-							$("#circles").append("<div class=\"circle circle6 deg225\" id=\""+item.name.replace(/\s+/g, '')+"\" name=\""+item.name+"\"><div><span>"+item.name+" 0</span></div></div>");
+							$("#circles").append("<div class=\"circle circle6 deg225\" style=\"background-color:"+item.color+" !important\" id=\""+item.name.replace(/\s+/g, '')+"\" name=\""+item.name+"\"><div><span>"+item.name+" 0</span></div></div>");
 						}
 						additionalCircles++;
 						break;
@@ -150,11 +166,12 @@
 								$.each(usersInCircles, function(k, u){ if(u["id"]==id.userId){found = k;} });
 								usersInCircles[found]["firstname"] = curUser.firstname;
 								usersInCircles[found]["lastname"] = curUser.lastname;
+								usersInCircles[found]["companyname"] = curUser.companyname;
 								var circles = [];
 								circles.push(item.name);
 								usersInCircles[found]["circles"] = circles;
 								if(curUser.userIcon!=undefined){
-									loadImage(data.userIcon, id.userId, {
+									loadImage(curUser.userIcon, id.userId, {
 										onSuccess: function(data, userId){
 											$.each(usersInCircles, function(k, u){ if(u["id"]==id.userId){found = k;} });
 											usersInCircles[found]["img"] = data;
@@ -178,7 +195,8 @@
 		    });
 		    $('.circle').click(function() {
 		        if($(this).attr('id')=="addCircle"){
-					if(circles.length + 2 < 8){
+		        	length = (user.allowResearch=="y")?circles.length + 1:circles.length + 2;
+					if(length < 8){
 						$('#addCircle-form').height("250px");
 						var maskHeight = $(document).height();  
 						var maskWidth = $(window).width();
@@ -189,13 +207,16 @@
 						$('#addCircle-form').css({top:dialogTop, left:dialogLeft}).show();
 						$("#addCircle-form label").autoWidth();
 						$("#theCircleId").val("");
+						$("#newCircleName").prop('disabled', false);
+						$("#newCircleDescr").prop('disabled', false);
+						$("#newCircleColor").val("#663300");
 		        		return false;
 					} else {
 						alert("You have already reached the maximum amount of circles allowed for your account.");
 		        		return false;
 					}
 		        } else if($(this).attr('id')=="researchCircle"){
-		        	$("#usersearchresults").html("<center>Thank you very much for allow researchers to acccess your data. You can change this behaviour with the checkbox on the left.</center>");
+		        	$("#usersearchresults").html("<center>Thank you very much for allow researchers to acccess your data. You can change this behaviour with the checkbox on the left. Add this circle to all the records you allow researchers to view. </center>");
 					$("#usersearchresults").css("border", "1px solid black");
 		        	return false;
 		        } else {
@@ -253,19 +274,23 @@
 			$("#usersearchresults").html("<center>Users in Circle "+name+":</center><button value='"+name+"' id='spacesButton' class=\"list-button spaceButton\">Spaces</button>");
 			
 			if(name=="Family"){
-				$("#usersearchresults").css("border", "4px solid #F60");
+				$("#usersearchresults").css("border", "4px solid "+$("#familyCircle").css("background-color"));
+				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
 			} else if(name=="Friends"){
-				$("#usersearchresults").css("border", "4px solid #B13E0F");
+				$("#usersearchresults").css("border", "4px solid "+$("#friendsCircle").css("background-color"));
+				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
 			} else if(name=="Medical Professionals"){
-				$("#usersearchresults").css("border", "4px solid #E47833");
+				$("#usersearchresults").css("border", "4px solid "+$("#medicalCircle").css("background-color"));
+				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
 			} else if(name=="Wellness Professionals"){
-				$("#usersearchresults").css("border", "4px solid #C76114");
+				$("#usersearchresults").css("border", "4px solid "+$("#wellnessCircle").css("background-color"));
+				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
 			} else if($("#"+name.replace(/\s+/g, '')).hasClass("circle5")){
-				$("#usersearchresults").css("border", "4px solid #630");
+				$("#usersearchresults").css("border", "4px solid "+$("#"+name.replace(/\s+/g, '')).css("background-color"));
 				$("#usersearchresults").append("<button value='"+name+"' id='deleteCircleButton' class=\"list-button spaceButton\">Delete Circle</button>");
 				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
 			} else if($("#"+name.replace(/\s+/g, '')).hasClass("circle6")){
-				$("#usersearchresults").css("border", "4px solid #F30");
+				$("#usersearchresults").css("border", "4px solid "+$("#"+name.replace(/\s+/g, '')).css("background-color"));
 				$("#usersearchresults").append("<button value='"+name+"' id='deleteCircleButton' class=\"list-button spaceButton\">Delete Circle</button>");
 				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
 			}	
@@ -276,7 +301,15 @@
 			$.each(usersInCircles, function(i, item){
 				$.each(item["circles"], function(j, circle){
 					if(circle==name){
-						$("#usersearchresults").append('<div userid="'+item["id"]+'" class="usersearch-box"><img id="'+item["id"]+'" src="'+((item["img"]!=undefined)?'data:image/png;base64,'+item["img"]:WEB_URL+'../images/defaultUserIcon.png')+'" class="usersearch-itemImage"/><h3 class="usersearch-itemheader">'+item["firstname"]+' '+item["lastname"]+'</div>');
+						textToAppend = '<div userid="'+item["id"]+'" class="usersearch-box"><img id="'+item["id"]+'" src="'+((item["img"]!=undefined)?'data:image/png;base64,'+item["img"]:WEB_URL+'../images/defaultUserIcon.png')+'" class="usersearch-itemImage"/><h3 class="usersearch-itemheader">';
+						if(item["firstname"] && item["lastname"]){
+							textToAppend += item["firstname"]+' '+item["lastname"]+'</div>';
+						} else if(item["companyname"]){
+							textToAppend += item["companyname"]+'</div>';
+						} else {
+							textToAppend += 'No Name</div>';
+						}
+						$("#usersearchresults").append(textToAppend);
 					}
 				});
 			});
@@ -389,9 +422,17 @@
 				$("#addCircleTitle").html("Edit Circle "+$("#editCircleButton").val())
 				$.each(circles, function(i, item){
 					if(item.name==$("#editCircleButton").val()){
+						if(item.name=="Friends" || item.name=="Family" || item.name=="Medical Professionals" || item.name=="Wellness Professionals" || item.name=="Research" ){
+							$("#newCircleName").prop('disabled', true);
+							$("#newCircleDescr").prop('disabled', true);
+						} else {
+							$("#newCircleName").prop('disabled', false);
+							$("#newCircleDescr").prop('disabled', false);
+						}
 						$("#newCircleName").val(item.name);
 						$("#newCircleDescr").val(item.descr);
 						$("#theCircleId").val(item._id.$oid);
+						$("#newCircleColor").val(item.color);
 						return false;
 					}
 				});
@@ -418,6 +459,7 @@
 				var name = $("#newCircleName").val();
 				var descr = $("#newCircleDescr").val();
 				var id = $("#theCircleId").val();
+				var color = $("#newCircleColor").val();
 				if(name==undefined || name.length<2 || descr==undefined || descr.length<2){
 					$("#addCircleFeedback").html("Please fill out both fields below!");
 					$("#addCircleFeedback").css("color", "red");
@@ -425,7 +467,7 @@
 				}
 
 				if(id==undefined || id.length<1){
-					addCircle(name, descr, {
+					addCircle(name, descr, color, {
 						onSuccess: function(data){
 							$("#close").click();
 							loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
@@ -435,7 +477,7 @@
 					});
 					return false;
 				} else {
-					editCircle(id, name, descr, {
+					editCircle(id, name, descr, color, {
 						onSuccess: function(data){
 							$("#close").click();
 							loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
@@ -526,9 +568,7 @@
 					$("#researchCircle").css("display", "block");
 			    } else {
 			    	console.log("Unchecked");
-			        user.allowResearch = "n";
-			        updateUserData(user, {}); 
-					$("#researchCircle").css("display", "none");
+			    	$("#research-confirm").dialog("open");
 			    }
 			});
 			$( document ).tooltip({ tooltipClass: "hbTooltip" });
@@ -562,6 +602,25 @@
 					}
 				}
 			});
+			$( "#research-confirm" ).dialog({
+				autoOpen: false,
+				resizable: false,
+				height:250,
+				width: 450,
+				modal: true,
+				buttons: {
+					"Delete": function() {
+						user.allowResearch = "n";
+				        updateUserData(user, {}); 
+						$("#researchCircle").css("display", "none");
+						$( this ).dialog( "close" );
+					},
+					Cancel: function() {
+						$("#allowResearch").prop('checked', true);
+						$( this ).dialog( "close" );
+					}
+				}
+			});
 		});
 		
 	</script>
@@ -582,6 +641,7 @@
 			<div class="page-header">
 				<h1>Circle Manager</h1> 
 				<div class="page-actionbox">
+					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
 					<span id="userInfo" class="userInfo"></span>
 					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
 					<div class="searchbox">
@@ -676,5 +736,8 @@
     	<div class="clr"></div>
     </div>
 	<!--END Bottom Bar -->
+	<div id="research-confirm" title="Delete research circle?">
+	  <p><span class="ui-icon ui-icon-alert" style="float: left; margin: 0 7px 20px 0;"></span>This will delete the research circle and remove all research circle assignments of your records. No researcher will be able to see any of your data anymore. Are you sure?</p>
+	</div>
 </body>
 </html>

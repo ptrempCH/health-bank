@@ -3,6 +3,7 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script src="../js/healthbank.js"></script>
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
@@ -14,13 +15,27 @@
 
 		function loadQueryResult(data) {
 			$("#resultentries").html("");
-			if(data.values.users==0){
-				$("#resultentries").append("<center>No entries yet!</center>");
+			if(data.values.records==undefined || data.values.records.length<1){
+				$("#resultentries").append("<center>No entries found!</center>");
+				return false;
 			}
 
 			queryRecords = data.values.records;
 			$.each(data.values.records, function(i, item) {
-				$("#resultentries").append('<li><h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '+item.timedate+'</i></li>');
+				if(user._id.$oid != item.userID){
+					$("#resultentries").append('<li><p class="'+item.userID+'">Other User:</p> <h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '+item.timedate+'</i></li>');
+					queryUserById(item.userID, {
+						onSuccess: function(data, id){
+							if(data.values.users[0].firstname!=undefined){
+								$("."+item.userID).html("User: <i>"+data.values.users[0].firstname + " " + data.values.users[0].lastname+"</i>");
+							} else {
+								$("."+item.userID).html("User: <i>"+data.values.users[0].companyname + "</i>");
+							}
+						}
+					});
+				} else {
+					$("#resultentries").append('<li><h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '+item.timedate+'</i></li>');
+				}
 			});
 			$("#resultentries li").click(function(){ 
 				if(typeof(Storage)!=="undefined") {
@@ -68,6 +83,7 @@
 			<div class="page-header">
 				<h1>Your query results</h1> 
 				<div class="page-actionbox">
+					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
 					<span id="userInfo" class="userInfo"></span>
 					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
 					<div class="searchbox">

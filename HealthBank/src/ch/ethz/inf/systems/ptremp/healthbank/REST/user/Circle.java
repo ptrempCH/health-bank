@@ -238,6 +238,7 @@ public class Circle extends HttpServlet {
 	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
 	 * - session: This is the current session key of the user
 	 * - name: The name of the circle
+	 * - color: The color for the circle
 	 * - descr: The description for the circle
 	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
 	 * 
@@ -247,6 +248,7 @@ public class Circle extends HttpServlet {
 	 * - id: The object id of the circle to edit
 	 * - name: The name of the circle  (either name or descr or both of them have to be provided)
 	 * - descr: The description for the circle (either name or descr or both of them have to be provided)
+	 * - color: The color for the circle
 	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
 	 * 
 	 * Delete an existing circle:
@@ -279,7 +281,7 @@ public class Circle extends HttpServlet {
 		String errorMessage = "";
 		boolean wasError = false;
 		boolean isLoggedIn = true;
-		String name = "", descr="", newUserId = "", id = "", del = "";
+		String name = "", descr="", color ="", newUserId = "", id = "", del = "";
 		
 		// check parameters user specific parameters
 		String callback = request.getParameter("callback");
@@ -298,6 +300,7 @@ public class Circle extends HttpServlet {
 			name = request.getParameter("name");
 			descr = request.getParameter("descr");
 			newUserId = request.getParameter("userId");
+			color = request.getParameter("color");
 			id = request.getParameter("id");
 			del = request.getParameter("del"); // used for deletions of circles and/or users in circles
 			
@@ -319,6 +322,7 @@ public class Circle extends HttpServlet {
 					descr = (descr!=null)?URLDecoder.decode(descr, "UTF-8"):null;	
 					newUserId = (newUserId!=null)?URLDecoder.decode(newUserId, "UTF-8"):null;	
 					id = (id!=null)?URLDecoder.decode(id, "UTF-8"):null;
+					color = (color!=null)?URLDecoder.decode(color, "UTF-8"):null;
 					if(id==null){ // insert a new one
 						if(name==null || name.length()<2 || descr==null || descr.length()<1){
 							errorMessage = "\"Circle doPost: Please provide the parameters 'name' and 'descr' with the request to create a new circle.\"";
@@ -328,6 +332,7 @@ public class Circle extends HttpServlet {
 							data = new HashMap<Object, Object>();
 							data.put("name", name);
 							data.put("descr", descr);
+							data.put("color", color);
 							DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 							data.put("timedate", dateFormat.format(new Date()));
 							data.put("userID", manager.getUserID(credentials));
@@ -341,6 +346,7 @@ public class Circle extends HttpServlet {
 						if(name!=null || descr!=null){ // update circle info
 							if(name!=null){data.put("name", name);}
 							if(descr!=null){data.put("descr", descr);}
+							if(color!=null){data.put("color", color);}
 							connector.update(MongoDBConnector.CIRCLES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));
 						} else if(newUserId!=null){ // add or remove users from circle
 							// first check if user is not already present, or if it is really present when you want to delete it
@@ -353,16 +359,18 @@ public class Circle extends HttpServlet {
 							if(res!=null && res.hasNext()) {
 								userExists = true;
 							}
-							if(del!=null && del.equals("true")){
+							if(del!=null && del.equals("true")){ // remove user from circle
 								if(userExists){
 									connector.update(MongoDBConnector.CIRCLES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$pull", new BasicDBObject( "users", user )));
+									removeFromHaveInCircleList(newUserId, credentials);
 								} else {
 									errorMessage = "\"The user you want to delete from this circle is not present in the circle.\"";
 									wasError = true;
 								}
-							} else {
+							} else { // add user to circle
 								if(!userExists){
 									connector.update(MongoDBConnector.CIRCLES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$push", new BasicDBObject( "users", user )));
+									addToHaveInCircleList(newUserId, credentials);
 								} else {
 									errorMessage = "\"The user you wanted to add already exists in this circle.\"";
 									wasError = true;
@@ -406,6 +414,87 @@ public class Circle extends HttpServlet {
 				if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage);}
 			}
 		} 
+	}
+
+	/**
+	 * Updates the haveMeInCircle field of the profile of the user that was removed from a circle
+	 * if this particular user is not in any other circles of the current user. 
+	 * @param userId The user id of the user we need to check
+	 * @param credentials The credentials of the current user
+	 */
+	private void removeFromHaveInCircleList(String userId, String credentials) {
+		try {
+			BasicDBList list = new BasicDBList();
+			list.add(manager.getUserID(credentials));
+			// first check if the user is not in any other circle of the current user anymore, else do nothing
+			DBCursor res = (DBCursor) connector.query(MongoDBConnector.CIRCLES_COLLECTION_NAME, new BasicDBObject("userID", new BasicDBObject("$in", list)));
+			if(res!=null){
+				boolean found = false;
+				while(res.hasNext()){
+					BasicDBList userIds = (BasicDBList) res.next().get("users");
+					if(userIds!=null && !userIds.isEmpty()){
+						for (int i=0;i<userIds.size();i++) { 
+							if(userIds.get(i).toString().contains(userId)){ 
+								found = true; 
+								break;
+							}
+						} 
+					} 
+					if(found){ break; }
+				}
+				if(!found){ // we need to remove ourself from the other users list
+					list = new BasicDBList();
+					list.add(new ObjectId(userId));
+					res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
+					if(res!=null && res.hasNext()){
+						BasicDBList usersWhoHaveHim = (BasicDBList) res.next().get("haveMeInCircle");
+						if(usersWhoHaveHim!=null && !usersWhoHaveHim.isEmpty()){
+							BasicDBObject user = new BasicDBObject("userId", manager.getUserID(credentials));
+							connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$pull", new BasicDBObject( "haveMeInCircle", user )));
+							System.out.println("updated user collection haveMeInCircle. Deleted from user with id: "+(new ObjectId(userId)).toString());
+						} 
+					}
+				}
+			}
+			
+			
+		} catch (NotConnectedException | IllegalQueryException e) {
+			if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+e.getMessage());}
+		}
+	}
+
+	/**
+	 * Updates the haveMeInCircle field of the profile of the user that was added to a circle
+	 * if this particular user is not already present in this list.
+	 * @param userId The user id of the user we need to check
+	 * @param credentials The credentials of the current user
+	 */
+	private void addToHaveInCircleList(String userId, String credentials) {
+		try {
+			String myId = manager.getUserID(credentials);
+			BasicDBList list = new BasicDBList();
+			list.add(new ObjectId(userId));
+			DBCursor res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
+			if(res!=null && res.hasNext()){
+				boolean found = false;
+				BasicDBList usersWhoHaveHim = (BasicDBList) res.next().get("haveMeInCircle");
+				if(usersWhoHaveHim!=null && !usersWhoHaveHim.isEmpty()){
+					for (int i=0;i<usersWhoHaveHim.size();i++) { 
+						if(usersWhoHaveHim.get(i).toString().contains(myId)){ 
+							found = true; 
+							break;
+						}
+					} 
+				} 
+				if(!found){
+					BasicDBObject user = new BasicDBObject("userId", myId);
+					connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$push", new BasicDBObject( "haveMeInCircle", user )));
+					System.out.println("updated user collection haveMeInCircle. Added to user with id: "+(new ObjectId(userId)).toString());
+				}
+			}
+		} catch (NotConnectedException | IllegalQueryException e) {
+			if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+e.getMessage());}
+		}
 	}
 
 }

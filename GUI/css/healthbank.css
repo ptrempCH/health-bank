@@ -262,6 +262,12 @@ PAGE HEADER
 .page-container .page-header .page-actionbox .searchbox input:focus {
 	width: 190px;
 }
+.page-container .page-header .page-actionbox .mailIcon {
+	float: left;
+	width: 40px;
+	height: 40px;
+	margin-right: 20px;
+}
 
 /*******************
 CONTENT CONTAINER
@@ -754,6 +760,9 @@ HOME PAGE
 .recordentries img {
 	height: 30px;
 	float: left;
+}
+.recordentries .indP {
+	border: 1px solid red;
 }
 .addnews {
 	margin-left: 5px;
@@ -1316,6 +1325,10 @@ Profile PAGE
 	float: left;
 	margin: 10px 0 0 30px;
 }
+.page-content .profileCircleButton{
+	float: right;
+	margin-right: 50%;
+}
 
 .profile-dialog-form div {
 	padding: 5px 5px 10px 10px;
@@ -1669,6 +1682,8 @@ QUERYRESULT PAGE
 .page-content #querysearch #entrysearchbar {
 	width: 200px;
 	height: 30px;
+	border: 1px solid;
+	border-radius: 5px;
 }
 
 /*******************
@@ -1695,4 +1710,49 @@ NEWS PAGES
 .news-info {
 	font-style: italic;
 	font-size: 14px;
+}
+
+/*******************
+MESSAGES PAGES
+*******************/
+
+#newMail-form .recipient {
+	width: 60%;
+	height: 30px;
+}
+#newMail-form .subject {
+	width: 60%;
+	height: 30px;
+}
+#recipient-form .recipient-form-searchbar {
+	box-shadow: none;
+}
+#recipient-form #usersearchbar {
+	margin: 0;
+}
+#recipient-form #searchButton {
+	float: none;
+}
+@-webkit-keyframes shake {
+	0% { -webkit-transform: translate(2px, 1px) rotate(0deg); }
+	10% { -webkit-transform: translate(-1px, -2px) rotate(-1deg); }
+	20% { -webkit-transform: translate(-3px, 0px) rotate(1deg); }
+	30% { -webkit-transform: translate(0px, 2px) rotate(0deg); }
+	40% { -webkit-transform: translate(1px, -1px) rotate(1deg); }
+	50% { -webkit-transform: translate(-1px, 2px) rotate(-1deg); }
+	60% { -webkit-transform: translate(-3px, 1px) rotate(0deg); }
+	70% { -webkit-transform: translate(2px, 1px) rotate(-1deg); }
+	80% { -webkit-transform: translate(-1px, -1px) rotate(1deg); }
+	90% { -webkit-transform: translate(2px, 2px) rotate(0deg); }
+	100% { -webkit-transform: translate(1px, -2px) rotate(-1deg); }
+}
+.mailIconFlash{
+	-webkit-animation-name: shake;
+	-webkit-animation-duration: 0.8s;
+	-webkit-transform-origin:50% 50%;
+	-webkit-animation-iteration-count: infinite;
+	-webkit-animation-timing-function: linear;
+}
+.unreadMessage {
+	background-color: #F4A460 !important;
 }

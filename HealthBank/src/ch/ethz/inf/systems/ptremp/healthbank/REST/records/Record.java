@@ -101,26 +101,13 @@ public class Record extends HttpServlet {
 	 * Return all records of current user:
 	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
 	 * - session: This is the current session key of the user
-	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
-	 * 
-	 * Return all records of another user:
-	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
-	 * - session: This is the current session key of the user
-	 * - userid: The user id of the other user.
-	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
-	 * 
-	 * Return a single records of current user:
-	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
-	 * - session: This is the current session key of the user
-	 * - id: The id of the record
+	 * - spaceId: (optional) The id of a space. If this is set, only the records of the current user which are in this particular space will be returned
 	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
 	 * 
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 * 
 	 * TODO: 
-	 * 	- Query via id is not yet implemented. 
-	 * 	- Query for other users is not yet implemented. 
-	 * 	- The more it would be useful to just return 20-50 items at a time because of network issues.
+	 * 	- It would be useful to just return 20-50 items at a time because of network issues.
 	 */
 	@SuppressWarnings("unchecked")
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -136,8 +123,8 @@ public class Record extends HttpServlet {
 		String callback = request.getParameter("callback");
 		String credentials = request.getParameter("credentials");
 		String session = request.getParameter("session");
-		String userId = request.getParameter("userid");
-		String id = request.getParameter("id");
+		String spaceId = request.getParameter("spaceId");
+		//String id = request.getParameter("id");
 		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
 			errorMessage = "\"Please provide the parameters 'pw' and 'username' with the request.\"";
 			wasError = true;
@@ -146,7 +133,7 @@ public class Record extends HttpServlet {
 			credentials = URLDecoder.decode(credentials, "UTF-8");
 			session = URLDecoder.decode(session, "UTF-8");
 			credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
-			if(userId!=null && userId.length()>0){userId = URLDecoder.decode(userId, "UTF-8");}
+			if(spaceId!=null && spaceId.length()>0){spaceId = URLDecoder.decode(spaceId, "UTF-8");}
 			
 			// check DB connection
 			if(!connector.isConnected()){
@@ -160,38 +147,71 @@ public class Record extends HttpServlet {
 					wasError = true;
 					isLoggedIn = false;
 				} else {
-					if(userId!=null && userId.length()>0){
-						// TODO check if request provided an id field and wants to query for a certain user. If not, query is for current user
-						// to do so: 
-						// 1) check if id is valid user id
-						// 2) check if current user is allowed to get this information (other has current in circle)
-						// 3) Change list below to the provided id
-						// 4) continue as before
-					}
+					DBCursor res;
 					BasicDBList list = new BasicDBList();
-					list.add(manager.getUserID(credentials));
-					DBCursor res = (DBCursor) connector.query(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("userID", new BasicDBObject("$in", list)));
-					if(res==null){
-						errorMessage = "\"Record doGet: There was an error. Did you provide the correct sessionKey and credentials?\"";
-						wasError = true;
-					}
-					if(!wasError){
-						nrRes = res.size();
-						if(nrRes==0){
-							values = "";
+					String userId = manager.getUserID(credentials);
+					JSONParser parser = new JSONParser();
+					JSONArray resArray = new JSONArray();
+					if(spaceId!=null && spaceId.length()>0){
+						res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("spaceID", spaceId));
+						if(res==null || !res.hasNext()){
+							errorMessage = "\"Record doGet: We could not find any record assigned to the space with id: "+spaceId+"\"";
+							wasError = true;
 						} else {
-							JSONParser parser = new JSONParser();
-							JSONArray resArray = new JSONArray();
+							while (res.hasNext()) {
+								DBObject obj = (DBObject) res.next();
+								String recId = (String) obj.get("recordID");
+								list = new BasicDBList();
+								list.add(new ObjectId(recId));
+								DBCursor rec = (DBCursor) connector.query(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
+								if(rec!=null && rec.hasNext()){
+									DBObject recEntry = (DBObject) rec.next();
+									if(((String) recEntry.get("userID")).equals(userId)){
+										DBCursor spa = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("recordID", recId));
+										JSONArray spas = new JSONArray();
+										if(spa!=null && spa.hasNext()){
+											while(spa.hasNext()){
+												DBObject spaObj = (DBObject) spa.next();
+												String s = (String) spaObj.get("spaceID");
+												if(s!=null && s.length()>0){ spas.add(s); }
+											}
+										}
+										JSONObject resObj = (JSONObject) parser.parse(obj.toString());
+										resObj.put("spaces", spas);
+										resArray.add(resObj);
+									}
+								} 
+							}
+							
+						}
+					} else {
+						list.add(userId);
+						res = (DBCursor) connector.query(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("userID", new BasicDBObject("$in", list)));
+						if(res==null || !res.hasNext()){
+							errorMessage = "\"Record doGet: There was an error. Did you provide the correct sessionKey and credentials?\"";
+							wasError = true;
+						} else {
 							while(res.hasNext()){
 								DBObject obj = res.next();
+								ObjectId recId = (ObjectId) obj.get("_id");
+								DBCursor spa = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("recordID", recId.toString()));
+								JSONArray spas = new JSONArray();
+								if(spa!=null && spa.hasNext()){
+									while(spa.hasNext()){
+										DBObject spaObj = (DBObject) spa.next();
+										String s = (String) spaObj.get("spaceID");
+										if(s!=null && s.length()>0){ spas.add(s); }
+									}
+								}
 								JSONObject resObj = (JSONObject) parser.parse(obj.toString());
+								resObj.put("spaces", spas);
 								resArray.add(resObj);
 							}
-							JSONObject result = new JSONObject();
-							result.put("records", resArray);
-							values = result.toJSONString();
 						}
 					}
+					JSONObject result = new JSONObject();
+					result.put("records", resArray);
+					values = result.toJSONString();
 				}
 			} catch (IllegalArgumentException e) {
 				errorMessage = "\"Record doGet: There was an error. Did you provide the correct sessionKey and credentials? Error: "+e.getMessage()+"\"";
@@ -258,6 +278,7 @@ public class Record extends HttpServlet {
 	 * 
 	 * TODO:
 	 * 	- Implement deletion of entries
+	 * 	- Implement editing of entries besides circles and spaces
 	 * 	- File upload
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -295,26 +316,88 @@ public class Record extends HttpServlet {
 						id = URLDecoder.decode(id, "UTF-8");
 						String circle = request.getParameter("circle");
 						String space = request.getParameter("space");
-						HashMap<Object, Object> data = new HashMap<Object, Object>();
-						int i=0;
+						BasicDBList objectList = new BasicDBList();
 						if(circle!=null){
 							circle = URLDecoder.decode(circle, "UTF-8");
 							for(String s: circle.split(" ")){
-								data.put("circle"+i, s);
-								i++;
+								objectList.add(new BasicDBObject("circle", s));
 							}
 							BasicDBList list = new BasicDBList();
 							list.add(new ObjectId(id));
-							connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("circles", data)));
+							connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("circles", objectList)));
 						} else  if(space!=null){
 							space = URLDecoder.decode(space, "UTF-8");
-							for(String s: space.split(" ")){
-								data.put("space"+i, s);
-								i++;
+							HashMap<Object, Object> data = new HashMap<Object, Object>();
+							BasicDBList and = new BasicDBList();
+							and.add(id);
+							DBCursor res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("recordID", new BasicDBObject("$in", and)));
+							if(res==null || !res.hasNext()){ // we need to insert all of the new space entries
+								for(String s: space.split(" ")){
+									data = new HashMap<Object, Object>();
+									data.put("recordID", id);
+									data.put("spaceID", s);
+									DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+									data.put("timedate", dateFormat.format(new Date()));
+									connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
+								}
+							} else { // add or remove the ones that do not fit anymore
+								boolean found = false;
+								while(res.hasNext()){
+									found = false;
+									DBObject obj = res.next();
+									String spaId = (String) obj.get("spaceID");
+									for(String s: space.split(" ")){
+										if(s.equals("")){ continue; }
+										if(spaId.equals(s)){
+											space = space.replace(s, "");
+											found=true; 
+											break; }
+									}
+									if(!found){ // the user removed this space
+										and = new BasicDBList();
+										and.add(new BasicDBObject("recordID", id));
+										and.add(new BasicDBObject("spaceID", spaId));
+										DBObject queryObject = new BasicDBObject("$and", and);
+										connector.delete(MongoDBConnector.SPACES_COLLECTION_NAME, queryObject);
+									}
+								}
+								for(String s: space.split(" ")){ // now insert new ones
+									if(s.equals("") || s.length()<2){ continue; }
+									else {
+										data = new HashMap<Object, Object>();
+										data.put("recordID", id);
+										data.put("spaceID", s);
+										DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+										data.put("timedate", dateFormat.format(new Date()));
+										connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
+									}
+								}
 							}
+							
+							/* old version
+							for(String s: space.split(" ")){
+								and = new BasicDBList();
+								and.add(new BasicDBObject("recordID", id));
+								and.add(new BasicDBObject("spaceID", s));
+								DBObject queryObject = new BasicDBObject("$and", and);
+								DBCursor res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, queryObject);
+								if(res==null || !res.hasNext()){
+									HashMap<Object, Object> data = new HashMap<Object, Object>();
+									data.put("recordID", id);
+									data.put("spaceID", s);
+									DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+									data.put("timedate", dateFormat.format(new Date()));
+									connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
+								} else {
+									// else do nothing, since it is already present
+								}
+								//objectList.add(new BasicDBObject("space", s));  // old old version
+							}
+							/* old old version
 							BasicDBList list = new BasicDBList();
 							list.add(new ObjectId(id));
-							connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("spaces", data)));
+							connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("spaces", objectList)));
+							*/
 						} else {
 							errorMessage = "\"Record doPost: If you provide the attribute 'id' you need either to provide the attribute 'circle' or 'space' as well!\"";
 							wasError = true;
@@ -388,108 +471,6 @@ public class Record extends HttpServlet {
 			else {
 				response.getOutputStream().println("{ \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\" : \""+errorMessage+"\" }");
 				if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage);}
-			}
-		} 
-	}
-
-	/**
-	 * Deletion of a record was first supposed to be done via this request. But there seem to be problems with allow origin via DELETE requests.
-	 * So maybe we need to deal with this in the POST request as well.
-	 * 
-	 * 
-	 * @see HttpServlet#doDelete(HttpServletRequest, HttpServletResponse)
-	 */
-	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("application/json");
-		response.addHeader("Access-Control-Allow-Origin", "*");
-		String errorMessage = "";
-		boolean wasError = false;
-		boolean isLoggedIn = true;
-		
-		// check parameters
-		String callback = request.getParameter("callback");
-		String credentials = request.getParameter("credentials");
-		String session = request.getParameter("session");
-		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
-			errorMessage = "\"Please provide the parameters 'credentials' and 'session' with the request.\"";
-			wasError = true;
-		}
-		if(!wasError){
-			credentials = URLDecoder.decode(credentials, "UTF-8");
-			session = URLDecoder.decode(session, "UTF-8");
-			credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
-			
-			// TODO: Do we really need the id here? And please make sure you are doing this right with objectID etc...
-			String id = request.getParameter("id");
-			if(id==null || id.length()<1){
-				errorMessage = "\"Please provide the parameter 'id' with the request.\"";
-				wasError = true;
-			}
-			if(!wasError){
-				id = URLDecoder.decode(id, "UTF-8");
-			
-				// check DB connection
-				if(connector==null || !connector.isConnected()){
-					manager.reconnect();
-				}
-				
-				// check if user is logged in
-				try {
-					if(manager.isUserLoggedIn(session, credentials)){
-						BasicDBList list = new BasicDBList();
-						list.add(manager.getUserID(credentials));
-						DBCursor res = (DBCursor) connector.query(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("userID", new BasicDBObject("$in", list)));
-						if(res==null){
-							errorMessage = "\"Record doGet: There was an error. Did you provide the correct sessionKey and credentials?\"";
-							wasError = true;
-						}
-						if(!wasError){
-							while(res.hasNext()){
-								res.next();
-								if(res.curr().get("_id").equals(new ObjectId(id))){
-									if(!connector.delete(MongoDBConnector.RECORDS_COLLECTION_NAME, res.curr())){
-										errorMessage = "\"There was an error deleting the record. Did you provide the correct sessionKey and credentials?\"";
-										wasError = true;
-									}
-									break;
-								}
-							}
-						}
-						
-					} else {
-						errorMessage = "\"Either your session timed out or you forgot to send me the session and credentials.\"";
-						wasError = true;
-						isLoggedIn = false;
-					}
-				} catch (IllegalQueryException e) {
-					errorMessage = "\"There was an error. Did you provide the correct username and password? Error: "+e.getMessage()+"\"";
-					wasError = true;
-				} catch (NotConnectedException e) {
-					errorMessage = "\"We lost connection to the DB. Please try again later. Sorry for that.\"";
-					wasError = true;
-				}
-			}
-		}
-				
-		
-		if(callback!=null && callback.length()>0){
-			callback = URLDecoder.decode(callback, "UTF-8");
-			if(!wasError) {
-				response.getOutputStream().println(callback+"( { \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"User got deleted successfully.\" } );");
-				if(MongoDBConnector.DEBUG){System.out.println("Deleted user with sessionKey: "+session+"!");}
-			}
-			else {
-				response.getOutputStream().println(callback+"( { \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\": "+errorMessage+" } );");
-				if(MongoDBConnector.DEBUG){System.out.println("Profile doDelete: There was an error: "+errorMessage+"!");}
-			}
-		} else {
-			if(!wasError) {
-				response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"User got deleted successfully.\" }");
-				if(MongoDBConnector.DEBUG){System.out.println("Deleted user with sessionKey: "+session+"!");}
-			}
-			else {
-				response.getOutputStream().println("{ \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\": "+errorMessage+" }");
-				if(MongoDBConnector.DEBUG){System.out.println("Profile doDelete: There was an error: "+errorMessage+"!");}
 			}
 		} 
 	}

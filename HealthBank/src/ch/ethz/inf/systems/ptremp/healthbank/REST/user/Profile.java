@@ -3,6 +3,9 @@ package ch.ethz.inf.systems.ptremp.healthbank.REST.user;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -20,6 +23,7 @@ import org.apache.tomcat.util.http.fileupload.FileItem;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
 import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
+import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -154,6 +158,23 @@ public class Profile extends HttpServlet {
 							JSONObject resObj = (JSONObject) parser.parse(obj.toString());
 							resArray.add(resObj);
 						}
+						
+						/*BasicDBList and = new BasicDBList();
+						list = new BasicDBList();
+						String userid = manager.getUserID(credentials);
+						list.add(userid);
+						and.add(new BasicDBObject("userID", new BasicDBObject("$in", list)));
+						and.add(new BasicDBObject("app", "profile"));
+						DBObject queryObject = new BasicDBObject("$and", and);
+						res = (DBCursor) connector.query(MongoDBConnector.RECORDS_COLLECTION_NAME, queryObject);
+						if(res.hasNext()){
+							BasicDBObject resList = (BasicDBObject) res.next().get("circles"); 
+							if(resList!=null){
+								JSONObject resObj = (JSONObject) parser.parse(resList.toString());
+								resArray.add(resObj);
+							}
+						}*/
+						
 						JSONObject result = new JSONObject();
 						result.put("user", resArray);
 						userData = result.toJSONString();
@@ -264,11 +285,11 @@ public class Profile extends HttpServlet {
 	 * - code: The postal code of the city the user lives in
 	 * - city: The name of the city the user lives in
 	 * - country: The country the user lives in
-	 * - privPhone: The private phone number of the user
-	 * - workPhone: The phone number at work of the user
-	 * - mobPhone: The mobile phone number of the user
-	 * - privMail: The private email address of the user
-	 * - workMail: The work email address of the user
+	 * - phoneP: The private phone number of the user
+	 * - phoneW: The phone number at work of the user
+	 * - phoneM: The mobile phone number of the user
+	 * - emailP: The private email address of the user
+	 * - emailW: The work email address of the user
 	 * - nationality: The user's nationality
 	 * - spouse: The spouse of the user
 	 * - insurance: The insurance company the user is registered with
@@ -287,7 +308,6 @@ public class Profile extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 * 
 	 * TODO: 
-	 * - refactor to have a single try-catch block and check logged in just once
 	 * - refactor to not have to deal with all these parameters at the same time, but directly with JSON strings
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -364,6 +384,7 @@ public class Profile extends HttpServlet {
 					data.put("userIcon", userIcon);
 					if(!wasError){
 						connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));
+						// TODO update profile record as well
 					}
 				}
 			} catch (FileUploadException | ParseException e) {
@@ -409,11 +430,11 @@ public class Profile extends HttpServlet {
 				String code = request.getParameter("code");
 				String city = request.getParameter("city");
 				String country = request.getParameter("country");
-				String phoneP = request.getParameter("privPhone");
-				String phoneM = request.getParameter("mobPhone");
-				String phoneW = request.getParameter("workPhone");
-				String emailP = request.getParameter("privMail");
-				String emailW = request.getParameter("workMail");
+				String phoneP = request.getParameter("phoneP");
+				String phoneM = request.getParameter("phoneM");
+				String phoneW = request.getParameter("phoneW");
+				String emailP = request.getParameter("emailP");
+				String emailW = request.getParameter("emailW");
 				String nationality = request.getParameter("nationality");
 				String spouse = request.getParameter("spouse");
 				String insurance = request.getParameter("insurance");
@@ -459,30 +480,95 @@ public class Profile extends HttpServlet {
 						isLoggedIn = false;
 					} else {
 		                BasicDBList list = new BasicDBList();
-						list.add(credentials.substring(0, credentials.lastIndexOf(':')));
+		                String username = credentials.substring(0, credentials.lastIndexOf(':'));
+						list.add(username);
 						
-						if(gender!=null){data.put("gender", gender);}
-						if(firstname!=null){data.put("firstname", firstname);}
-						if(lastname!=null){data.put("lastname", lastname);}
-						if(street!=null){data.put("street", street);}
-						if(code!=null){data.put("code", code);}
-						if(city!=null){data.put("city", city);}
-						if(country!=null){data.put("country", country);}
-						if(phoneP!=null){data.put("phoneP", phoneP);}
-						if(phoneM!=null){data.put("phoneM", phoneM);}
-						if(phoneW!=null){data.put("phoneW", phoneW);}
-						if(emailP!=null){data.put("emailP", emailP);}
-						if(emailW!=null){data.put("emailW", emailW);}
-						if(nationality!=null){data.put("nationality", nationality);}
-						if(spouse!=null){data.put("spouse", spouse);}
-						if(insurance!=null){data.put("insurance", insurance);}
-						if(password!=null){data.put("password", md5);}
-						if(birthday!=null){data.put("birthday", birthday);}
-						if(height!=null){data.put("height", height);}
-						if(weight!=null){data.put("weight", weight);}
-						if(allowResearch!=null){data.put("allowResearch", allowResearch);}
+						if(gender!=null && gender.length()>0){data.put("gender", gender);}
+						if(firstname!=null && firstname.length()>0){data.put("firstname", firstname);}
+						if(lastname!=null && lastname.length()>0){data.put("lastname", lastname);}
+						if(street!=null && street.length()>0){data.put("street", street);}
+						if(code!=null && code.length()>0){data.put("code", code);}
+						if(city!=null && city.length()>0){data.put("city", city);}
+						if(country!=null && country.length()>0){data.put("country", country);}
+						if(phoneP!=null && phoneP.length()>0){data.put("phoneP", phoneP);}
+						if(phoneM!=null && phoneM.length()>0){data.put("phoneM", phoneM);}
+						if(phoneW!=null && phoneW.length()>0){data.put("phoneW", phoneW);}
+						if(emailP!=null && emailP.length()>0){data.put("emailP", emailP);}
+						if(emailW!=null && emailW.length()>0){data.put("emailW", emailW);}
+						if(nationality!=null && nationality.length()>0){data.put("nationality", nationality);}
+						if(spouse!=null && spouse.length()>0){data.put("spouse", spouse);}
+						if(insurance!=null && insurance.length()>0){data.put("insurance", insurance);}
+						if(password!=null && password.length()>0){data.put("password", md5);}
+						if(birthday!=null && birthday.length()>0){data.put("birthday", birthday);}
+						if(height!=null && height.length()>0){data.put("height", height);}
+						if(weight!=null && weight.length()>0){data.put("weight", weight);}
+						if(allowResearch!=null && allowResearch.length()>0){
+							data.put("allowResearch", allowResearch);
+							if(allowResearch.equals("y")){
+								// Add research circle to user
+								HashMap<Object, Object> researchData = new HashMap<Object, Object>();
+								researchData.put("name", "Research");
+								researchData.put("descr", "All the records you allow researchers to process. This might help to cure a diseases");
+								SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+								researchData.put("timedate", dateFormat.format(new Date()));
+								researchData.put("userID", manager.getUserID(credentials));
+								researchData.put("color", "#930");
+								connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, researchData);
+							} else if(allowResearch.equals("n")) {
+								// remove research circle from user
+								BasicDBList and = new BasicDBList();
+								and.add(new BasicDBObject("userID", manager.getUserID(credentials)));
+								and.add(new BasicDBObject("name", "Research"));
+								DBObject queryObject = new BasicDBObject("$and", and);
+								
+								// remove circle from all records.
+								DBCursor cir = (DBCursor) connector.query(MongoDBConnector.CIRCLES_COLLECTION_NAME, queryObject);
+								if(cir!=null && cir.hasNext()){
+									DBObject obj = cir.next();
+									ObjectId cirId = (ObjectId) obj.get("_id");
+									DBCursor recs = (DBCursor) connector.query(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("circles", new BasicDBObject("circle", cirId.toString())));
+									if(recs != null && recs.hasNext()){
+										while(recs.hasNext()){
+											obj = recs.next();
+											ObjectId recId = (ObjectId) obj.get("_id");
+											connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", recId), new BasicDBObject("$pull", new BasicDBObject("circles", new BasicDBObject("circle", cirId))));
+										}
+									}
+								}
+								
+								// finally delete the circle itself								
+								connector.delete(MongoDBConnector.CIRCLES_COLLECTION_NAME, queryObject);
+							}
+						}
 						
 						connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));
+						
+						// query for the record that contains the profile, if it does not exist, create it first. else update it
+
+						BasicDBList and = new BasicDBList();
+						list = new BasicDBList();
+						String userid = manager.getUserID(credentials);
+						list.add(userid);
+						and.add(new BasicDBObject("userID", new BasicDBObject("$in", list)));
+						and.add(new BasicDBObject("app", "profile"));
+						DBObject queryObject = new BasicDBObject("$and", and);
+						DBCursor res = (DBCursor) connector.query(MongoDBConnector.RECORDS_COLLECTION_NAME, queryObject);
+						DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+						data.put("timedate", dateFormat.format(new Date())); // time of last update
+						data.put("username", username);
+						if(res==null || !res.hasNext()){ // we need to insert one
+							data.put("userID", userid);
+							data.put("name", "Profile");
+							data.put("descr", "Profile information of user "+userid);
+							data.put("app", "profile");
+							data.remove("allowResearch");
+							ObjectId recordid = (ObjectId) connector.insert(MongoDBConnector.RECORDS_COLLECTION_NAME, data);
+							list = new BasicDBList();
+							list.add(username);
+							connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("profileRecordId", recordid.toString())));
+						} else {
+							connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, queryObject, new BasicDBObject("$set", data));
+						}
 					}
 				} catch (NotConnectedException e) {
 					errorMessage = "\"Profile doPost: We lost connection to the DB. Please try again later. Sorry for that.\"";

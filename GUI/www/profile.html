@@ -3,6 +3,7 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
   	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<script type="text/javascript" src="../js/jquery.base64.js"></script>
@@ -16,64 +17,76 @@
 		function loadUserInfoIndividual(data){
 			if(data.gender!=undefined){
 				data.gender=decodeURIComponent(data.gender);
-				if(data.gender=="mr"){ data.gender = "Mr.";} else { data.gender = "Mrs.";}
-				$(".detail-name").html("Name: "+data.gender+" "+decodeURIComponent(data.firstname)+" "+decodeURIComponent(data.lastname));
+				if(data.gender=="mr"){ mygender = "Mr.";} else { mygender = "Mrs.";}
+				$(".detail-name").html("Name: "+mygender+" "+decodeURIComponent(data.firstname)+" "+decodeURIComponent(data.lastname));
 			} else {
 				$(".detail-name").html("Name: "+decodeURIComponent(data.firstname)+" "+decodeURIComponent(data.lastname));
 			}
 	    	$(".detail-username").html("<b>Username: </b>"+decodeURIComponent(data.username));
-	    	if(data.street!=undefined && data.code!=undefined && data.city!=undefined){
-	    		$(".detail-address").html("<b>Address: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.street)+",</br>"+decodeURIComponent(data.code)+" "+decodeURIComponent(data.city)+",</br>"+decodeURIComponent(data.country)+"</div>");
+	    	if((data.street!=undefined && data.street.length>0) || (data.code!=undefined && data.city!=undefined && data.code.length>0 && data.city.length>0) || (data.country!=undefined && data.country.length>0)){
+	    		s = "<b>Address: </b></br>";
+	    		if(data.street!=undefined && data.street.length>0){
+	    			s += "<div style=\"margin-left:10px\">"+decodeURIComponent(data.street)+",</br>";
+	    		}
+	    		if(data.code!=undefined && data.city!=undefined && data.code.length>0 && data.city.length>0){
+	    			s += decodeURIComponent(data.code)+" "+decodeURIComponent(data.city)+",</br>";
+	    		}
+	    		if(data.country!=undefined && data.country.length>0){
+	    			s += decodeURIComponent(data.country)+",<br/>";
+	    		}
+	    		s = s.substring(0, s.length-6);
+	    		s += "</div>";
+	    		$(".detail-address").html(s);
 	    		$(".detail-address").css("display", "block");
 	    	}
-	    	if(data.privMail!=undefined && data.workMail!=undefined){
-	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.privMail)+"</div><div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.workMail)+"</div>");
+	    	if((data.emailP!=undefined && data.emailP.length>0) && (data.emailW!=undefined && data.emailW.length>0)){
+	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.emailP)+"</div><div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.emailW)+"</div>");
 	    		$(".detail-email").css("display", "block");
-	    	} else if (data.privMail!=undefined) {
-	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.privMail))+"</div>";
+	    	} else if (data.emailP!=undefined && data.emailP.length>0) {
+	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.emailP))+"</div>";
 	    		$(".detail-email").css("display", "block");
-	    	} else if (data.workMail!=undefined) {
-	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.workMail)+"</div>");
+	    	} else if (data.emailW!=undefined && data.emailW.length>0) {
+	    		$(".detail-email").html("<b>Email: </b><br/><div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.emailW)+"</div>");
 	    		$(".detail-email").css("display", "block");
 	    	}
-	    	if(data.privPhone!=undefined || data.workPhone!=undefined || data.mobPhone!=undefined){
+	    	if((data.phoneP!=undefined && data.phoneP.length>0) || (data.phoneW!=undefined && data.phoneW.length>0) || (data.phoneM!=undefined && data.phoneM.length>0)){
 	    		var s = "<b>Phone: </b><br/>";
 	    		$(".detail-phone").css("display", "block");
-	    		if (data.privPhone!=undefined) {
-		    		s += "<div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.privPhone)+"</div>";
+	    		if (data.phoneP!=undefined && data.phoneP.length>0) {
+		    		s += "<div style=\"margin-left:10px\">Private: "+decodeURIComponent(data.phoneP)+"</div>";
 		    	}
-		    	if (data.workPhone!=undefined) {
-		    		s += "<div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.workPhone)+"</div>";
+		    	if (data.phoneW!=undefined && data.phoneW.length>0) {
+		    		s += "<div style=\"margin-left:10px\">Work: "+decodeURIComponent(data.phoneW)+"</div>";
 		    	} 
-		    	if (data.mobPhone!=undefined) {
-		    		s += "<div style=\"margin-left:10px\">Mobile: "+decodeURIComponent(data.mobPhone)+"</div>";
+		    	if (data.phoneM!=undefined && data.phoneM.length>0) {
+		    		s += "<div style=\"margin-left:10px\">Mobile: "+decodeURIComponent(data.phoneM)+"</div>";
 		    	}
 		    	$(".detail-phone").html(s);
 	    	}
-	    	if(data.nationality!=undefined){
+	    	if(data.nationality!=undefined && data.nationality.length>0){
 	    		$(".detail-nationality").html("<b>Nationality: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.nationality)+"</div>");
 	    		$(".detail-nationality").css("display", "block");
 	    	}
-	    	if(data.weight!=undefined || data.height!=undefined){
+	    	if((data.weight!=undefined && data.weight.length>0) || (data.height!=undefined && data.height.length>0)){
 	    		var s = "<b>Body information:</b></br>";
-	    		if(data.weight!=undefined){
+	    		if(data.weight!=undefined && data.weight.length>0){
 	    			s += "<div style=\"margin-left:10px\">Weight: "+decodeURIComponent(data.weight)+" kg</div>";
 	    		}
-	    		if(data.height!=undefined){
+	    		if(data.height!=undefined && data.height.length>0){
 	    			s += "<div style=\"margin-left:10px\">Height: "+decodeURIComponent(data.height)+" cm</div>"
 	    		}
 	    		$(".detail-body").html(s);
 	    		$(".detail-body").css("display", "block");
 	    	}
-	    	if(data.spouse!=undefined){
+	    	if(data.spouse!=undefined && data.spouse.length>0){
 	    		$(".detail-spouse").html("<b>Spouse: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.spouse)+"</div>");
 	    		$(".detail-spouse").css("display", "block");
 	    	}
-	    	if(data.insurance!=undefined){
+	    	if(data.insurance!=undefined && data.insurance.length>0){
 	    		$(".detail-insurance").html("<b>Insurance: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.insurance)+"</div>");
 	    		$(".detail-insurance").css("display", "block");
 	    	}
-	    	if(data.birthday!=undefined){
+	    	if(data.birthday!=undefined && data.birthday.length>0){
 	    		$(".detail-birthday").html("<b>Birthday: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.birthday)+"</div>");
 	    		$(".detail-birthday").css("display", "block");
 	    	}
@@ -100,15 +113,15 @@
 	    		if(user.code!=undefined){$("#code").val(user.code);}
 	    		if(user.city!=undefined){$("#city").val(user.city);}
 	    		if(user.country!=undefined){$("#country").val(user.country);}
-	    		if(user.privMail!=undefined){$("#privMail").val(user.privMail);}
-	    		if(user.workMail!=undefined){$("#workMail").val(user.workMail);}
-	    		if(user.privPhone!=undefined){$("#privPhone").val(user.privPhone);}
-	    		if(user.mobPhone!=undefined){$("#mobPhone").val(user.mobPhone);}
-	    		if(user.workPhone!=undefined){$("#workPhone").val(user.workPhone);}    		
+	    		if(user.emailP!=undefined){$("#privMail").val(user.emailP);}
+	    		if(user.emailW!=undefined){$("#workMail").val(user.emailW);}
+	    		if(user.phoneP!=undefined){$("#privPhone").val(user.phoneP);}
+	    		if(user.phoneM!=undefined){$("#mobPhone").val(user.phoneM);}
+	    		if(user.phoneW!=undefined){$("#workPhone").val(user.phoneW);}    		
 	    		if(user.nationality!=undefined){$("#nationality").val(user.nationality);}
 	    		if(user.spouse!=undefined){$("#spouse").val(user.spouse);}
 	    		if(user.insurance!=undefined){$("#insurance").val(user.insurance);}
-	    		if(user.birthday!=undefined){$("#birthday").val(moment(user.birthday, "DD-MM-YYYY").format("YYYY-MM-DD"));}
+	    		if(user.birthday!=undefined && birthday.length>0){$("#birthday").val(moment(user.birthday, "DD-MM-YYYY").format("YYYY-MM-DD"));}
 	    		if(user.height!=undefined){$("#height").val(user.height);}
 	    		if(user.weight!=undefined){$("#weight").val(user.weight);}
 	    	}
@@ -137,11 +150,11 @@
     		if($("#code").val()!=undefined && $("#code").val().length>0){user.code = $("#code").val();}
     		if($("#city").val()!=undefined && $("#city").val().length>0){user.city = $("#city").val();}
     		if($("#country").val()!=undefined && $("#country").val().length>0){user.country = $("#country").val();}
-    		if($("#privMail").val()!=undefined && $("#privMail").val().length>0){user.privMail = $("#privMail").val();}
-    		if($("#workMail").val()!=undefined && $("#workMail").val().length>0){user.workMail = $("#workMail").val();}
-    		if($("#privPhone").val()!=undefined && $("#privPhone").val().length>0){user.privPhone = $("#privPhone").val();}
-    		if($("#mobPhone").val()!=undefined && $("#mobPhone").val().length>0){user.mobPhone = $("#mobPhone").val();}
-    		if($("#workPhone").val()!=undefined && $("#workPhone").val().length>0){user.workPhone = $("#workPhone").val();}    		
+    		if($("#privMail").val()!=undefined && $("#privMail").val().length>0){user.emailP = $("#privMail").val();}
+    		if($("#workMail").val()!=undefined && $("#workMail").val().length>0){user.emailW = $("#workMail").val();}
+    		if($("#privPhone").val()!=undefined && $("#privPhone").val().length>0){user.phoneP = $("#privPhone").val();}
+    		if($("#mobPhone").val()!=undefined && $("#mobPhone").val().length>0){user.phoneM = $("#mobPhone").val();}
+    		if($("#workPhone").val()!=undefined && $("#workPhone").val().length>0){user.phoneW = $("#workPhone").val();}    		
     		if($("#nationality").val()!=undefined && $("#nationality").val().length>0){user.nationality = $("#nationality").val();}
     		if($("#spouse").val()!=undefined && $("#spouse").val().length>0){user.spouse = $("#spouse").val();}
     		if($("#insurance").val()!=undefined && $("#insurance").val().length>0){user.insurance = $("#insurance").val();}
@@ -241,14 +254,95 @@
 			});
 		}
 
+		function loadedCirclesForm() {
+			$( "#closeCircles, #dialog-overlay, #closeSpaces, #closeSpacesTab" ).click(function() {
+				$("#dialog-form, #circles-form, #pw-dialog-form, #dialog-overlay, #userIcon-dialog-form").hide();
+				return false;
+			});
+			$( "#saveCircles" ).click(function() {
+				var selectedCircles = [];
+				var iter = 0;
+				var s = "";
+				$.each(circles, function(i, item){
+					if($("#"+item._id.$oid).is(":checked")){
+						selectedCircles[iter] = item._id.$oid;
+						iter++;
+					}
+				});
+				$.each(selectedCircles, function(i, item){
+					s += item+" ";
+				});
+				s = s.substring(0,s.length-1);
+				updateRecordCircles(
+					user.profileRecordId, 
+					s, 
+					{
+						onSuccess: function(data){
+							$("#circles-form, #dialog-overlay").hide();
+						}, 
+						onError: function(){
+							d=document.createElement('div');
+							$(d).html("<p style=\"color:red\">There was an error assigning your circles. We are terribly sorry</p>")
+								.dialog({
+									autoOpen: false,
+									show: {
+										effect: "slide",
+										duration: 200
+									},
+									hide: {
+										effect: "scale",
+										duration: 200
+									}
+								});
+							$(d).dialog("open");
+						}
+					}
+				);
+				return false;
+			});
+			$("#circleButton").click(function(){
+				getProfileRecord({
+					onSuccess: function(data){
+						$('#circles-form').height("320px");
+						var maskHeight = $(document).height();  
+						var maskWidth = $(window).width();
+						var dialogTop =  (maskHeight/2) - ($('#circles-form').height()/2);  
+						var dialogLeft = (maskWidth/2) - ($('#circles-form').width()/2);
+						var recordId = user.profileRecordId;
+						$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+						$('#circles-form').css({top:dialogTop, left:dialogLeft}).show();
+						$(".circles-form label").autoWidth();
+						$("#recordID").val(recordId)
+						$(".dialog-header").html("All people in the selected circle will be able to see your personal data.");
+						$("#circle").contents().remove();
+						$.each(circles, function(i, item){
+							var circleName = item.name.replace(" ", "");
+							$("#circle").append("<input type=\"checkbox\" id=\""+item._id.$oid+"\" name=\""+circleName+"\" value=\""+circleName+"\">"+item.name+"</input></br>");
+						});
+						if(data.values.records[0].circles!=undefined){
+							$.each(data.values.records[0].circles, function(j,c){
+								$("#"+c.circle).prop('checked', true);
+							});
+						}
+						return false;
+					}, 
+					onError: function(data){
+						// TODO
+					}
+				});
+			});
+		}
+
 		$(document).ready(function() {
 			initialize();
+			loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
 			$.get(WEB_URL+'dialogs/not-implemented.html').success(function(data){$('body').append(data); loadedNotYetImplemented();});
+			$.get(WEB_URL+'dialogs/circles-form.html').success(function(data){$('body').append(data); loadedCirclesForm();});
 			$( "#edit" ).click(function() {
 				popup();
 				return false;
 			});
-			$( "#close, #dialog-overlay" ).click(function() {
+			$( "#closeCircles, #close, #dialog-overlay" ).click(function() {
 				$("#dialog-form, #dialog-overlay").hide();
 				$("#pw-dialog-form, #dialog-overlay").hide();
 				$("#userIcon-dialog-form, #dialog-overlay").hide();
@@ -662,6 +756,7 @@
 			<div class="page-header">
 				<h1>Your Profile Settings</h1> 
 				<div class="page-actionbox">
+					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
 					<span id="userInfo" class="userInfo"></span>
 					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
 					<div class="searchbox">
@@ -689,7 +784,7 @@
 				<div class="page-content">
 					<div class="details">
 						<div class="detail-icon"></div>
-						<h2 class="detail-name">Name</h2>
+						<h2 class="detail-name">Name</h2> <button class="big-button profileCircleButton" id="circleButton">Circles</button>
 						<p class="detail-username">Username</p></br>
 						<p class="detail-address">Address</p></br>
 						<p class="detail-email">Email</p></br>

@@ -3,6 +3,7 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
 	<title>Health Bank Register</title>
+	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script type="text/javascript" src="../js/jquery.base64.js"></script>
 	<script src="../js/healthbank.js"></script>
@@ -65,7 +66,11 @@
 					},
 					error: function (request, status, error) {
 						console.log(request);
-						$("#feedbackText").html(request.status + " " + request.statusText + ": " + request.responseText); 
+						if(request.status==0){
+							$("#feedbackText").html("There was an error. Unfortunately we could not send your request to the server. Please try again later. If this continues to happen, please inform an admin."); 
+						} else {
+							$("#feedbackText").html(request.status + " " + request.statusText + ": " + request.responseText); 
+						}
 						$("#feedbackText").css("color","red"); 
 					}
 				});

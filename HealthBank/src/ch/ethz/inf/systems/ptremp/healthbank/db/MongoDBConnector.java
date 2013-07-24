@@ -316,7 +316,7 @@ public class MongoDBConnector implements DBConnector {
 				}
 				cursor = coll.find(query).sort(new BasicDBObject("timedate", 1));
 			}
-			if(cursor.count() == 0){ return null;} // maybe we should skip this line for performance reasons
+			if(!cursor.hasNext()){ return null;} // maybe we should skip this line for performance reasons
 			return cursor;
 		} catch (MongoException e) {
 			throw new IllegalQueryException("Your provided query did throw an exception: "+e.getMessage());

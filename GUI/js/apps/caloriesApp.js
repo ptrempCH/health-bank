@@ -1,13 +1,13 @@
 var entries, entriesShown, caloriesData, sportsData, days, bmrSet;
 
 function loadTodayCalItems(){
-	loadRecords({onSuccess: function(data){loadTodayCalItemsSucc(data);}, onError: function(){loadCalItemsErr();}});
+	loadRecords("Calories", {onSuccess: function(data){loadTodayCalItemsSucc(data);}, onError: function(){loadCalItemsErr();}});
 }
 function loadTodaySportsItems(){
-	loadRecords({onSuccess: function(data){loadTodaySportsItemsSucc(data);}, onError: function(){loadCalItemsErr();}})
+	loadRecords("Calories", {onSuccess: function(data){loadTodaySportsItemsSucc(data);}, onError: function(){loadCalItemsErr();}})
 }
 function loadAllCalItems(){
-	loadRecords({onSuccess: function(data){loadAllCalItemsSucc(data);}, onError: function(){loadAllCalItemsErr();}});
+	loadRecords("Calories", {onSuccess: function(data){loadAllCalItemsSucc(data);}, onError: function(){loadAllCalItemsErr();}});
 }
 function loadTodayCalItemsSucc(data) {
 	$("#recordentries").html("");
@@ -101,15 +101,15 @@ function loadTodaySportsItemsSucc(data) {
 		$("#recordentries").append("<center>No entries yet!</center>");
 	}
 	$("#chronic-section-header").html("Your records for today  ("+burned+"cal burned)")
-	if(userData!=undefined){
-		if(userData.birthday){
-			$("#age").val(Math.floor(moment().diff(moment(userData.birthday, "DD-MM-YYYY"), "days")/365));	
+	if(user!=undefined){
+		if(user.birthday){
+			$("#age").val(Math.floor(moment().diff(moment(user.birthday, "DD-MM-YYYY"), "days")/365));	
 		}
-		if(userData.weight!=undefined){
-			$("#weight").val(userData.weight);
+		if(user.weight!=undefined){
+			$("#weight").val(user.weight);
 		}
-		if(userData.height!=undefined){
-			$("#tall").val(userData.height);
+		if(user.height!=undefined){
+			$("#tall").val(user.height);
 		}
 	} else {
 		$("#age").val(age);
@@ -330,7 +330,7 @@ function loadMoreEntries(){
 	entriesShown += (iter-entriesShown);
 }
 
-function addCalEntry(){
+function addCalEntry(type){
 	var mealtype = $("#mealtype").val();
 	var descr = $("#descr").val();
 	var amount = $("#amount").val();
@@ -353,7 +353,7 @@ function addCalEntry(){
 		return;
 	}
 	
-	var values = "{ \"app\":\"caloriesApp\", \"mealtype\":\""+encodeURIComponent(mealtype)+"\", \"descr\":\""+encodeURIComponent(descr)+"\"";
+	var values = "{ \"app\":\"caloriesApp\", \"mealtype\":\""+encodeURIComponent(mealtype)+"\"";
 	if(mealtype!="sports"){
 		values = values + ", \"amount\":\""+encodeURIComponent(amount)+"\"";
 	}
@@ -366,14 +366,18 @@ function addCalEntry(){
 	}
 	values = values + " }";
 
-	addRecord("Calories App Entry", "Open the Calories App to see data", values, {onSuccess: function(data){addCalEntrySucc(data);}, onError: function(message){addCalEntryErr(message);}});
+	addRecord(encodeURIComponent(descr), "Calories App Entry", values, {onSuccess: function(data){addCalEntrySucc(data, type);}, onError: function(message){addCalEntryErr(message);}});
 }
 
-function addCalEntrySucc(data) {
+function addCalEntrySucc(data, type) {
 	$("#calApp-feedback").html("Please fill out all the fields with a *.");
 	$("#calApp-feedback").css("color", "black");
 	$("#cancelButton").click();
-	loadTodayCalItems();
+	if(type=="s"){
+		loadTodaySportsItems();
+	} else {
+		loadTodayCalItems();
+	}
 }
 function addCalEntryErr(message) {
 	$("#calApp-feedback").html(message);
@@ -418,10 +422,10 @@ function addBMREntry() {
 			break;
 	}
 	bmr = Math.round(bmr);
-	var values = "{ \"app\":\"caloriesApp\", \"descr\":\""+encodeURIComponent("Daily BMR")+"\", \"mealtype\":\""+encodeURIComponent("sports")+"\", ";
+	var values = "{ \"app\":\"caloriesApp\", \"mealtype\":\""+encodeURIComponent("sports")+"\", ";
 	values += "\"age\":\""+encodeURIComponent(age)+"\", \"weight\":\""+encodeURIComponent(weight)+"\", \"height\":\""+encodeURIComponent(tall)+"\", \"cal\":\""+encodeURIComponent(bmr)+"\"}";
 
-	addRecord("Calories App Entry", "Open the Calories App to see data", values, {onSuccess: function(data){addCalEntrySucc(data);}, onError: function(message){addCalEntryErr(message);}});
+	addRecord("Daily BMR", "Calories App Entry", values, {onSuccess: function(data){addCalEntrySucc(data, "s");}, onError: function(message){addCalEntryErr(message);}});
 }
 
 function drawVisualization() {

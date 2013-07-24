@@ -16,17 +16,24 @@
 	<classpathentry exported="true" kind="lib" path="D:/Master/Masterthesis/Code/Libraries/mongo-java-driver-2.11.0.jar" sourcepath="D:/Master/Masterthesis/Code/Libraries/mongo-java-driver-2.11.0-sources.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:file:/D:/Master/Masterthesis/Code/Libraries/mongo-java-driver-2.11.0-javadoc.jar!/"/>
+			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/lib"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry exported="true" kind="lib" path="D:/Master/Masterthesis/Code/Libraries/commons-codec-1.7.jar" sourcepath="D:/Master/Masterthesis/Code/Libraries/commons-codec-1.7-sources.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:file:/D:/Master/Masterthesis/Code/Libraries/mongo-java-driver-2.11.0-javadoc.jar!/"/>
+			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/lib"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry exported="true" kind="lib" path="D:/Master/Masterthesis/Code/HealthBank/WebContent/WEB-INF/lib/json-simple-1.1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="D:/Master/Masterthesis/Code/HealthBank/WebContent/WEB-INF/lib/json-simple-1.1.1.jar">
+		<attributes>
+			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/lib"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="D:/Master/Masterthesis/Code/HealthBank/WebContent/WEB-INF/lib/commons-io-2.4.jar" sourcepath="D:/Master/Masterthesis/Code/HealthBank/WebContent/WEB-INF/lib/commons-io-2.4-sources.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:file:/D:/Master/Masterthesis/Code/HealthBank/WebContent/WEB-INF/lib/commons-io-2.4-javadoc.jar!/"/>
+			<attribute name="org.eclipse.jst.component.dependency" value="/WEB-INF/lib"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="output" path="build/classes"/>

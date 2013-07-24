@@ -6,8 +6,9 @@
  * Copyright 2013, Patrick Tremp, ETH Zurich
  * This is not yet released under a licese so all rights reserved.
  *
- * Last Change: 2013-06-26 at 5pm
+ * Last Change: 2013-07-17 at 5pm
  */
+
 
 
 /**
@@ -95,6 +96,16 @@ function initialize() {
 	       	}
 	    }
 	});
+	$("#mailIcon").click(function(){
+		window.location = WEB_URL+"messageInbox.html"; 
+	});
+	queryHaveNewMessage({ onSuccess: function(data){
+		if(data.values.messages.length>0 && data.values.messages[0].hasNew=="true"){
+			$("#mailIcon").attr("src", "../images/newmail.png");
+			$("#mailIcon").addClass("mailIconFlash");
+			$('#mailIcon').trigger('hover'); 
+		}
+	}});
 }
 
 /**
@@ -108,8 +119,19 @@ function initialize() {
 */
 function initializeSpaces(backurl, spacesName, nrOfItems) {
 	loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
-	loadSpaces({onSuccess: function(data){loadedSpaces(data);}, onError: function(){console.log("Error while loading spaces...");}});
-	loadRecords({onSuccess: function(data){loadLatestRecords(data, backurl, spacesName, nrOfItems);}, onError: function(){loadRecordsError();}});
+	loadSpaces(
+		{onSuccess: function(data){
+			loadedSpaces(data);
+			if($("#userDefTabs").length>0){
+				$.each(spaces, function (i, item) {
+					$("#userDefTabs").append('<div id="'+item.name.toLowerCase().replace(/\s/g,"")+'" class="tab"><a href="'+item.url+'">'+item.name+'</a></div>');
+				});
+			}
+		}, onError: function(){
+			console.log("Error while loading spaces...");
+		}
+	});
+	loadRecords(spacesName, {onSuccess: function(data){loadLatestRecords(data.values.records, backurl, spacesName, nrOfItems);}, onError: function(){loadRecordsError();}});
 	$.get(WEB_URL+'dialogs/circles-form.html').success(function(data){$('body').append(data); loadedExtHTMLForSpaces(backurl, spacesName, nrOfItems);});
 	$.get(WEB_URL+'dialogs/spaces-form.html').success(function(data){$('body').append(data); loadedExtHTMLForSpaces(backurl, spacesName, nrOfItems);});
 	$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data); loadedExtHTMLForSpaces(backurl, spacesName, nrOfItems);});
@@ -138,6 +160,275 @@ function initializeSpaces(backurl, spacesName, nrOfItems) {
 		$("#currentSpaces").sortable();
 		return false;
 	});
+	$("#createRecButton").click(function(){
+		window.location = WEB_URL+"apps/addMedicalRecordApp.html"; 
+		return false;
+	});
+	$("#filterMyEntry").change(function(){
+		if(this.checked) {
+			if(!$("#filterEveryone").is(':checked') && !$("#filterIndCircle").is(':checked') && !$("#filterIndPeople").is(':checked')){
+				$("#filterTop").html("My Entries<img src=\"../../images/navigate_down.png\" height=\"20px\"/>");
+			}
+			found = false;
+			$.each(records, function(i, item){
+				if(item.userID==user._id.$oid){ found = true; return false; }
+			});
+			if(!found){
+				updateFilterPeopleList(user._id.$oid, true, spacesName, backurl); 
+			}
+		}
+		else { 
+			updateFilterSelection(spacesName, backurl); 
+			updateFilterPeopleList(user._id.$oid, false, spacesName, backurl); 
+		}
+	});
+	$("#filterEveryone").change(function(){
+		$.each(spaces, function(i, item){
+			if(spacesName==item.name){spacesName=item._id.$oid; return false;}
+		});
+		if(this.checked) {
+			$("#filterTop").html("No Filter<img src=\"../../images/navigate_down.png\" height=\"20px\"/>");
+			$("#filterIndCircle").each(function(){ this.checked = false; $("#filterIndCircle").change(); });
+			$("#filterIndPeople").each(function(){ this.checked = false; $("#filterIndPeople").change(); });
+			$("#filterMyEntry").each(function(){ this.checked = true; $("#filterMyEntry").change(); });
+			$("#filterIndPeopleList input").each(function(){ 
+				this.checked = false; 
+				updateFilterPeopleList(this.id.substring(7), true, spacesName, backurl);
+			});
+			$("#filterIndCircleList input").each(function(){ this.checked = false; });
+			wasEveryone = true;
+		}
+		else { 
+			updateFilterSelection(spacesName, backurl); 
+			if(wasEveryone){
+				updateFilterPeopleList("", false, spacesName, backurl); 
+				wasEveryone=false;
+			}
+		}
+	});
+	$("#filterIndCircle").change(function(){
+		if(this.checked) {
+			$("#filterTop").html("Individual Circles<img src=\"../../images/navigate_down.png\" height=\"20px\"/>");
+			$("#filterEveryone").each(function(){ this.checked = false; $("#filterEveryone").change(); });
+			$("#filterIndPeople").each(function(){ this.checked = false; $("#filterIndPeople").change(); });
+			$("#filterIndPeopleList input").each(function(){ this.checked = false; });
+		}
+		else { 
+			updateFilterSelection(spacesName, backurl); 
+			$("#filterIndCircleList input").each(function(){ this.checked = false; });
+			updateFilterCircleList("", false, spacesName, backurl);
+		}
+	});
+	$("#filterIndPeople").change(function(){
+		if(this.checked) {
+			$("#filterTop").html("Individual People<img src=\"../../images/navigate_down.png\" height=\"20px\"/>");
+			$("#filterIndCircle").each(function(){ this.checked = false; $("#filterIndCircle").change(); });
+			$("#filterEveryone").each(function(){ this.checked = false; $("#filterEveryone").change(); });
+			$("#filterIndCircleList input").each(function(){ this.checked = false; });
+		}
+		else { 
+			updateFilterSelection(spacesName, backurl); 
+			$("#filterIndPeopleList input").each(function(){ this.checked = false; });
+			updateFilterPeopleList("", false, spacesName, backurl);
+		}
+	});
+	$("#filterDropdown li").hover(
+			function(){
+    			$(this).children('ul').hide();
+    			$(this).children('ul').slideDown(100);
+			},
+			function () {
+    			$('ul', this).slideUp(50);            
+		});
+	$("#filterMyEntry").each(function(){ this.checked = true; });
+	initializeDropDown(spacesName, backurl);
+}
+
+function initializeDropDown(space, backurl) {
+	if(circles==undefined || spaces==undefined){
+		setTimeout(function(){
+			initializeDropDown(space, backurl);
+		}, 100);
+		return false;
+	} else {
+		$("#filterIndCircleList").html("");
+		$("#filterIndPeopleList").html("");
+		$.each(circles, function(i, item){
+			$("#filterIndCircleList").append("<li><span><label><input id=\"filter_"+item._id.$oid+"\"type=\"checkbox\"/>&nbsp;"+item.name.substring(0,12)+"</label></span></li>");
+		});
+		$.each(user.haveMeInCircle, function(i, item){
+			loadUserById(
+				item.userId, 
+				{
+					onSuccess: function(data, id) {
+						var curUser = data.values.users[0];
+						if(curUser.firstname && curUser.lastname){
+							$("#filterIndPeopleList").append("<li><span><label><input id=\"filter_"+id+"\"type=\"checkbox\"/>&nbsp;"+curUser.firstname.substring(0,1)+". "+curUser.lastname+"</label></span></li>");
+						} else if(curUser.companyname){
+							$("#filterIndPeopleList").append("<li><span><label><input id=\"filter_"+id+"\"type=\"checkbox\"/>&nbsp;"+curUser.companyname+"</label></span></li>");
+						}
+					}, onError: function(data){
+						$(".detail-name").html("<center>No information found!</center>");
+					}
+				}
+			);
+		});
+
+		var mySpaceId = "";
+		$.each(spaces, function (i, item) {
+			if(item.name==space){
+				mySpaceId = item._id.$oid;
+			}
+		});
+
+		$("#filterIndCircleList input").change(function(){
+			if(this.checked){
+				$("#filterIndCircle").each(function(){ this.checked = true; });
+				$("#filterIndCircle").change();
+				updateFilterCircleList(this.id.substring(7), true, mySpaceId, backurl);
+			} else {
+				updateFilterCircleList(this.id.substring(7), false, mySpaceId, backurl);
+			}
+		});
+
+		wasEveryone = false;
+	}
+	
+	setTimeout(function(){
+		$("#filterIndPeopleList input").change(function(){
+			if(this.checked){
+				$("#filterIndPeople").each(function(){ this.checked = true; });
+				$("#filterIndPeople").change();
+				updateFilterPeopleList(this.id.substring(7), true, mySpaceId, backurl);
+			} else {
+				updateFilterPeopleList(this.id.substring(7), false, mySpaceId, backurl);
+			}
+		});
+		param = getURLParameter("userId");
+		if(param!=undefined){
+			$("#filter_"+param).click();
+		}
+	}, 600);
+}
+
+var wasEveryone;
+function updateFilterSelection(spacesName, backurl){
+	if(!$("#filterEveryone").is(':checked')&& !$("#filterMyEntry").is(':checked') && !$("#filterIndCircle").is(':checked') && !$("#filterIndPeople").is(':checked')){
+		$("#filterTop").html("No Filter<img src=\"../../images/navigate_down.png\" height=\"20px\"/>");
+		$("#filterMyEntry").each(function(){ this.checked = true; });
+		$("#filterEveryone").each(function(){ this.checked = true; });
+		$.each(spaces, function(i, item){
+			if(spacesName==item.name){spacesName=item._id.$oid; return false;}
+		});
+		$("#filterIndPeopleList input").each(function(){ 
+			this.checked = false; 
+			updateFilterPeopleList(this.id.substring(7), true, spacesName, backurl);
+		});
+		wasEveryone = true;
+	} else if(!$("#filterEveryone").is(':checked')&& $("#filterMyEntry").is(':checked') && !$("#filterIndCircle").is(':checked') && !$("#filterIndPeople").is(':checked')){
+		$("#filterTop").html("My Entries<img src=\"../../images/navigate_down.png\" height=\"20px\"/>");
+	} else if($("#filterEveryone").is(':checked')&& !$("#filterMyEntry").is(':checked') && !$("#filterIndCircle").is(':checked') && !$("#filterIndPeople").is(':checked')){
+		$("#filterTop").html("No Filter<img src=\"../../images/navigate_down.png\" height=\"20px\"/>");
+		$("#filterMyEntry").each(function(){ this.checked = true; });
+		$("#filterEveryone").each(function(){ this.checked = true; });
+	}
+
+}
+
+function updateFilterCircleList(id, checked, space, backurl){
+	if(checked){ // we need to add the records
+		setTimeout(function(){
+			$.each(spaces, function(i, item){
+				if(space==item.name){space=item._id.$oid; return false;}
+				else if(space==item._id.$oid){return false;}
+			});
+			queryEntriesByCircleId(
+				id, space,
+				{
+					onSuccess: function(data, id) {
+						newRecords = data.values.records;
+						$.each(newRecords, function(i,item){
+							item.indC = id;
+						});
+						records = records.concat(newRecords);
+						loadLatestRecords(records, backurl, space, 0);
+					}, onError: function(data){
+						//alert("No more data was loaded. Maybe you are not allowed to see any of this user.")
+					}
+				}
+			);
+		}, 300);
+	} else { // we need to remove the records
+		if(id==undefined || id.length<1){
+			for (var i = records.length-1; i >= 0; i--) {
+			    if (records[i].indC != undefined) {
+			        records.splice(i, 1);
+			    }
+			}
+		} else {
+			for (var i = records.length-1; i >= 0; i--) {
+			    if (records[i].indC == id) {
+			        records.splice(i, 1);
+			    }
+			}
+		}
+		loadLatestRecords(records, backurl, space, 0);
+	}
+}
+
+function updateFilterPeopleList(id, checked, space, backurl){
+	if(checked){ // we need to add the records
+		setTimeout(function(){
+			$.each(spaces, function(i, item){
+				if(space==item.name){space=item._id.$oid; return false;}
+				else if(space==item._id.$oid){return false;}
+			});
+			if(id==user._id.$oid){
+				loadRecords(
+					space, 
+					{
+						onSuccess: function(data){
+							records = records.concat(data.values.records);
+							loadLatestRecords(records, backurl, space, 0);
+						}, onError: function(){
+							loadRecordsError();
+						}
+					}
+				);
+			} else {
+				queryEntriesByUserId(
+					id, space,
+					{
+						onSuccess: function(data, id) {
+							newRecords = data.values.records;
+							$.each(newRecords, function(i,item){
+								item.indP = id;
+							});
+							records = records.concat(newRecords);
+							loadLatestRecords(records, backurl, space, 0);
+						}, onError: function(data){
+							//alert("No more data was loaded. Maybe you are not allowed to see any of this user.")
+						}
+					}
+				);
+			}
+		}, 300);
+	} else { // we need to remove the records
+		if(id==undefined || id.length<1){
+			for (var i = records.length-1; i >= 0; i--) {
+			    if (records[i].indP != undefined) {
+			        records.splice(i, 1);
+			    }
+			}
+		} else {
+			for (var i = records.length-1; i >= 0; i--) {
+			    if (records[i].userID == id) {
+			        records.splice(i, 1);
+			    }
+			}
+		}
+		loadLatestRecords(records, backurl, space, 0);
+	}
 }
 
 /**
@@ -244,14 +535,46 @@ function getUserData(callback) {
 }
 
 /**
+* Gets the data of the user such as username, name etc. stored as a record for defining its circles
+* Redirects to the login page, if not logged in. 
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+**/
+function getProfileRecord(callback){
+	if(user==undefined){return false;}
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"RecordQuery",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id : encodeURIComponent(user.profileRecordId) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
 * This function gathers all the information the user has provided in the profile view and sends it 
 * to the server via AJAX. This is needed to update any information about the user. This function is 
 * not only used in the edit profile dialog but can be used by anyone to update userData. 
 *
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
-* - userData: All the userData to work with. Only existing fields will be transmitted. Possible fields are gender, code, street, city, country, privMail,
-* 				workMail, privPhone, mobPhone, workPhone, nationality, spouse, insurance, birthday, height, weight and allowResearch
+* - userData: All the userData to work with. Only existing fields will be transmitted. Possible fields are gender, code, street, city, country, emailP,
+* 				emailW, phoneP, phoneM, phoneW, nationality, spouse, insurance, birthday, height, weight and allowResearch
 */
 function updateUserData(userData, callback) {
 	callback = callback || {};
@@ -262,11 +585,11 @@ function updateUserData(userData, callback) {
 		if(userData.street==undefined){userData.street="";}
 		if(userData.city==undefined){userData.city="";}
 		if(userData.country==undefined){userData.country="";}
-		if(userData.privMail==undefined){userData.privMail="";}
-		if(userData.workMail==undefined){userData.workMail="";}
-		if(userData.privPhone==undefined){userData.privPhone="";}
-		if(userData.mobPhone==undefined){userData.mobPhone="";}
-		if(userData.workPhone==undefined){userData.workPhone="";}
+		if(userData.emailP==undefined){userData.emailP="";}
+		if(userData.emailW==undefined){userData.emailW="";}
+		if(userData.phoneP==undefined){userData.phoneP="";}
+		if(userData.phoneM==undefined){userData.phoneM="";}
+		if(userData.phoneW==undefined){userData.phoneW="";}
 		if(userData.nationality==undefined){userData.nationality="";}
 		if(userData.spouse==undefined){userData.spouse="";}
 		if(userData.insurance==undefined){userData.insurance="";}
@@ -282,18 +605,18 @@ function updateUserData(userData, callback) {
 			data: { 
 				session : encodeURIComponent(mySession), 
 				credentials : encodeURIComponent(myCredentials), 
-				surname : encodeURIComponent(userData.surname),
+				firstname : encodeURIComponent(userData.firstname),
 				lastname : encodeURIComponent(userData.lastname),
 				gender : encodeURIComponent(userData.gender),
 				street : encodeURIComponent(userData.street),
 				code : encodeURIComponent(userData.code),
 				city : encodeURIComponent(userData.city),
 				country : encodeURIComponent(userData.country),
-				privMail : encodeURIComponent(userData.privMail),
-				workMail : encodeURIComponent(userData.workMail),
-				privPhone : encodeURIComponent(userData.privPhone),
-				mobPhone : encodeURIComponent(userData.mobPhone),
-				workPhone : encodeURIComponent(userData.workPhone),
+				emailP : encodeURIComponent(userData.emailP),
+				emailW : encodeURIComponent(userData.emailW),
+				phoneP : encodeURIComponent(userData.phoneP),
+				phoneM : encodeURIComponent(userData.phoneM),
+				phoneW : encodeURIComponent(userData.phoneW),
 				nationality : encodeURIComponent(userData.nationality),
 				spouse : encodeURIComponent(userData.spouse),
 				insurance : encodeURIComponent(userData.insurance),
@@ -511,31 +834,55 @@ function updateRecordSpaces(spaceId, spaces, callback){
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
 **/
-function loadRecords(callback) {
+function loadRecords(space_name, callback) {
 	callback = callback || {};
 	if(isStorageDefined())
 	{
-		$.ajax({
-			url: API_URL+"Record",
-			type: 'get',
-			dataType: 'json',
-			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials) },
-			success: function(data){
-				if(data.result=="failed"){
-					if(data.loggedOut=="true"){
-						window.location = WEB_URL+"login.html"; 
+		if(space_name==undefined || space_name.length>1){
+			$.ajax({
+				url: API_URL+"Record",
+				type: 'get',
+				dataType: 'json',
+				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials) },
+				success: function(data){
+					if(data.result=="failed"){
+						if(data.loggedOut=="true"){
+							window.location = WEB_URL+"login.html"; 
+						}
+						if(callback.onError){
+							console.log("calling onError");
+					        callback.onError();
+					    }
+					} else { 
+						if(callback.onSuccess){
+					        callback.onSuccess(data);
+					    }
 					}
-					if(callback.onError){
-						console.log("calling onError");
-				        callback.onError();
-				    }
-				} else { 
-					if(callback.onSuccess){
-				        callback.onSuccess(data);
-				    }
 				}
-			}
-		});
+			});
+		} else {
+			$.ajax({
+				url: API_URL+"Record",
+				type: 'get',
+				dataType: 'json',
+				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), spaceId : encodeURIComponent(space_name) },
+				success: function(data){
+					if(data.result=="failed"){
+						if(data.loggedOut=="true"){
+							window.location = WEB_URL+"login.html"; 
+						}
+						if(callback.onError){
+							console.log("calling onError");
+					        callback.onError();
+					    }
+					} else { 
+						if(callback.onSuccess){
+					        callback.onSuccess(data);
+					    }
+					}
+				}
+			});
+		}
 	}
 }
 
@@ -583,9 +930,9 @@ function loadCircles(callback) {
 * - name: The name of the new circle
 * - descr: The description of the new circle
 **/
-function addCircle(name, descr, callback){
+function addCircle(name, descr, color, callback){
 	callback = callback || {};
-	if(name==undefined || name.length<2 || descr==undefined || descr.length<2){
+	if(name==undefined || name.length<2 || descr==undefined || descr.length<2 || color==undefined || color.length<2){
 		return false;
 	}
 	if(isStorageDefined())
@@ -594,7 +941,7 @@ function addCircle(name, descr, callback){
 			url: API_URL+"Circle",
 			type: 'post',
 			dataType: 'json',
-			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), name : encodeURIComponent(name), descr : encodeURIComponent(descr) },
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), name : encodeURIComponent(name), descr : encodeURIComponent(descr), color: encodeURIComponent(color) },
 			success: function(data){
 				if(data.result=="failed"){
 					if(data.loggedOut=="true"){
@@ -624,9 +971,9 @@ function addCircle(name, descr, callback){
 * - name: The new name of the circle
 * - descr: The new description of the circle
 **/
-function editCircle(id, name, descr, callback){
+function editCircle(id, name, descr, color, callback){
 	callback = callback || {};
-	if(name==undefined || name.length<2 || descr==undefined || descr.length<2 || id==undefined || id.length<2){
+	if(name==undefined || name.length<2 || descr==undefined || descr.length<2 || id==undefined || id.length<2 || color==undefined || color.length<2){
 		return false;
 	}
 	if(isStorageDefined())
@@ -635,7 +982,7 @@ function editCircle(id, name, descr, callback){
 			url: API_URL+"Circle",
 			type: 'post',
 			dataType: 'json',
-			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id : encodeURIComponent(id), name : encodeURIComponent(name), descr : encodeURIComponent(descr) },
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id : encodeURIComponent(id), name : encodeURIComponent(name), descr : encodeURIComponent(descr), color: encodeURIComponent(color) },
 			success: function(data){
 				if(data.result=="failed"){
 					if(data.loggedOut=="true"){
@@ -980,6 +1327,41 @@ function queryUsers(query, callback) {
 }
 
 /**
+* Searches for all users which are in any of the current users circles 
+* Redirects to the login page, if not logged in. 
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+**/
+function queryUsersInCircles(callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"userquery",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), circle: encodeURIComponent("true") },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
 * Searches for users according to an id 
 * Redirects to the login page, if not logged in. 
 *
@@ -1007,7 +1389,7 @@ function queryUserById(id, callback) {
 				    }
 				} else { 
 					if(callback.onSuccess){
-				        callback.onSuccess(data);
+				        callback.onSuccess(data, id);
 				    }
 				}
 			}
@@ -1048,6 +1430,126 @@ function queryEntries(query, callback) {
 				}
 			}
 		});
+	}
+}
+
+/**
+* Gets all the records of a certain user given by the according user ID. Only records we are allowed to see are returned 
+* Redirects to the login page, if not logged in. 
+* 
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - query: The query to search a record
+**/
+function queryEntriesByUserId(userId, spaceId, callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		if(spaceId== undefined || spaceId.length<1){
+			$.ajax({
+				url: API_URL+"recordquery",
+				type: 'get',
+				dataType: 'json',
+				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), userId: encodeURIComponent(userId) },
+				success: function(data){
+					if(data.result=="failed"){
+						if(data.loggedOut=="true"){
+							window.location = WEB_URL+"login.html"; 
+						}
+						if(callback.onError){
+							console.log("calling onError");
+					        callback.onError();
+					    }
+					} else { 
+						if(callback.onSuccess){
+					        callback.onSuccess(data, userId);
+					    }
+					}
+				}
+			});
+		} else {
+			$.ajax({
+				url: API_URL+"recordquery",
+				type: 'get',
+				dataType: 'json',
+				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), userId: encodeURIComponent(userId), spaceId : encodeURIComponent(spaceId) },
+				success: function(data){
+					if(data.result=="failed"){
+						if(data.loggedOut=="true"){
+							window.location = WEB_URL+"login.html"; 
+						}
+						if(callback.onError){
+							console.log("calling onError");
+					        callback.onError();
+					    }
+					} else { 
+						if(callback.onSuccess){
+					        callback.onSuccess(data, userId);
+					    }
+					}
+				}
+			});
+		}
+	}
+}
+
+/**
+* Gets all the records of users in a certain circle given by the according circle ID. Only records we are allowed to see are returned  
+* Redirects to the login page, if not logged in. 
+* 
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - query: The query to search a record
+**/
+function queryEntriesByCircleId(circleId, spaceId, callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		if(spaceId== undefined || spaceId.length<1){
+			$.ajax({
+				url: API_URL+"recordquery",
+				type: 'get',
+				dataType: 'json',
+				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), circleId: encodeURIComponent(circleId) },
+				success: function(data){
+					if(data.result=="failed"){
+						if(data.loggedOut=="true"){
+							window.location = WEB_URL+"login.html"; 
+						}
+						if(callback.onError){
+							console.log("calling onError");
+					        callback.onError();
+					    }
+					} else { 
+						if(callback.onSuccess){
+					        callback.onSuccess(data, circleId);
+					    }
+					}
+				}
+			});
+		} else {
+			$.ajax({
+				url: API_URL+"recordquery",
+				type: 'get',
+				dataType: 'json',
+				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), circleId: encodeURIComponent(circleId), spaceId : encodeURIComponent(spaceId) },
+				success: function(data){
+					if(data.result=="failed"){
+						if(data.loggedOut=="true"){
+							window.location = WEB_URL+"login.html"; 
+						}
+						if(callback.onError){
+							console.log("calling onError");
+					        callback.onError();
+					    }
+					} else { 
+						if(callback.onSuccess){
+					        callback.onSuccess(data, circleId);
+					    }
+					}
+				}
+			});
+		}
 	}
 }
 
@@ -1266,7 +1768,7 @@ function saveSpacesOfRecord(recordId, backlink, space_name, nrOfItems){
 			{
 				onSuccess: function(data){
 					$("#circles-form, #dialog-overlay, #spaces-form").hide();
-					loadRecords({onSuccess: function(data){loadLatestRecords(data, backlink, space_name, nrOfItems);}, onError: function(){loadRecordsError();}});
+					loadRecords(space_name, {onSuccess: function(data){loadLatestRecords(data.values.records, backlink, space_name, nrOfItems);}, onError: function(){loadRecordsError();}});
 				}, 
 				onError: function(){
 					d=document.createElement('div');
@@ -1334,7 +1836,7 @@ function saveCirclesOfRecord(recordId, backlink, space_name, nrOfItems){
 		{
 			onSuccess: function(data){
 				$("#circles-form, #dialog-overlay").hide();
-				loadRecords({onSuccess: function(data){loadLatestRecords(data, backlink, space_name, nrOfItems);}, onError: function(){loadRecordsError();}});
+				loadRecords(space_name, {onSuccess: function(data){loadLatestRecords(data.values.records, backlink, space_name, nrOfItems);}, onError: function(){loadRecordsError();}});
 			}, 
 			onError: function(){
 				d=document.createElement('div');
@@ -1357,6 +1859,16 @@ function saveCirclesOfRecord(recordId, backlink, space_name, nrOfItems){
 }
 
 /**
+* This function sorts the records entries according to its timedate value. After the sorting, the first entry in the 
+* records array is the latest record of all in the list and the last element the oldest one.
+*/
+function sortRecords () {
+	records = records.sort(function(a, b) {
+        return (moment(a.timedate).isBefore(b.timedate)) ? 1 : ((moment(a.timedate).isAfter(b.timedate))? -1 : 0);
+    });
+}
+
+/**
 * This function loads the latest records of the current logged in user and initialices all kind of click listener
 *
 * Parameters:
@@ -1367,38 +1879,120 @@ function saveCirclesOfRecord(recordId, backlink, space_name, nrOfItems){
 */
 function loadLatestRecords(data, backlink, space_name, nrOfItems) {
 	$("#recordentries").html("");
-	if(data.values.records==undefined || data.values.records.length==0){
+	if(data==undefined || data.length==0){
 		$("#recordentries").append("<center>No entries yet!</center>");
 		return false;
 	}
-	records = data.values.records;
-	records.reverse();
+	records = data;
+	sortRecords();
 
 	if(space_name==undefined || space_name.length<1){
 		$.each(records, function(i, item) {
-		    $("#recordentries").append('<li><h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '+item.timedate+'</i><button value="'+item._id.$oid+'" class=\"list-button spaceButton\">Spaces</button><button value="'+item._id.$oid+'" class=\"list-button circleButton\">Circles</button></li>');
-		    if(nrOfItems>0 && i==(nrOfItems-1)){
-		    	return false;
-		    }
+			if(item.app==undefined || item.app!="profile"){
+				if(item.indP!=undefined && item.indP.length>0){
+					$("#recordentries").append('<li class="indP"><p class="'+item.indP+'">Other User:</p> <h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '
+						+item.timedate+'</i><button value="'+item._id.$oid+'" class=\"list-button spaceButton\">Spaces</button></li>');
+					queryUserById(item.indP, {
+						onSuccess: function(data, id){
+							if(data.values.users[0].firstname!=undefined){
+								$("."+id).html("User: <i>"+data.values.users[0].firstname + " " + data.values.users[0].lastname+"</i>");
+							} else {
+								$("."+id).html("User: <i>"+data.values.users[0].companyname + "</i>");
+							}
+						}
+					});
+				} else if(item.indC!=undefined && item.indC.length>0) {
+					indC = item.indC;
+					color = "";
+					$.each(circles, function (j, cir) {
+						if(cir._id.$oid==indC){color = cir.color;}
+					});
+					if(color.length>0){
+						$("#recordentries").append('<li><p class="'+item.userID+'" style="background-color:'+color+' !important">Other User:</p> <h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '
+							+item.timedate+'</i><button value="'+item._id.$oid+'" class=\"list-button spaceButton\">Spaces</button></li>');
+					} else {
+						$("#recordentries").append('<li><p class="'+item.userID+'">Other User:</p> <h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '
+							+item.timedate+'</i><button value="'+item._id.$oid+'" class=\"list-button spaceButton\">Spaces</button></li>');
+					}
+					queryUserById(item.userID, {
+						onSuccess: function(data, id){
+							if(data.values.users[0].firstname!=undefined){
+								$("."+item.userID).html("User: <i>"+data.values.users[0].firstname + " " + data.values.users[0].lastname+"</i>");
+							} else {
+								$("."+item.userID).html("User: <i>"+data.values.users[0].companyname + "</i>");
+							}
+						}
+					});
+				} else {
+					$("#recordentries").append('<li><h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '+item.timedate+'</i><button value="'+item._id.$oid
+						+'" class=\"list-button spaceButton\">Spaces</button><button value="'+item._id.$oid+'" class=\"list-button circleButton\">Circles</button></li>');
+				}
+			    if(nrOfItems>0 && i==(nrOfItems-1)){
+			    	return false;
+			    }
+			}
 		});
 	} else {
 		var spaceID = "";
 		$.each(spaces, function(i, item){
 			if(item.name==space_name){ spaceID = item._id.$oid;}
+			else if(item._id.$oid == space_name) { spaceID = space_name;}
 		});
 		$.each(records, function(i, item) {
-			var found = false;
-			if(item.spaces!=undefined){
-				$.each(item.spaces, function(j, c){
-					if(c == spaceID){ found = true;}
-				});
-				if(found){
-			    	$("#recordentries").append('<li><h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '+item.timedate+'</i><button value="'+item._id.$oid+'" class=\"list-button spaceButton\">Spaces</button><button value="'+item._id.$oid+'" class=\"list-button circleButton\">Circles</button></li>');
+			if(item.app==undefined || item.app!="profile"){
+				var found = false;
+				if(item.spaces!=undefined){
+					$.each(item.spaces, function(j, c){
+						if(c == spaceID){ found = true;}
+					});
+					if(found){
+						if(item.indP!=undefined && item.indP.length>0){
+							$("#recordentries").append('<li class="indP"><p class="'+item.indP+'">Other User:</p> <h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '
+								+item.timedate+'</i><button value="'+item._id.$oid+'" class=\"list-button spaceButton\">Spaces</button></li>');
+							queryUserById(item.indP, {
+								onSuccess: function(data, id){
+									if(data.values.users[0].firstname!=undefined){
+										$("."+id).html("User: <i>"+data.values.users[0].firstname + " " + data.values.users[0].lastname+"</i>");
+									} else {
+										$("."+id).html("User: <i>"+data.values.users[0].companyname + "</i>");
+									}
+								}
+							});
+						} else if(item.indC!=undefined && item.indC.length>0) {
+							indC = item.indC;
+							color = "";
+							$.each(circles, function (j, cir) {
+								if(cir._id.$oid==indC){color = cir.color;}
+							});
+							if(color.length>0){
+								$("#recordentries").append('<li><p class="'+item.userID+'" style="background-color:'+color+' !important">Other User:</p> <h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '
+									+item.timedate+'</i><button value="'+item._id.$oid+'" class=\"list-button spaceButton\">Spaces</button></li>');
+							} else {
+								$("#recordentries").append('<li><p class="'+item.userID+'">Other User:</p> <h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '
+									+item.timedate+'</i><button value="'+item._id.$oid+'" class=\"list-button spaceButton\">Spaces</button></li>');
+							}
+							queryUserById(item.userID, {
+								onSuccess: function(data, id){
+									if(data.values.users[0].firstname!=undefined){
+										$("."+item.userID).html("User: <i>"+data.values.users[0].firstname + " " + data.values.users[0].lastname+"</i>");
+									} else {
+										$("."+item.userID).html("User: <i>"+data.values.users[0].companyname + "</i>");
+									}
+								}
+							});
+						} else {
+							$("#recordentries").append('<li><h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '+item.timedate+'</i><button value="'+item._id.$oid
+								+'" class=\"list-button spaceButton\">Spaces</button><button value="'+item._id.$oid+'" class=\"list-button circleButton\">Circles</button></li>');
+						}
+					    if(nrOfItems>0 && i==(nrOfItems-1)){
+					    	return false;
+					    }
+					}
 				}
 			}
 		});			
 		if($("#recordentries").html()==""){
-			$("#recordentries").html("No entries yet. Please assign records to the "+space_name+" space first in order to see them here.");
+			$("#recordentries").html("No entries yet. Please assign records to this space first in order to see them here.");
 		}
 	}
 
@@ -1431,7 +2025,7 @@ function loadLatestRecords(data, backlink, space_name, nrOfItems) {
 				$("#record-name").html(item.name);
 				if(item.circles!=undefined){
 					$.each(item.circles, function(j,c){
-						$("#"+c).prop('checked', true);
+						$("#"+c.circle).prop('checked', true);
 					});
 				}
 				return false;
@@ -1554,7 +2148,7 @@ function loadUserById(id, callback){
 				    }
 				} else { 
 					if(callback.onSuccess){
-				        callback.onSuccess(data);
+				        callback.onSuccess(data, id);
 				    }
 				}
 			}
@@ -1600,3 +2194,161 @@ function updateCirclesOfSpace(spaceId, circles, callback){
 		});
 	}
 }
+
+/**
+* This function sends a new message to a user
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - recipientID: The id of the recipient of the message
+* - message: The message body
+* - subject: The subject or header of the message
+*/
+function sendMessage(recipientID, subject, message, callback){
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"message",
+			type: 'post',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), recipient: encodeURIComponent(recipientID), subject: encodeURIComponent(subject), message: encodeURIComponent(message) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function queries all the recieved messages from the server
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+*/
+function getReceivedMessages(callback){
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"message",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function queries a single message from the server given an id
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - id: The id of the message to query
+*/
+function getMessageById(id, callback){
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"message",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id: encodeURIComponent(id) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function queries the server to check if the current user has new messages
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+*/
+function queryHaveNewMessage(callback){
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"message",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), hasNew: encodeURIComponent("true") },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+
+
+
+/**
+* _____________________________________________________________________________________________________________________________________________________________
+*/
+
+/**
+ * Addons to jQuery by other Authors
+ */
+
+ // Array Remove - By John Resig (MIT Licensed)
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};

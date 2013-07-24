@@ -192,9 +192,19 @@ public class Register extends HttpServlet {
 	                /**END USER ICON **/
 					
 					ObjectId userid = (ObjectId) connector.insert(MongoDBConnector.USER_COLLECTION_NAME, data);
+					data.put("userID", userid);
+					data.put("name", "Profile");
+					data.put("descr", "Profile information of user "+userid);
+					data.put("app", "profile");
+					data.remove("type");
+					data.remove("password");
+					ObjectId recordid = (ObjectId) connector.insert(MongoDBConnector.RECORDS_COLLECTION_NAME, data); // save profile also as a record, to allow setting circles on it. 
+					
 					// Finally add the default circles and spaces to the user
 					manager.createCoreCircles(userid.toString());
 					manager.createCoreSpaces(userid.toString());
+					System.out.println(recordid.toString());
+					connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("profileRecordId", recordid.toString())));
 				}
 			} catch (IllegalQueryException e) {
 				errorMessage = "\"There was an error with the provided query. Please call an administrator. "+e.getMessage();

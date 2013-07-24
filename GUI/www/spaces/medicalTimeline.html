@@ -3,6 +3,7 @@
 <head>
 	<title>Health Bank</title>
 	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../images/favicon.ico">
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<script src="../../js/healthbank.js"></script>
 	<script src="../../js/underscore-min.js"></script>
@@ -29,6 +30,7 @@
 			<div class="page-header">
 				<h1>Health record - medical</h1> 
 				<div class="page-actionbox">
+					<img id="mailIcon" src="../../images/mail.png" class="mailIcon" title="Your messages"/>
 					<span id="userInfo" class="userInfo"></span>
 					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
 					<div class="searchbox">
@@ -56,14 +58,38 @@
 				<div class="page-content spaces-page-content">
 					<div id="tabs" class="tabs">
 						<div id="all" class="tab"><a href="spaces.html">All Entries</a></div>
-						<div id="medical" class="tab tab-highlight"><a href="medicalTimeline.html">Medical</a></div>
-						<div id="wellness" class="tab"><a href="wellnessTimeline.html">Wellness</a></div>
-						<div id="calories" class="tab"><a href="caloriesTimeline.html">Calories</a></div>
+						<div id="userDefTabs"></div>
 						<div id="newtab" class="tab new-tab"><img id="newTabIcon" src="../../images/plus.png" width="18px"/></div>
 					</div>
 					<div id="spaces-chronic-section">
 						<div class="chronic-section-header">
 							<h3 class="header-text">Medical records:</h3>
+							<input id="createRecButton" type="submit" name="submit" value="Create New Record" class="big-button" /></br>
+							<ul id="filterDropdown">
+							    <li class="filterLabel"><span>Filter entries:&nbsp;</span></li>
+							    <li class="filterDD"><span id="filterTop">My Entries<img src="../../images/navigate_down.png" height="20px"/></span>
+								<ul>
+								    <li><span><label><input type="checkbox" id="filterEveryone"/>No Filter</label></span></li>
+								    <li><span><label><input type="checkbox" id="filterMyEntry"/>My Entries</label></span></li>
+								    <li><span><label><input type="checkbox"id="filterIndCircle"/>Individual Circles</label></span>
+										<ul id="filterIndCircleList">
+										    <li><span><label><input type="checkbox"/>Family</label></span></li>
+								    	    <li><span><label><input type="checkbox"/>Friends</label></span></li>
+								            <li><span><label><input type="checkbox"/>Medical Prof.</label></span></li>
+								    	    <li><span><label><input type="checkbox"/>Wellness Prof.</label></span></li>
+										</ul>
+								    </li>
+								    <li><span><label><input type="checkbox" id="filterIndPeople"/>Individual People</label></span>
+										<ul id="filterIndPeopleList">  
+								    	    <li><span><label><input type="checkbox"/>Dr. D. Kossmann</label></span></li>
+								    	    <li><span><label><input type="checkbox"/>Hans Mustermann</label></span></li>
+								    	    <li><span><label><input type="checkbox"/>Nadja Auer</label></span></li>
+								    	    <li><span><label><input type="checkbox"/>Nasri Nahas</label></span></li>
+										</ul>
+								    </li>
+								</ul>
+							    </li>
+							</ul>
 						</div>
 						<br/>
 						<ul id="recordentries" class="recordentries">
