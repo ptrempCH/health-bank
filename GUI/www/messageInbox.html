@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+		var messages;
+
+		function loadUserInfoIndividual(data){
+			// This will be called after the user information has been loaded
+			// Add or change potential page related content here if needed
+		}
+
+		function displayMessages(data){
+			$("#recordentries").html("");
+			if(data.values.messages==undefined || data.values.messages.length==0){
+				$("#recordentries").append("<center>You have not received any messages yet!</center>");
+				return false;
+			}
+			messages = data.values.messages;
+			messages.reverse();
+			$.each(messages, function(i, item) {
+				if(item.read=="false"){
+					$("#recordentries").append('<li id="'+item._id.$oid+'" class="unreadMessage '+item.senderID+'"><h3 class="recordlist-itemheader">'+decodeURIComponent(item.subject)+'</h3><i>'+decodeURIComponent(item.subject)+'. Sent at: '+item.timedate+'</i></li>');
+				} else {
+					$("#recordentries").append('<li id="'+item._id.$oid+'" class="readMessage '+item.senderID+'"><h3 class="recordlist-itemheader">'+decodeURIComponent(item.subject)+'</h3><i>'+decodeURIComponent(item.subject)+'. Sent at: '+item.timedate+'</i></li>');
+				}
+				queryUserById(item.senderID, {onSuccess: function(data, id){
+					$("."+id+" h3").html(data.values.users[0].firstname+" "+data.values.users[0].lastname);
+				}});
+			});	
+
+			$("#recordentries li").click(function(){
+				window.location = WEB_URL+"detailMessage.html?messageID="+$(this).attr("id"); 
+			});	
+		}
+
+		$(document).ready(function() {
+			initialize();
+			getReceivedMessages({
+				onSuccess: function(data){
+					displayMessages(data);
+				}, 
+				onError: function(data){
+					$("#recordentries").html("");
+					$("#recordentries").css("color", "red");
+					$("#recordentries").append("<center>You have not received any messages yet!</center>");
+				}
+			});
+
+			$("#sendMessageButton").click(function(){
+				window.location = WEB_URL+"newMessage.html"; 
+				return false;
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>Write a new Message</h1> 
+				<div class="page-actionbox">
+					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
+						<input id="search" type="text"/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li class="selectedLi"><a href="home.html">Home</a></li>
+					<li><a href="profile.html">Profile</a></li>
+					<li><a href="spaces/spaces.html">Spaces</a></li>
+					<li><a href="circles.html">Circles</a></li>
+					<li><a href="apps.html">Apps</a></li>
+					<li><a href="community.html">Community</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<div id="chronic-section">
+						<h3 class="header-text">Message Inbox</h3>
+						<button id="sendMessageButton" class="big-button">Send new message</button>
+						<br/>
+						<ul id="recordentries" class="recordentries">
+							<center>
+								<img style="height:60px; float:center; display: block; margin-left: auto; margin-right: auto;" src="../images/loading.gif"></img>
+								Loading...
+							</center>
+						</ul>
+					</div>
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

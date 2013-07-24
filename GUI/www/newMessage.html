@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+		var recipientId = "";
+
+		function loadUserInfoIndividual(data){
+			// This will be called after the user information has been loaded
+			// Add or change potential page related content here if needed
+		}
+
+		function initRecipientDialog(data){
+			$("#recipientList").html("");
+			$.each(data.values.users, function(i, item){
+				$("#recipientList").append("<li id=\""+jQuery.parseJSON(item.userId).$oid+"\" >"+item.firstname+" "+item.lastname+"</li></br>");
+			});
+			if(recipientId.length>0){
+				$("#recipient").val($("#"+recipientId).html());
+			}
+			$("#recipientList li").click(function(){
+				recipientId = $(this).attr("id");
+				$("#recipient").val($(this).html());
+				$('#dialog-overlay').click();
+			});
+			$("#usersearchbar").keyup(function(event){
+	    		if(event.keyCode == 13){
+	    			$("#searchButton").click();
+	    		}
+	    	});
+			$("#searchButton").click(function(){
+				query = $("#usersearchbar").val();
+				queryUsers(query, {
+					onSuccess: function(data){
+						$("#recipientList").html("");
+						$.each(data.values.users, function(i, item){
+							if(item.userId.$oid!=user._id.$oid){
+								if(item.companyname!=undefined){
+									$("#recipientList").append("<li id=\""+item.userId.$oid+"\" >"+item.companyname+"</li></br>");
+								} else {
+									$("#recipientList").append("<li id=\""+item.userId.$oid+"\" >"+item.firstname+" "+item.lastname+"</li></br>");
+								}
+							}
+						});
+						$("#recipientList li").click(function(){
+							recipientId = $(this).attr("id");
+							$("#recipient").val($(this).html());
+							$('#dialog-overlay').click();
+						});
+						if($("#recipientList").html()==""){
+							$("#recipientList").html("No user found");
+						}
+					},
+					onError: function(data){
+						$("#recipientList").html("Sorry, could not load the answers. Why don't you try another query?")
+					}
+				});
+			});
+			$("#circleUsersButton").click(function(){
+				queryUsersInCircles({onSuccess: function(data){initRecipientDialog(data);}});
+			});
+		}
+
+		function submit(){
+			if(recipientId==undefined || $("#subject").val().length<1 || $("#message").val().length<1){
+				$("#feedbackText").html("Please fill out all the fields");
+				$("#feedbackText").css("color","red");	
+			} else{
+				sendMessage(recipientId, $("#subject").val(), $("#message").val(), {onSuccess: function(data){$("#feedbackText").html("Message sent successfully");$("#feedbackText").css("color","green");}});
+			}
+		}
+
+		function clear() {
+			$("#recipient").val("");
+			$("#subject").val("");
+			$("#message").val("");
+		}
+
+		function textAreaAdjust(o) {
+		    o.style.height = "1px";
+		    o.style.height = (25+o.scrollHeight)+"px";
+		}
+
+		$(document).ready(function() {
+			initialize();
+			$.get(WEB_URL+'dialogs/getRecipient-dialog.html').success(function(data){$('body').append(data); queryUsersInCircles({onSuccess: function(data){initRecipientDialog(data);}});});
+			$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data);});
+
+			$("#submitButton").click(function(){
+				submit();
+				return false;
+			});
+			$("#clearButton").click(function(){
+				clear();
+				return false;
+			});backButton
+			$("#backButton").click(function(){
+				window.location = WEB_URL+"messageInbox.html"; 
+				return false;
+			});
+			$(".page-content #newMail-form div label").autoWidth();
+			$("#recipient").click(function() {
+				$('#recipient-form').height("300px");
+				$('#recipient-form').width("50%");
+				var maskHeight = $(document).height();  
+				var maskWidth = $(window).width();
+				var dialogTop =  (maskHeight/2) - ($('#recipient-form').height()/2);  
+				var dialogLeft = (maskWidth/2) - ($('#recipient-form').width()/2);
+				$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+
+				$('#dialog-overlay').click(function(){
+					$("#recipient-form, #dialog-overlay").hide();
+					return false;
+				});
+				$('#recipient-form').css({top:dialogTop, left:dialogLeft}).show();
+				return false;
+			});
+			$("#subject").click(function() {
+				$("#subject").select();
+			});
+			$("#message").click(function() {
+				$("#message").select();
+			});
+			$("#feedbackText").html("Please fill out all fields.");
+			receivedSubject = getURLParameter("s");
+			receivedRecipient = getURLParameter("r");
+			receivedMessage = getURLParameter("m");
+			if(receivedSubject!=undefined){$("#subject").val("Re: "+receivedSubject);}
+			if(receivedMessage!=undefined){$("#message").val("\n\n----------------------------\nIn Reply to: \n\n"+receivedMessage);}
+			if(receivedRecipient!=undefined){recipientId=receivedRecipient;}
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>Write a new Message</h1> 
+				<div class="page-actionbox">
+					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
+						<input id="search" type="text"/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li class="selectedLi"><a href="home.html">Home</a></li>
+					<li><a href="profile.html">Profile</a></li>
+					<li><a href="spaces/spaces.html">Spaces</a></li>
+					<li><a href="circles.html">Circles</a></li>
+					<li><a href="apps.html">Apps</a></li>
+					<li><a href="community.html">Community</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<h3 class="addRec-header-text">Write a new message to another user.</h3>
+					<div id="feedbackText" class="addRec-feedback"></div>
+					<form name="newMail-form" id="newMail-form" class="addRec-form" action="" method="post">
+						<!--Input fields-->
+						<div>
+							<label for="recipient" id="recipientLabel" class="label">Recipient</label> 
+							<input id="recipient" name="recipient" type="text" class="input recipient" placeholder="Recipient" />
+						</div>
+						<div>
+							<label for="subject" id="subjectLabel" class="label">Subject</label> 
+							<input id="subject" name="subject" type="text" class="input subject" placeholder="Subject" />
+						</div>
+						<div>
+							<label for="message" id="messageLabel" class="label message">Message</label>
+							<textarea id="message" name="message" class="input message" placeholder="Message" rows="8" cols="52" onkeyup="textAreaAdjust(this)"></textarea>
+						</div>
+						<!--END Input fields-->
+						<!--Buttons-->
+						<div class="addRec-footer">
+							<input id="submitButton" type="submit" name="submit" value="Send" class="big-button addRecButton" />
+							<input id="clearButton" type="submit" name="submit" value="Clear Form" class="big-button addRecButton" />
+							<input id="backButton" type="submit" name="submit" value="Cancel" class="big-button addRecButton" />
+						</div>
+						<!--END Buttons-->
+					</form>
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>
