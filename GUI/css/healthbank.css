@@ -1400,7 +1400,7 @@ Profile PAGE
 	-moz-box-shadow: inset 0 1px 3px rgba(0,0,0,0.50);
 	-webkit-box-shadow: inset 0 1px 3px rgba(0,0,0,0.50);
 }
-.dialog-button, #autoC {
+.dialog-button, #autoC, #autoC-institute {
 	border: none !important;
 	border-radius: 0px !important;
 	box-shadow: none !important;
@@ -1533,6 +1533,8 @@ CIRCLE PAGE
 .page-content #usersearch #usersearchbar {
 	width: 200px;
 	height: 30px;
+	border: 1px solid;
+	border-radius: 2px;
 }
 
 .page-content #circleentries {

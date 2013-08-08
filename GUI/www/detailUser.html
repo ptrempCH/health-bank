@@ -43,6 +43,10 @@
 				}
 			}
 	    	$(".detail-username").html("<b>Username: </b>"+decodeURIComponent(data.username));
+	    	if(data.descr!=undefined && data.descr.length>0){
+	    		$(".detail-descr").html("<b>About: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.descr)+"</div>");
+	    		$(".detail-descr").css("display", "block");
+	    	}
 	    	if((data.street!=undefined && data.street.length>0) || (data.code!=undefined && data.city!=undefined && data.code.length>0 && data.city.length>0) || (data.country!=undefined && data.country.length>0)){
 	    		s = "<b>Address: </b></br>";
 	    		if(data.street!=undefined && data.street.length>0){
@@ -109,6 +113,10 @@
 	    	if(data.birthday!=undefined && data.birthday.length>0){
 	    		$(".detail-birthday").html("<b>Birthday: </b></br><div style=\"margin-left:10px\">"+decodeURIComponent(data.birthday)+"</div>");
 	    		$(".detail-birthday").css("display", "block");
+	    	}
+
+	    	if(data.userId==undefined || data.userId.length<1){
+	    		$("#recordsButton").hide();
 	    	}
 		}
 
@@ -224,7 +232,6 @@
 					return false;
 				});
 				$("#recordsButton").click(function(){
-					// $( "#notYetImplementedDialog" ).dialog( "open" );
 					window.location = WEB_URL+"spaces/spaces.html?userId="+id;
 					return false;
 				});
@@ -274,6 +281,7 @@
 						<h2 class="detail-name">Name</h2>
 						<p class="detail-username">Username</p></br>
 						</br>
+						<p class="detail-descr">About</p></br>
 						<p class="detail-address">Address</p></br>
 						<p class="detail-email">Email</p></br>
 						<p class="detail-phone">Phone</p></br>

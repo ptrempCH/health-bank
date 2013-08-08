@@ -19,11 +19,15 @@
 		}
 
 		function loadUserInfoIndividual(data){
-			if(data.allowResearch!=undefined && data.allowResearch=="y"){
-				$("#allowResearch").prop('checked', true);
-				$("#researchCircle").css("display", "block");
+			if(data.type=="institute"){
+				$("#research").hide();
 			} else {
-				$("#allowResearch").prop('checked', false);
+				if(data.allowResearch!=undefined && data.allowResearch=="y"){
+					$("#allowResearch").prop('checked', true);
+					$("#researchCircle").css("display", "block");
+				} else {
+					$("#allowResearch").prop('checked', false);
+				}
 			}
 		}
 

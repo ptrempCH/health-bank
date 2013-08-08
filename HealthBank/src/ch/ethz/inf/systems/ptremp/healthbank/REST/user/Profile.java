@@ -281,6 +281,8 @@ public class Profile extends HttpServlet {
 	 * - gender: The gender of the user "Mr" or "Mrs"
 	 * - firstname: The first name of the user
 	 * - lastname: The surname of the user
+	 * - companyname: The name of the company the user represents
+	 * - descr: A description of the company the user represents
 	 * - street: The street and number the user is living
 	 * - code: The postal code of the city the user lives in
 	 * - city: The name of the city the user lives in
@@ -416,7 +418,7 @@ public class Profile extends HttpServlet {
 			}
 		} // FINISH USERICON
 		else {
-			String firstname = "", lastname="";
+			String firstname = "", lastname="", companyname="";
 			
 			// check parameters user specific parameters
 			String callback = request.getParameter("callback");
@@ -435,6 +437,8 @@ public class Profile extends HttpServlet {
 				String gender = request.getParameter("gender");
 				firstname = request.getParameter("firstname");
 				lastname = request.getParameter("lastname");
+				companyname = request.getParameter("companyname");
+				String descr = request.getParameter("descr");
 				String street = request.getParameter("street");
 				String code = request.getParameter("code");
 				String city = request.getParameter("city");
@@ -455,6 +459,8 @@ public class Profile extends HttpServlet {
 				gender = (gender!=null)?URLDecoder.decode(gender, "UTF-8"):null;
 				firstname = (firstname!=null)?URLDecoder.decode(firstname, "UTF-8"):null;
 				lastname = (lastname!=null)?URLDecoder.decode(lastname, "UTF-8"):null;
+				companyname = (companyname!=null)?URLDecoder.decode(companyname, "UTF-8"):null;
+				descr = (descr!=null)?URLDecoder.decode(descr, "UTF-8"):null;
 				street = (street!=null)?URLDecoder.decode(street, "UTF-8"):null;
 				code = (code!=null)?URLDecoder.decode(code, "UTF-8"):null;
 				city = (city!=null)?URLDecoder.decode(city, "UTF-8"):null;
@@ -495,6 +501,8 @@ public class Profile extends HttpServlet {
 						if(gender!=null && gender.length()>0){data.put("gender", gender);}
 						if(firstname!=null && firstname.length()>0){data.put("firstname", firstname);}
 						if(lastname!=null && lastname.length()>0){data.put("lastname", lastname);}
+						if(companyname!=null && companyname.length()>0){data.put("companyname", companyname);}
+						if(descr!=null && descr.length()>0){data.put("descr", descr);}
 						if(street!=null && street.length()>0){data.put("street", street);}
 						if(code!=null && code.length()>0){data.put("code", code);}
 						if(city!=null && city.length()>0){data.put("city", city);}

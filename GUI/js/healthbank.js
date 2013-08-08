@@ -542,7 +542,7 @@ function getUserData(callback) {
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
 **/
 function getProfileRecord(callback){
-	if(user==undefined){return false;}
+	if(user==undefined || user.profileRecordId==undefined){return false;}
 	callback = callback || {};
 	if(isStorageDefined())
 	{
@@ -580,6 +580,10 @@ function updateUserData(userData, callback) {
 	callback = callback || {};
 	if(isStorageDefined())
 	{
+		if(userData.firstname==undefined){userData.firstname="";}
+		if(userData.lastname==undefined){userData.lastname="";}
+		if(userData.companyname==undefined){userData.companyname="";}
+		if(userData.descr==undefined){userData.descr="";}
 		if(userData.gender==undefined){userData.gender="";}
 		if(userData.code==undefined){userData.code="";}
 		if(userData.street==undefined){userData.street="";}
@@ -607,6 +611,8 @@ function updateUserData(userData, callback) {
 				credentials : encodeURIComponent(myCredentials), 
 				firstname : encodeURIComponent(userData.firstname),
 				lastname : encodeURIComponent(userData.lastname),
+				companyname : encodeURIComponent(userData.companyname),
+				descr : encodeURIComponent(userData.descr),
 				gender : encodeURIComponent(userData.gender),
 				street : encodeURIComponent(userData.street),
 				code : encodeURIComponent(userData.code),

@@ -245,6 +245,7 @@ public class UserQuery extends HttpServlet {
 								items.put("firstname", resObj.get("firstname"));
 								items.put("lastname", resObj.get("lastname"));
 								items.put("companyname", resObj.get("companyname"));
+								items.put("descr", resObj.get("descr"));
 								Object s = resObj.get("userIcon");
 								if(s!=null){ items.put("userIcon", s.toString());}
 								resArray.add(new JSONObject(items));
