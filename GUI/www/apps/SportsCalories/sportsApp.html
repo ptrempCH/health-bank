@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script src="js/sportsCaloriesApp.js"></script>
+	<link href="css/sportsCaloriesApp.css" rel="stylesheet" type="text/css">
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.1.0/moment.min.js"></script>
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			loadTodaySportsItems();
+			$("#addNewButton").click(function(){
+				$("#calApp-addnew-box").css("display", "block");
+				$("#calApp-addnew-box .label").css("width", "150px");
+				$("#addNewButton").css("display", "none");
+				if(bmrSet){
+					$("#mealtype").val("sports");
+					$("#gender").parent().hide();
+					$("#age").parent().hide();
+					$("#weight").parent().hide();
+					$("#activity").parent().hide();
+					$("#tall").parent().hide();
+				} else {
+					$("#cal").parent().hide();
+					$("#descr").parent().hide();
+				}
+				if(parent.user.gender=="mr"){
+					$("#gender").val("m");
+					$("#gender").parent().hide();
+				} else if(parent.user.gender=="mrs"){
+					$("#gender").val("f");
+					$("#gender").parent().hide();
+				}
+				if(parent.user.birthday!=undefined){
+					$("#age").parent().hide();
+				}
+				$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+				$("#calApp-feedback").html("You can set your weight and height to be used here in your <a href=\"\" id=\"profileButton\">profile</a>!");
+				$("#profileButton").click(function(){
+					window.top.location = parent.WEB_URL+"profile.html";
+				});
+				return false;
+			});
+			$("#cancelButton").click(function(){
+				$("#calApp-addnew-box").css("display", "none");
+				$("#addNewButton").css("display", "block");
+				return false;
+			});
+			$("#submitButton").click(function(){
+				if($("#mealtype").val()=="sports"){
+					addCalEntry("s");
+				} else {
+					addBMREntry();
+				}
+				return false;
+			});
+			$("#timelineButton").click(function(){
+				window.top.location = parent.WEB_URL+"spaces/spaces.html";
+			});
+			$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+			$("#mealtype").change(function(e){
+				if(this.value=="sports"){
+					$("#cal").parent().show();
+					$("#descr").parent().show();
+					$("#gender").parent().hide();
+					$("#age").parent().hide();
+					$("#weight").parent().hide();
+					$("#activity").parent().hide();
+					$("#tall").parent().hide();
+				} else {
+					if(bmrSet){
+						$("#calApp-feedback").html("You can add your BMR only once a day!");
+						$("#calApp-feedback").css("color", "red");
+						$("#mealtype").val("sports");
+						return false;
+					} 
+					if($("#gender").parent().is(":hidden")){
+						$("#cal").parent().hide();
+						$("#descr").parent().hide();
+						if(parent.user.gender==undefined || parent.user.gender.length==0){$("#gender").parent().show();}
+						if(parent.user.birthday==undefined || parent.user.birthday.length==0){$("#age").parent().show();}
+						$("#weight").parent().show();
+						$("#activity").parent().show();
+						$("#tall").parent().show();
+					}
+				}
+				$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+			});
+		});
+	</script>
+</head>
+<body>
+	<!--Content-->
+	<div class="page-content">
+		<div id="chronic-section">
+			<div>
+				<h3 id="chronic-section-header">Your records for today</h3>
+				<input id="timelineButton" type="submit" name="submit" value="Timeline" class="big-button timelineButton" />
+			</div>
+			<ul id="recordentries" class="recordentries calAppRecEnt">
+				<center>
+					<img style="height:60px; float:center; display: block; margin-left: auto; margin-right: auto;" src="../../images/loading.gif"></img>
+					Loading...
+				</center>
+			</ul>
+		</div>
+
+		<input id="addNewButton" type="submit" name="submit" value="Add New Item" class="button" />
+		<div class="calApp-addnew-box" id="calApp-addnew-box">
+			<h3 class="calApp-header-text">Add a new entry to your chronicle.</h3>
+			<div id="calApp-feedback" class="callApp-feedback">Please fill out all the fields with a *.</div>
+			<form name="calApp-form" id="calApp-form" class="calApp-form" action="" method="post">
+				<!--Input fields-->
+
+				<!-- sports -->
+				<div>
+					<label for="mealtype" id="mealLabel" class="label">How did you burn the calories?(*)</label>
+					<select id="mealtype" name="mealtype" class="select" placeholder="Meal Type" require>
+					  <option value="bmr">BMR (<a href="http://en.wikipedia.org/wiki/Harris-Benedict_equation" target='_blank'>Basal Metabolic Rate</a>)</option>
+					  <option value="sports">Sports</option>
+					</select>
+				</div>
+				<div>
+					<label for="descr" id="descrLabel" class="label">What did you do?(*)</label> 
+					<input id="descr" name="descr" type="text" class="input descr" placeholder="What?" required />
+				</div>
+				<div>
+					<label for="cal" id="calLabel" class="label">How many calories?</label> 
+					<input id="cal" name="cal" type="number" class="input cal" placeholder="1" step="1" min="0" value="1" />
+				</div>
+
+				<!-- bmr -->
+				<div>
+					<label for="gender" id="genderLabel" class="label">&#9794; or &#9792; ?(*)</label>
+					<select id="gender" name="gender" class="select" require>
+					  <option value="m">Men</option>
+					  <option value="f">Women</option>
+					</select>
+				</div>
+				<div>
+					<label for="activity" id="activityLabel" class="label">How much activity do you have during the day?(*)</label>
+					<select id="activity" name="activity" class="select" require>
+					  <option value="little">Little to no exercise</option>
+					  <option value="light">Light exercise</option>
+					  <option value="moderate">Moderate exercise</option>
+					  <option value="heavy">Heavy exercise</option>
+					  <option value="veryHeavy">Very heavy exercise</option>
+					</select>
+				</div>
+				<div>
+					<label for="age" id="ageLabel" class="label">How old are you?(*)</label> 
+					<input id="age" name="age" type="number" class="input age" placeholder="21" step="1" min="0" value="21" required />
+				</div>
+				<div>
+					<label for="weight" id="weightLabel" class="label">How much do you weight (in kg)(*)</label> 
+					<input id="weight" name="weight" type="number" class="input weight" placeholder="75" step="0.1" min="0" value="75" required />
+				</div>
+				<div>
+					<label for="tall" id="tallLabel" class="label">How tall are you (in cm)?(*)</label> 
+					<input id="tall" name="tall" type="number" class="input tall" placeholder="170" step="1" min="0" value="170" />
+				</div>
+
+
+				<div>
+					<label for="comment" id="commentLabel" class="label comment">Any comments?</label>
+					<textarea id="comment" name="comment" class="input comment" placeholder="Comment" rows="3" cols="50" onkeyup="parent.textAreaAdjust(this)"></textarea>
+				</div>
+				<!--END Input fields-->
+				<!--Buttons-->
+				<div class="addRec-footer">
+					<input id="submitButton" type="submit" name="submit" value="Add" class="big-button calAppFormButton" />
+					<input id="cancelButton" type="submit" name="submit" value="Cancel" class="big-button calAppFormButton" />
+				</div>
+				<!--END Buttons-->
+			</form>
+		</div>
+	</div>
+	<!--END Content-->
+</body>
+</html>

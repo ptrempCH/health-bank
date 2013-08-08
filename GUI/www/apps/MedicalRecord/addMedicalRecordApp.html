@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="css/medicalRecordApp.css" rel="stylesheet" type="text/css">
+	<script src="js/medicalRecordApp.js"></script>
+
+	<script type="text/javascript">
+
+		function addRecordCompleted(data){
+			$("#addRec-feedback").html(data.message+"<br/>To see all your records click <a id=\"seeAllRecsButton\">here</a>.");
+			$("#addRec-feedback").css("color", "green");
+			$("#seeAllRecsButton").click(function () {
+				window.top.location = parent.WEB_URL+"spaces/spaces.html";
+			});
+		}
+
+		function submit(){
+			var name = $("#name").val();
+			var descr = $("#descr").val();
+			if(name==undefined || name.length<1 || descr==undefined || descr.length<1 || descr=="Enter your description of the record here..."){
+				$("#addRec-feedback").html("Please fill out all the form fields with a (*).");
+				$("#addRec-feedback").css("color", "red");
+				return false;
+			} 
+			var cause = ($("#cause").val()!=undefined || $("#cause").val()=="")?$("#cause").val():"";
+			var doctor = ($("#doctor").val()!=undefined || $("#doctor").val()=="")?$("#doctor").val():"";
+			parent.addRecord(
+				name, 
+				descr, 
+				"{ \"app\" : \"addRecord\", \"cause\": \""+cause+"\", \"doctor\": \""+doctor+"\" }", 
+				{
+					onSuccess: function(data){
+						addRecordCompleted(data);
+					}, 
+					onError: function(message){
+						$("#addRec-feedback").html(message); 
+						$("#addRec-feedback").css("color", "red");
+					}
+				}
+			);
+		}
+
+		function clear() {
+			$("#name").val("");
+			$("#descr").val("");
+			$("#cause").val("");
+			$("#doctor").val("");
+			$("#file").val("");
+		}
+
+		function textAreaAdjust(o) {
+		    o.style.height = "1px";
+		    o.style.height = (25+o.scrollHeight)+"px";
+		}
+
+		$(document).ready(function() {
+			$("#submitButton").click(function(){
+				submit();
+				return false;
+			});
+			$("#clearButton").click(function(){
+				clear();
+				return false;
+			});
+			$(".page-content .addRec-form div label").autoWidth();
+			$("#name").click(function() {
+				$("#name").select();
+			});
+			$("#descr").click(function() {
+				$("#descr").select();
+			});
+			$("#addRec-feedback").html("All fields marked with a (*) are required.");
+			$("#addRec-form").attr("action", parent.API_URL+"Record");
+			$("#file").prop('disabled', true);
+		});
+		
+	</script>
+</head>
+<body>
+	<div class="page-content">
+		<h3 class="addRec-header-text">Add a new entry to your health record.</h3>
+		<div id="addRec-feedback" class="addRec-feedback"></div>
+		<form name="addRec-form" id="addRec-form" class="addRec-form" action="" method="post">
+			<!--Input fields-->
+			<div>
+				<label for="name" id="nameLabel" class="label">Name(*)</label> 
+				<input id="name" name="name" type="text" class="input name" placeholder="Name" />
+			</div>
+			<div>
+				<label for="cause" id="causeLabel" class="label">Cause</label> 
+				<input id="cause" name="name" type="text" class="input name" placeholder="Cause" />
+			</div>
+			<div>
+				<label for="doctor" id="doctorLabel" class="label">Doctor</label> 
+				<input id="doctor" name="name" type="text" class="input name" placeholder="Doctor" />
+			</div>
+			<div>
+				<label for="descr" id="descrLabel" class="label descr">Description(*)</label>
+				<textarea id="descr" name="description" class="input descr" placeholder="Description" rows="5" cols="50" onkeyup="textAreaAdjust(this)"></textarea>
+			</div>
+			<div>
+				<label for="file" id = "fileLabel" class="label">File</label>
+				<input id="file" type="file" name="file" class="input"/>
+				<span style="color: red">Comming soon!</span>
+			</div>
+			<!--END Input fields-->
+			<!--Buttons-->
+			<div class="addRec-footer">
+				<input id="submitButton" type="submit" name="submit" value="Add" class="big-button addRecButton" />
+				<input id="clearButton" type="submit" name="submit" value="Clear Form" class="big-button addRecButton" />
+			</div>
+			<!--END Buttons-->
+		</form>
+	</div>
+</body>
+</html>

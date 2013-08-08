@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script src="js/caloriesApp.js"></script>
+	<link href="css/caloriesApp.css" rel="stylesheet" type="text/css">
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.1.0/moment.min.js"></script>
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			loadTodayCalItems();
+			$("#addNewButton").click(function(){
+				$("#calApp-addnew-box").css("display", "block");
+				$("#calApp-addnew-box .label").css("width", "150px");
+				$("#addNewButton").css("display", "none");
+				$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+				return false;
+			});
+			$("#cancelButton").click(function(){
+				$("#calApp-addnew-box").css("display", "none");
+				$("#addNewButton").css("display", "block");
+				return false;
+			});
+			$("#submitButton").click(function(){
+				addCalEntry();
+				return false;
+			});
+			$("#timelineButton").click(function(){
+				window.top.location = parent.WEB_URL+"spaces/spaces.html";
+			});
+			$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Content-->
+	<div class="page-content">
+		<div id="chronic-section">
+			<div>
+				<h3 id="chronic-section-header">Your records for today</h3>
+				<input id="timelineButton" type="submit" name="submit" value="Timeline" class="big-button timelineButton" />
+			</div>
+			<ul id="recordentries" class="recordentries calAppRecEnt">
+				<center>
+					<img style="height:60px; float:center; display: block; margin-left: auto; margin-right: auto;" src="../images/loading.gif"></img>
+					Loading...
+				</center>
+			</ul>
+		</div>
+
+		<input id="addNewButton" type="submit" name="submit" value="Add New Item" class="button" />
+		<div class="calApp-addnew-box" id="calApp-addnew-box">
+			<h3 class="calApp-header-text">Add a new entry to your chronicle.</h3>
+			<div id="calApp-feedback" class="callApp-feedback">Please fill out all the fields with a (*).</div>
+			<form name="calApp-form" id="calApp-form" class="calApp-form" action="" method="post">
+				<!--Input fields-->
+				<div>
+					<label for="mealtype" id="mealLabel" class="label">When did you eat?(*)</label>
+					<select id="mealtype" name="mealtype" class="select" placeholder="Meal Type" require>
+					  <option value="breakfast">Breakfast</option>
+					  <option value="lunch">Lunch</option>
+					  <option value="dinner">Dinner</option>
+					  <option value="snack">Snack in between</option>
+					</select>
+				</div>
+				<div>
+					<label for="descr" id="descrLabel" class="label">What did you eat?(*)</label> 
+					<input id="descr" name="descr" type="text" class="input descr" placeholder="What?" required />
+				</div>
+				<div>
+					<label for="amount" id="amountLabel" class="label">How many items?(*)</label> 
+					<input id="amount" name="amount" type="number" class="input amount" placeholder="2" step="1" min="0" value="1" required />
+				</div>
+				<div>
+					<label for="cal" id="calLabel" class="label">How many calories?</label> 
+					<input id="cal" name="cal" type="number" class="input cal" placeholder="1" step="1" min="0" value="1" />
+				</div>
+				<div>
+					<label for="comment" id="commentLabel" class="label comment">Any comments?</label>
+					<textarea id="comment" name="comment" class="input comment" placeholder="Comment" rows="3" cols="50" onkeyup="parent.textAreaAdjust(this)"></textarea>
+				</div>
+				<!--END Input fields-->
+				<!--Buttons-->
+				<div class="addRec-footer">
+					<input id="submitButton" type="submit" name="submit" value="Add" class="big-button calAppFormButton" />
+					<input id="cancelButton" type="submit" name="submit" value="Cancel" class="big-button calAppFormButton" />
+				</div>
+				<!--END Buttons-->
+			</form>
+		</div>
+	</div>
+	<!--END Content-->
+</body>
+</html>

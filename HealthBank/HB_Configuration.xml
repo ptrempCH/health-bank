@@ -8,7 +8,7 @@
 		<DB_NAME>healthbank</DB_NAME>
 		<collection>
 			<USER_COLLECTION_NAME>users</USER_COLLECTION_NAME>
-			<INSTITUTES_COLLECTION_NAME>institutes</INSTITUTES_COLLECTION_NAME>
+			<APPLICATION_COLLECTION_NAME>applications</APPLICATION_COLLECTION_NAME>
 			<RECORDS_COLLECTION_NAME>records</RECORDS_COLLECTION_NAME>
 			<SPACES_COLLECTION_NAME>spaces</SPACES_COLLECTION_NAME>
 			<CIRCLES_COLLECTION_NAME>circles</CIRCLES_COLLECTION_NAME>
@@ -16,11 +16,12 @@
 			<NEWS_COLLECTION_NAME>news</NEWS_COLLECTION_NAME>
 		</collection>
 	</dbServerSetup>
+	<paths>
+		<IPATH>C:\Temp\images\</IPATH>
+		<APPHTML>C:\xampp\htdocs\GUI\apps\</APPHTML>
+	</paths>
 	<debugSettings>
 		<DEBUGGING>true</DEBUGGING>
 		<DEBUGLEVEL>info</DEBUGLEVEL>
 	</debugSettings>
-	<imagesPath>
-		<IPATH>C:\Temp\images\</IPATH>
-	</imagesPath>
 </configuration>

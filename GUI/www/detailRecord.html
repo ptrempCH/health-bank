@@ -18,7 +18,7 @@
 			if(typeof(Storage)!=="undefined") {
 					var id = localStorage.getItem("hb_detailId");
 					if(data.size==0){
-						$(".detail-name").html("<center>No entries yet!</center>");
+						$(".detail-name").html("<center>There was an error loading your data. We are so sorry!</center>");
 						return false;
 					}
 					data.values.records.reverse();
@@ -168,7 +168,7 @@
 
 		$(document).ready(function() {
 			initialize();
-			loadRecords({onSuccess: function(data){loadID(data);}, onError: function(){console.log("onError"); loadRecordsError();}});
+			loadRecords("",{onSuccess: function(data){loadID(data);}, onError: function(){console.log("onError"); loadRecordsError();}});
 			loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
 			loadSpaces({onSuccess: function(data){loadedSpaces(data);}, onError: function(){console.log("Error while loading spaces...");}});
 			$.get(WEB_URL+'dialogs/not-implemented.html').success(function(data){$('body').append(data); loadedNotYetImplemented();});
@@ -321,6 +321,7 @@
 	<!-- Bottom Bar -->
     <div class="hb-bottom">
 		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
     	
         <span class="right">
     		<a href="http://www.healthbank.ch">

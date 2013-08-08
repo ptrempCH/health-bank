@@ -697,20 +697,19 @@ function loadUserInfo(data){
 		console.log("data undefined in loadUserInfo()");
 		return;
 	}
-	data = data.values.user[0];
-	if(data.userIcon!=undefined){
-		$("#userInfo").html(decodeURIComponent(data.username));
-		loadImage(data.userIcon, "", {onSuccess: function(data){loadUserIcon(data);}});
+	user = data.values.user[0];
+	if(user.userIcon!=undefined){
+		$("#userInfo").html(decodeURIComponent(user.username));
+		loadImage(user.userIcon, "", "user", {onSuccess: function(data){loadUserIcon(data);}});
 	} else {
-		$("#userInfo").html("Logged in as: "+decodeURIComponent(data.username));
+		$("#userInfo").html("Logged in as: "+decodeURIComponent(user.username));
 	}
-	if(data.type=="institute"){
-		$("#navApps").hide();
+	if(user.type=="institute"){
+		//$("#navApps").hide();
 	}
 	if (typeof loadUserInfoIndividual == 'function') { 
-		loadUserInfoIndividual(data); 
+		loadUserInfoIndividual(user); 
 	}
-	user = data;
 }
 
 /**
@@ -1588,16 +1587,17 @@ jQuery.fn.autoWidth = function(options)
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
 * - iconName: The name of the icon to load from the server
+* - type: The type of the image you would like to receive. Use 'application' for an app icon and 'user' for a user icon
 * - userId: the user id that belongs to the user we are loading the image from
 */
-function loadImage(iconName, userId, callback){
+function loadImage(iconName, userId, type, callback){
 	callback = callback || {};
 	if(isStorageDefined())
 	{
 		$.ajax({
 			url: API_URL+"Image",
 			type: 'get',
-			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), name : (iconName!=undefined)?encodeURIComponent(iconName):encodeURIComponent("defaultUserIcon")},
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), type: encodeURIComponent(type), name : (iconName!=undefined)?encodeURIComponent(iconName):encodeURIComponent("defaultUserIcon")},
 			success: function(data){
 				if(data.result=="failed"){
 					if(data.loggedOut=="true"){
@@ -2316,6 +2316,215 @@ function queryHaveNewMessage(callback){
 			type: 'get',
 			dataType: 'json',
 			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), hasNew: encodeURIComponent("true") },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function sends the form data to add a new application or visualization to the server.
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - formData: The form data that contains all the information about the new app or visualization to add.
+*/
+function addNewApplication(formData, callback) {
+	callback = callback || {};
+	var oXHR = new XMLHttpRequest();
+	if(callback.onSuccess!=undefined){oXHR.addEventListener('load', callback.onSuccess, false);}
+	if(callback.onError!=undefined){oXHR.addEventListener('error', callback.onError, false);}
+	oXHR.open('POST', API_URL+"application");
+	oXHR.send(formData);
+}
+
+/**
+* This function sends the form data to edit an existing application or visualization to the server.
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - formData: The form data that contains all the information about the application or visualization to edit.
+*/
+function editExistingApplication(formData, callback) {
+	callback = callback || {};
+	var oXHR = new XMLHttpRequest();
+	if(callback.onSuccess!=undefined){oXHR.addEventListener('load', callback.onSuccess, false);}
+	if(callback.onError!=undefined){oXHR.addEventListener('error', callback.onError, false);}
+	oXHR.open('POST', API_URL+"application");
+	oXHR.send(formData);
+}
+
+/**
+* This function queries for details about a single application or visualization
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - id: The id of the application or visualization to query details about
+* - type: The type you want to query. Either 'app' for applications or 'viz' for visualizations
+*/
+function getApplicationDetail(id, type, callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"appquery",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id: encodeURIComponent(id), type: encodeURIComponent(type) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function queries for applications and visualizations according to a query word
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - query: The query to search applications for
+* - type: The type you want to query. Either 'app' for applications or 'viz' for visualizations
+*/
+function getApplicationByQuery(query, type, callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"appquery",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), query: encodeURIComponent(query), type: encodeURIComponent(type) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function queries for all the applications or visualizations the current user has installed already
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - type: The type you want to query. Either 'app' for applications or 'viz' for visualizations
+*/
+function getInstalledApplications(type, callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"appquery",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), type: encodeURIComponent(type) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function queries for all the applications or visualizations the current user has created and added to the system already
+* If the current user is a standard user, this will return all the applicatio and visualizations that are installed on the system so far.
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+*/
+function getUploadedOrInstalledApplications(callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"application",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function allows to install and uninstall applications and visualizations.
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - id: The if of the applications or visualizations to install or uninstall
+*/
+function inAndUninstallApplication(id, callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"appinstall",
+			type: 'post',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id: encodeURIComponent(id) },
 			success: function(data){
 				if(data.result=="failed"){
 					if(data.loggedOut=="true"){

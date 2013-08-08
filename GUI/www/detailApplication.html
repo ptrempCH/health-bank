@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<script src="../js/moment.min.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+		var id, type, url, mydata;
+		var hasInstalled;
+
+		function loadUserInfoIndividual(data){
+			if(data.type=="institute" || data.type=="admin"){
+				$(".appDevCont").show();
+			} else {
+				$(".appDevCont").hide();
+				$("#commNavEntry").css("margin-top", "90px");
+			}
+		}
+
+		function install () {
+			if(hasInstalled){return false;}
+			inAndUninstallApplication(id, {
+				onSuccess: function(data){
+					$("#feedback").html("Installation successfull.");
+					$("#feedback").css("color", "green");
+					hasInstalled = true;
+					$("#installButton").val("Uninstall");
+					$("#installButton").click( function(){
+						uninstall();
+					});
+				}, onError: function(data) {
+					$("#feedback").html("There was an error installing the application. Please try again.");
+					$("#feedback").css("color", "red");
+				}
+			});
+		}
+
+		function uninstall () {
+			if(!hasInstalled){return false;}
+			inAndUninstallApplication(id, {
+				onSuccess: function(data){
+					$("#feedback").html("Successfully uninstalled.");
+					$("#feedback").css("color", "green");
+					hasInstalled = false;
+					$("#installButton").val("Install");
+					$("#installButton").click( function(){
+						install();
+					});
+				}, onError: function(data) {
+					$("#feedback").html("There was an error uninstalling the application. Please try again.");
+					$("#feedback").css("color", "red");
+				}
+			});
+		}
+
+		function initInstallButton () {
+			if(user==undefined){
+				setTimeout(function () {
+					initInstallButton();
+				}, 100);
+				return false;
+			}
+			if(user.application!=undefined){
+				$.each(user.application, function(i, item){
+					if(type=="app" && item.app!=undefined){
+						if(item.app==id){
+							hasInstalled = true;
+							return false;
+						}
+					} else if(type="viz" && item.viz!=undefined){
+						if(item.viz==id){
+							hasInstalled = true;
+							return false;
+						}
+					} else {
+						window.location = WEB_URL+"apps.html";
+					}
+				});
+			}
+			if(hasInstalled){
+				$("#installButton").val("Uninstall");
+				$("#installButton").click( function(){
+					uninstall();
+				});
+			} else {
+				$("#installButton").click( function(){
+					install();
+				});
+			}
+		}
+
+		function loadApplication(){
+			id = getURLParameter("id");
+			type = getURLParameter("type");
+			if(id!=undefined && type!=undefined){
+				getApplicationDetail(id, type, {
+					onSuccess: function(data){
+						mydata = undefined;
+						if(type=="app"){
+							mydata = data.values.applications[0];
+						} else if(type="viz"){
+							mydata = data.values.visualizations[0];
+						}
+
+						$("#name").html(mydata.name);
+						$("#descr").html("<b>Description: </b></br>"+mydata.descr);
+						if(mydata.whatIsNew!=undefined && mydata.whatIsNew.length>0){$("#whatIsNew").html("<b>What is new?: </b></br>"+mydata.whatIsNew);}
+						$("#info").html("&nbsp;&nbsp;&nbsp;<b>Author: </b><font id=\"authorID\" value=\""+mydata.companyID+"\">"+mydata.companyName+"</font></br>&nbsp;&nbsp;&nbsp;<b>Created on: </b>"+moment(mydata.timedate).format('MMMM Do YYYY')+"</br>&nbsp;&nbsp;&nbsp;<b>Version: </b>"+mydata.version+"</br>&nbsp;&nbsp;&nbsp;<b>Installs so far: </b>"+mydata.nrOfInstalls);
+						if(mydata.icon!=undefined){
+							loadImage(mydata.icon, "", "application", {
+								onSuccess: function(data, id){
+									$("#icon").attr("src", "data:image/png;base64,"+data);
+								}, onError: function(data){
+									$("#icon").attr("src", WEB_URL+'../images/news-icon.jpg');
+								}
+							});
+						}
+					}, 
+					onError: function(data){
+						$("#feedback").html("There was an error loading the application. Please try again.");
+						$("#feedback").css("color", "red");
+					}
+				});
+			} else {
+				$("#feedback").html("There was an error loading the application. Please try again.");
+				$("#feedback").css("color", "red");
+			}
+		}
+
+		$(document).ready(function() {
+			initialize();
+			loadApplication();
+			initInstallButton();
+			$("#backButton").click(function(){
+				url = getURLParameter("url");
+				if(url!=undefined){ window.location = WEB_URL + url; }
+				else { window.location = WEB_URL + "market.html"; }
+				return false;
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>Application Detail</h1> 
+				<div class="page-actionbox">
+					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
+						<input id="search" type="text"/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li><a href="home.html">Home</a></li>
+					<li><a href="profile.html">Profile</a></li>
+					<li><a href="spaces/spaces.html">Spaces</a></li>
+					<li><a href="circles.html">Circles</a></li>
+					<li class="selectedLi">
+						<a href="apps.html">Apps</a>
+						<ul id="subnavigation" class="page-subnavi">
+							<li class="selectedLi"><a href="market.html">Market</a></li>
+							<li><a href="myApps.html">My Apps</a></li>
+							<li class="appDevCont"><a href="myUploadedApps.html">Uploaded</a></li>
+							<li class="appDevCont"><a href="addNewApp.html">Add App</a></li>
+							<li class="appDevCont"><a href="devGuide.html">Dev. Guide</a></li>
+						</ul>
+					</li>
+					<li id="commNavEntry" style="margin-top:210px;"><a href="community.html">Community</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<div id="feedback" class="detailAppFeedback"></div>
+					<div id="appInfoBox">
+						<img id="icon" class="appIcon"/>
+						<div class="appNameInfoBox">
+							<h3 id="name" class="appName"> </h3></br>
+							<div id="info" class="appInfo"></div>
+						</div>
+					</div>
+					</br>
+					<div id="descr" class="appDescr"></div></br>
+					<div id="whatIsNew" class="appWhatsNew"> </div>
+					</br></br></br>
+					<button id="backButton" class="button">Back</button>
+					<input id="installButton" type="submit" name="submit" value="Install" class="button" />
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

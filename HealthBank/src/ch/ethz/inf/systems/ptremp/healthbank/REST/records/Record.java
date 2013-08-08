@@ -124,7 +124,6 @@ public class Record extends HttpServlet {
 		String credentials = request.getParameter("credentials");
 		String session = request.getParameter("session");
 		String spaceId = request.getParameter("spaceId");
-		//String id = request.getParameter("id");
 		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
 			errorMessage = "\"Please provide the parameters 'pw' and 'username' with the request.\"";
 			wasError = true;
@@ -179,6 +178,7 @@ public class Record extends HttpServlet {
 										JSONObject resObj = (JSONObject) parser.parse(obj.toString());
 										resObj.put("spaces", spas);
 										resArray.add(resObj);
+										nrRes++;
 									}
 								} 
 							}
@@ -188,7 +188,7 @@ public class Record extends HttpServlet {
 						list.add(userId);
 						res = (DBCursor) connector.query(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("userID", new BasicDBObject("$in", list)));
 						if(res==null || !res.hasNext()){
-							errorMessage = "\"Record doGet: There was an error. Did you provide the correct sessionKey and credentials?\"";
+							errorMessage = "\"Record doGet: You do not have any records yet! Add some first.\"";
 							wasError = true;
 						} else {
 							while(res.hasNext()){
@@ -206,6 +206,7 @@ public class Record extends HttpServlet {
 								JSONObject resObj = (JSONObject) parser.parse(obj.toString());
 								resObj.put("spaces", spas);
 								resArray.add(resObj);
+								nrRes++;
 							}
 						}
 					}
@@ -373,31 +374,6 @@ public class Record extends HttpServlet {
 									}
 								}
 							}
-							
-							/* old version
-							for(String s: space.split(" ")){
-								and = new BasicDBList();
-								and.add(new BasicDBObject("recordID", id));
-								and.add(new BasicDBObject("spaceID", s));
-								DBObject queryObject = new BasicDBObject("$and", and);
-								DBCursor res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, queryObject);
-								if(res==null || !res.hasNext()){
-									HashMap<Object, Object> data = new HashMap<Object, Object>();
-									data.put("recordID", id);
-									data.put("spaceID", s);
-									DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-									data.put("timedate", dateFormat.format(new Date()));
-									connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
-								} else {
-									// else do nothing, since it is already present
-								}
-								//objectList.add(new BasicDBObject("space", s));  // old old version
-							}
-							/* old old version
-							BasicDBList list = new BasicDBList();
-							list.add(new ObjectId(id));
-							connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("spaces", objectList)));
-							*/
 						} else {
 							errorMessage = "\"Record doPost: If you provide the attribute 'id' you need either to provide the attribute 'circle' or 'space' as well!\"";
 							wasError = true;

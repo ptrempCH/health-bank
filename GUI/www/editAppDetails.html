@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+
+		function loadUserInfoIndividual(data){
+			if(user.type==undefined || !(user.type=="institute"  || data.type=="admin")){
+				window.location = WEB_URL+"apps.html";
+			}
+			if(data.type=="institute" || data.type=="admin"){
+				$(".appDevCont").show();
+			}
+		}
+
+		function submit () {
+			if($("#appName").val().length<2 || $("#descr").val().length<2 || $("#version").val().length<1 || $("#index1").val().length<2){
+				$("#feedbackText").html("Please fill out all the fields marked with a (*)!");
+				$("#feedbackText").css("color", "red");
+				$("#feedbackText").css("font-weight", "bold");
+				$(".page-content").animate({ scrollTop: 0 }, "slow");
+				return false;
+			}
+			var icon = $("#icon")[0].files[0];
+		    if(icon!=undefined && icon.size > 100000){
+		    	$(".dialog-header").html("Only icons smaller then 100kB are supported.");
+				$(".dialog-header").css("color", "red");
+				$(".dialog-header").css("font-weight", "bold");
+				$(".page-content").animate({ scrollTop: 0 }, "slow");
+				return false;
+		    }
+			var formData = new FormData(document.getElementById('newApp-form'));
+		    editExistingApplication(formData, {
+				onSuccess: function(data){
+					$("#feedbackText").html("Your application has been updated successfully.");
+					$("#feedbackText").css("color", "green");
+					$("#feedbackText").css("font-weight", "bold");
+					$(".page-content").animate({ scrollTop: 0 }, "slow");
+				}, 
+				onError: function(data){
+					$("#feedbackText").html("We are terribly sorry, but there was a problem on the server. Your application could not be updated.");
+					$("#feedbackText").css("color", "red");
+					$("#feedbackText").css("font-weight", "bold");
+					$(".page-content").animate({ scrollTop: 0 }, "slow");
+				}
+			});
+			return false;
+		}
+
+		function loadOriginalData(type){
+			id = getURLParameter("id");
+			if(id!=undefined){
+				getApplicationDetail(id, type, {
+					onSuccess: function(data){
+						mydata = undefined;
+						if(type=="app"){
+							mydata = data.values.applications[0];
+						} else if(type="viz"){
+							mydata = data.values.visualizations[0];
+						}
+						$("#id").val(mydata._id.$oid);
+						$("#appName").val(mydata.name);
+						$("#descr").val(mydata.descr);
+						$("#currentIcon").html("Current: <img style=\"height:30px\"/> "+mydata.icon);
+						loadImage(mydata.icon, "", "application", {
+							onSuccess: function(data, id){
+								$("#currentIcon img").attr("src", "data:image/png;base64,"+data);
+							}, onError: function(data){ /*ignore*/ }
+						});
+						$("#currentFile").html("Current: <a href=\"../apps/"+id+"/"+(mydata.name.replace(/\s+/g, ''))+"/"+mydata.url+"\">"+mydata.url+"</a>");
+						$("#currentCSS").html("Current: "+((mydata.cssFile!=undefined && mydata.cssFile.length>0)?("<a href=\"../apps/"+id+"/"+(mydata.name.replace(/\s+/g, ''))+"/css/"+mydata.cssFile+"\">"+mydata.cssFile+"</a>"):"none"));
+						$("#currentJS").html("Current: "+((mydata.jsFile!=undefined && mydata.jsFile.length>0)?("<a href=\"../apps/"+id+"/"+(mydata.name.replace(/\s+/g, ''))+"/js/"+mydata.jsFile+"\">"+mydata.jsFile+"</a>"):"none"));
+						$("#version").val(mydata.version);
+						$("#whatsNew").val(mydata.whatIsNew);
+						if(mydata.online=="online"){
+							$("#onlineRB").prop("checked", true);
+							$("#offlineRB").prop("checked", false);
+						} else {
+							$("#onlineRB").prop("checked", false);
+							$("#offlineRB").prop("checked", true);
+						}
+						if(mydata.index!=undefined){
+							var j = 1;
+							$.each(mydata.index, function(i, item){
+								$("#index"+j).val(item.keyword);
+								$("#index"+j).parent().show();
+								j++;
+							});
+						}
+						adjustHeightOfForm();
+					}, 
+					onError: function(data){
+						if(type=="app"){
+							loadOriginalData("viz");
+							return;
+						}
+						$("#feedback").html("There was an error loading the application. Please try again.");
+						$("#feedback").css("color", "red");
+					}
+				});
+			} else {
+				$("#feedback").html("There was an error loading the original application data. Please try again.");
+				$("#feedback").css("color", "red");
+			}
+		}
+
+
+		function textAreaAdjust(o) {
+			old = o.scrollHeight;
+		    o.style.height = "1px";
+		    o.style.height = (25+o.scrollHeight)+"px";
+		    if(old<o.scrollHeight){
+				$("#newApp-form").height(parseInt($("#newApp-form").height())+20);
+			}
+		}
+
+		function adjustHeightOfForm () {
+			height = 0;
+			$.each($("#newApp-form").children(), function(i, item){height = height + item.scrollHeight + 11;})
+			$("#newApp-form").animate({height: height}, 500 );
+		}
+
+		$(document).ready(function() {
+			initialize();
+			loadOriginalData("app");
+			$("#feedbackText").html("All fields marked with a (*) are required.");
+			$(".page-content #newApp-form div label").autoWidth();
+			$("#index2, #index3, #index4, #index5").parent().hide();
+			$("#addIndexFieldButton").click(function(){
+				found = false;
+				$.each($("input[name=index]"), function(i, item){
+					if($(this).is(":hidden")){
+						$(this).parent().show("slow");
+						adjustHeightOfForm();
+						if(i>=4){
+							$("#addIndexFieldButton").attr("disabled","disabled");
+							$("#addIndexFieldButton").fadeTo("slow", 0.33);
+						}
+						found = true;
+						return false;
+					}
+				});
+				if(!found){
+					$("#addIndexFieldButton").attr("disabled","disabled");
+					$("#addIndexFieldButton").fadeTo("slow", 0.33);
+				}
+				return false;
+			});
+			$(".indexRemoveButton").click(function() {
+				$(this).parent().parent().hide("slow");
+				$("#addIndexFieldButton").removeAttr('disabled');
+				$("#addIndexFieldButton").fadeTo("slow", 1);
+				setTimeout(function(){adjustHeightOfForm();}, 700);
+				return false;
+			});
+			$("#submitButton").click(function () { submit(); return false; });
+			$("#cancelButton").click(function () { if(confirm("If you cancel, all the data you entered will be lost. Proceed?")){window.location = WEB_URL+"apps.html";} return false; });
+			adjustHeightOfForm();
+			$(window).resize(function() {
+			  adjustHeightOfForm();
+			});
+			if(typeof(Storage)!=="undefined") {
+				var mySession = localStorage.getItem("hb_session");
+				var credentials = localStorage.getItem("hb_cred");
+				$("#session").attr("value", mySession);
+				$("#credentials").attr("value", credentials);
+			}
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>Edit one of your applications in HealthBank</h1> 
+				<div class="page-actionbox">
+					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
+						<input id="search" type="text"/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li><a href="home.html">Home</a></li>
+					<li><a href="profile.html">Profile</a></li>
+					<li><a href="spaces/spaces.html">Spaces</a></li>
+					<li><a href="circles.html">Circles</a></li>
+					<li class="selectedLi">
+						<a href="apps.html">Apps</a>
+						<ul id="subnavigation" class="page-subnavi">
+							<li><a href="market.html">Market</a></li>
+							<li><a href="myApps.html">My Apps</a></li>
+							<li class="appDevCont"><a href="myUploadedApps.html">Uploaded</a></li>
+							<li class="appDevCont selectedLi"><a href="addNewApp.html">Add App</a></li>
+							<li class="appDevCont"><a href="devGuide.html">Dev. Guide</a></li>
+						</ul>
+					</li>
+					<li id="commNavEntry" style="margin-top:210px;"><a href="community.html">Community</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<h3 class="addRec-header-text">Change the details of your application in HealthBank.</h3>
+					<div id="feedbackText" class="addRec-feedback"></div>
+					<form name="newApp-form" id="newApp-form" class="addRec-form" action="" method="post">
+						<!--Input fields-->
+						<input type="hidden" id="id" name="id"/>
+						<input type="hidden" id="session" name="session"/>
+						<input type="hidden" id="credentials" name="credentials"/>
+						<div>
+							<label for="appName" id="appNameLabel" class="label">Name of your application(*)</label> 
+							<input id="appName" name="name" type="text" class="input large-input appname" placeholder="Name" />
+						</div>
+						<div>
+							<label for="descr" id="descrLabel" class="label">Description of your application(*)</label> 
+							<textarea id="descr" name="descr" class="input large-input descr" placeholder="Description" rows="8" cols="52" onkeyup="textAreaAdjust(this)"></textarea>
+						</div>
+						<div>
+							<label for="icon" id = "iconLabel" class="label">Application icon</label>
+							<input id="icon" type="file" name="icon" class="input large-input"/>
+							<span style="margin-left:30%" id="currentIcon"></span>
+						</div>
+						<div>
+							<label for="version" id="versionLabel" class="label version">Application version number(*)</label>
+							<input id="version" name="version" type="text" class="input large-input version" placeholder="1.0" />
+						</div>
+						<div>
+							<label for="whatsNew" id="whatsNewLabel" class="label version">What is new in this version?</label>
+							<textarea id="whatsNew" name="whatIsNew" class="input large-input whatsNew" placeholder="In this version, we added the functionality to..." rows="10" cols="52"></textarea>
+						</div>
+						<div>
+							<label for="file" id = "fileLabel" class="label">Replacement for HTML file</label>
+							<input id="file" type="file" name="file" class="input large-input"/>
+							<span style="margin-left:30%" id="currentFile"></span>
+						</div>
+						<div>
+							<label for="css" id = "cssLabel" class="label">Replacement for CSS file</label>
+							<input id="css" type="file" name="css" class="input large-input"/>
+							<span style="margin-left:30%" id="currentCSS"></span>
+						</div>
+						<div>
+							<label for="js" id = "jsLabel" class="label">Replacement for JavaScript file</label>
+							<input id="js" type="file" name="js" class="input large-input"/>
+							<span style="margin-left:30%" id="currentJS"></span>
+						</div>
+						<div>
+							<fieldset>
+								<label class="label">Online?(*)</label>            
+								<input type="radio" name="online" id="onlineRB" value="online"/>online
+								<input type="radio" name="online" id="offlineRB" value="offline" checked="checked" />offline
+							</fieldset>
+						</div>
+						<div>
+							<label for="index1" id="index1Label" class="label">Index keyword(*) <button id="addIndexFieldButton" class="addIndexButton">Add Keyword</button></label> 
+							<input id="index1" name="index" type="text" class="input large-input index" title="These keywords will help the search engine to identify your app data." placeholder="calories" />
+						</div>
+						<div>
+							<label for="index2" id="index2Label" class="label">Index keyword <button class="addIndexButton indexRemoveButton">Remove</button></label> 
+							<input id="index2" name="index" type="text" class="input large-input index" title="These keywords will help the search engine to identify your app data." placeholder="calories" />
+						</div>
+						<div>
+							<label for="index3" id="index3Label" class="label">Index keyword <button class="addIndexButton indexRemoveButton">Remove</button></label> 
+							<input id="index3" name="index" type="text" class="input large-input index" title="These keywords will help the search engine to identify your app data." placeholder="calories" />
+						</div>
+						<div>
+							<label for="index4" id="index4Label" class="label">Index keyword <button class="addIndexButton indexRemoveButton">Remove</button></label> 
+							<input id="index4" name="index" type="text" class="input large-input index" title="These keywords will help the search engine to identify your app data." placeholder="calories" />
+						</div>
+						<div>
+							<label for="index5" id="index5Label" class="label">Index keyword <button class="addIndexButton indexRemoveButton">Remove</button></label> 
+							<input id="index5" name="index" type="text" class="input large-input index" title="These keywords will help the search engine to identify your app data." placeholder="calories" />
+						</div>
+						<!--END Input fields-->
+						<!--Buttons-->
+						<div class="addRec-footer">
+							<input id="submitButton" type="submit" name="submit" value="Save" class="big-button addRecButton" />
+							<input id="cancelButton" type="submit" name="submit" value="Cancel" class="big-button addRecButton" />
+						</div>
+						<!--END Buttons-->
+					</form>
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

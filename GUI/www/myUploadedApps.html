@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+
+		function loadInstituteApps(data) {
+			$("#appentries").html("");
+			if(data.size==0){
+				$("#appentries").append("<center>No applications uploaded yet!</center>");
+			}
+
+			apps = data.values.applications;
+			apps.reverse();
+			$.each(apps, function(i, item) {
+			    $("#appentries").append('<li><div id="'+item._id.$oid+'"><img class="store-preview-icon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="store-preview-content"><h4 class="store-preview-header">'+item.name+'</h4><p class="store-preview-descr">Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div><img class="gearImage" src="../images/gear.png" width="18px"/></div></li>');
+			    loadImage(item.icon, item._id.$oid, "application", {
+					onSuccess: function(data, id){
+						$("#"+id+" .newsicon").attr("src", "data:image/png;base64,"+data);
+					}, onError: function(data){ /*ignore*/ }
+				});
+			});
+			$("#apps-section #appentries li div div").click(function(){ 
+				window.location = WEB_URL+"appView.html?id="+$(this).parent().attr("id"); 
+			});
+			$("#apps-section #appentries li .gearImage").click(function(){ 
+				window.location = WEB_URL+"editAppDetails.html?id="+$(this).parent().attr("id"); 
+			});
+		}
+
+		function loadUserInfoIndividual(data){
+			if(data.type=="institute" || data.type=="admin"){
+				getUploadedOrInstalledApplications({
+					onSuccess: function(data){
+						loadInstituteApps(data);
+					}, onError: function(data){
+						$("#appentries").html("<center>Either you have no applications uploaded yet or there has been an error loading your data. </br>Add an application or try to reload this page.</center>");
+					}
+				});
+				$(".appDevCont").show();
+			} else {
+				window.location = WEB_URL+"apps.html";
+			}
+		}
+
+		$(document).ready(function() {
+			initialize();
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>My Uploaded Apps</h1> 
+				<div class="page-actionbox">
+					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
+						<input id="search" type="text"/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li><a href="home.html">Home</a></li>
+					<li><a href="profile.html">Profile</a></li>
+					<li><a href="spaces/spaces.html">Spaces</a></li>
+					<li><a href="circles.html">Circles</a></li>
+					<li class="selectedLi">
+						<a href="apps.html">Apps</a>
+						<ul id="subnavigation" class="page-subnavi">
+							<li><a href="market.html">Market</a></li>
+							<li><a href="myApps.html">My Apps</a></li>
+							<li class="appDevCont selectedLi"><a href="myUploadedApps.html">Uploaded</a></li>
+							<li class="appDevCont"><a href="addNewApp.html">Add App</a></li>
+							<li class="appDevCont"><a href="devGuide.html">Dev. Guide</a></li>
+						</ul>
+					</li>
+					<li id="commNavEntry" style="margin-top:210px;"><a href="community.html">Community</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<div id="apps-section">
+						<h3 id="headerText" style="margin: 10px 0 20px 0;">These are all the apps you have already uploaded to the system: <a href="addNewApp.html" id="addApp" class="big-button addappButton">Add new</a></h3>
+						<ul id="appentries" class="store-preview-list">
+						</ul>
+					</div>
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

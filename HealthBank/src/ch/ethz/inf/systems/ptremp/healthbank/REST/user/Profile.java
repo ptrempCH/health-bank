@@ -329,7 +329,7 @@ public class Profile extends HttpServlet {
 			try {
 				String userIcon = "";
                 //Create GridFS object
-				GridFS fs = new GridFS( connector.getRootDatabase(), MongoDBConnector.USER_COLLECTION_NAME);;
+				GridFS fs = new GridFS( connector.getRootDatabase(), MongoDBConnector.USER_COLLECTION_NAME);
 				List<FileItem> items = new ServletFileUpload(new DiskFileItemFactory()).parseRequest(request);
 		        for (FileItem item : items) {
 		            if (!item.isFormField()) {
@@ -366,7 +366,7 @@ public class Profile extends HttpServlet {
 				} else {
 			        // OK it seems like we could save the new image successfully. Hence delete the old one to reduce space consumption
 					DBCursor res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)));
-					if(res==null || res.size()==0){
+					if(res==null || !res.hasNext()){
 						errorMessage = "\"No user found with these credentials. Did you provide the correct sessionKey and credentials?\"";
 						wasError = true;
 					}
@@ -384,7 +384,16 @@ public class Profile extends HttpServlet {
 					data.put("userIcon", userIcon);
 					if(!wasError){
 						connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));
-						// TODO update profile record as well
+
+						// update profile record as well
+						BasicDBList and = new BasicDBList();
+						list = new BasicDBList();
+						String userid = manager.getUserID(credentials);
+						list.add(userid);
+						and.add(new BasicDBObject("userID", new BasicDBObject("$in", list)));
+						and.add(new BasicDBObject("app", "profile"));
+						DBObject queryObject = new BasicDBObject("$and", and);
+						connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, queryObject, new BasicDBObject("$set", data));
 					}
 				}
 			} catch (FileUploadException | ParseException e) {
@@ -544,6 +553,9 @@ public class Profile extends HttpServlet {
 						connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));
 						
 						// query for the record that contains the profile, if it does not exist, create it first. else update it
+						
+						DBCursor user = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)));
+						BasicDBObject myUser = (BasicDBObject) user.next();
 
 						BasicDBList and = new BasicDBList();
 						list = new BasicDBList();
@@ -562,11 +574,19 @@ public class Profile extends HttpServlet {
 							data.put("descr", "Profile information of user "+userid);
 							data.put("app", "profile");
 							data.remove("allowResearch");
+							String userIcon = (String) myUser.get("userIcon");
+							if(userIcon != null){
+								data.put("userIcon", userIcon);
+							}
 							ObjectId recordid = (ObjectId) connector.insert(MongoDBConnector.RECORDS_COLLECTION_NAME, data);
 							list = new BasicDBList();
 							list.add(username);
 							connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("profileRecordId", recordid.toString())));
 						} else {
+							String userIcon = (String) myUser.get("userIcon");
+							if(userIcon != null){
+								data.put("userIcon", userIcon);
+							}
 							connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, queryObject, new BasicDBObject("$set", data));
 						}
 					}
@@ -605,90 +625,6 @@ public class Profile extends HttpServlet {
 				}
 			} 
 		}
-	}
-
-	/**
-	 * The DELETE request allows the caller to delete the entire profile. This needs more discussion and is far more complex since it 
-	 * involves deleting of records, spaces, circles, images and possibly more. The more DELETE request do not seem to be supported at the moment
-	 * and result in allow-origin errors. Therefore take with care and do not use until further information.
-	 * 
-	 * For a successful call the following parameters need to be present in the URL:
-	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
-	 * - session: This is the current session key of the user
-	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
-	 * 
-	 * @see HttpServlet#doDelete(HttpServletRequest, HttpServletResponse)
-	 */
-	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("application/json");
-		response.addHeader("Access-Control-Allow-Origin", "*");
-		String errorMessage = "";
-		boolean wasError = false;
-		boolean isLoggedIn = true;
-		
-		// check parameters
-		String callback = request.getParameter("callback");
-		String credentials = request.getParameter("credentials");
-		String session = request.getParameter("session");
-		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
-			errorMessage = "\"Please provide the parameters 'credentials' and 'session' with the request.\"";
-			wasError = true;
-		}
-		if(!wasError){
-			credentials = URLDecoder.decode(credentials, "UTF-8");
-			session = URLDecoder.decode(session, "UTF-8");
-			credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
-			
-			// check DB connection
-			if(connector==null || !connector.isConnected()){
-				manager.reconnect();
-			}
-			
-			// check if user is logged in
-			try {
-				if(manager.isUserLoggedIn(session, credentials)){
-					BasicDBList list = new BasicDBList();
-					list.add(credentials.substring(0, credentials.lastIndexOf(':')));
-					if(!connector.delete(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)))){
-						errorMessage = "\"There was an error deleting the user account. Did you provide the correct sessionKey and credentials?\"";
-						wasError = true;
-					}
-					isLoggedIn = false; // user was deleted, hence we are no longer logged in... 					
-				} else {
-					errorMessage = "\"Either your session timed out or you forgot to send me the session and credentials.\"";
-					wasError = true;
-					isLoggedIn = false;
-				}
-			} catch (IllegalQueryException e) {
-				errorMessage = "\"There was an error. Did you provide the correct username and password? Error: "+e.getMessage()+"\"";
-				wasError = true;
-			} catch (NotConnectedException e) {
-				errorMessage = "\"We lost connection to the DB. Please try again later. Sorry for that.\"";
-				wasError = true;
-			}
-		}
-				
-		
-		if(callback!=null && callback.length()>0){
-			callback = URLDecoder.decode(callback, "UTF-8");
-			if(!wasError) {
-				response.getOutputStream().println(callback+"( { \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"User got deleted successfully.\" } );");
-				if(MongoDBConnector.DEBUG){System.out.println("Deleted user with sessionKey: "+session+"!");}
-			}
-			else {
-				response.getOutputStream().println(callback+"( { \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\": "+errorMessage+" } );");
-				if(MongoDBConnector.DEBUG){System.out.println("Profile doDelete: There was an error: "+errorMessage+"!");}
-			}
-		} else {
-			if(!wasError) {
-				response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"User got deleted successfully.\" }");
-				if(MongoDBConnector.DEBUG){System.out.println("Deleted user with sessionKey: "+session+"!");}
-			}
-			else {
-				response.getOutputStream().println("{ \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\": "+errorMessage+" }");
-				if(MongoDBConnector.DEBUG){System.out.println("Profile doDelete: There was an error: "+errorMessage+"!");}
-			}
-		} 
 	}
 
 }

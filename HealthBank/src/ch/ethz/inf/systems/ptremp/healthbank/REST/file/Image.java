@@ -96,16 +96,25 @@ public class Image extends HttpServlet {
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		// Get Name from request.
         String fileName = request.getParameter("name");
+        String collection = request.getParameter("type");
 
         // Check if Name is supplied to the request.
-        if (fileName == null) {
+        if (fileName == null || collection==null) {
             // Throw an exception, or send 404.
             response.sendError(HttpServletResponse.SC_NOT_FOUND); // 404.
             return;
         }
+        if(collection.equals("application")){
+        	collection = MongoDBConnector.APPLICATION_COLLECTION_NAME;
+        } else if(collection.equals("user")){
+        	collection = MongoDBConnector.USER_COLLECTION_NAME;
+        } else {
+        	response.sendError(HttpServletResponse.SC_BAD_REQUEST); // 400
+        	return;
+        }
 
         // Lookup File by FileName in database.
-        GridFS gfsPhoto = new GridFS( connector.getRootDatabase(), MongoDBConnector.USER_COLLECTION_NAME );
+        GridFS gfsPhoto = new GridFS( connector.getRootDatabase(), collection );
 		GridFSDBFile imageForOutput = gfsPhoto.findOne(fileName);
 		
 		if(imageForOutput==null){

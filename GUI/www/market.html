@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+
+		function loadUserInfoIndividual(data){
+			if(data.type=="institute" || data.type=="admin"){
+				$(".appDevCont").show();
+			} else {
+				$(".appDevCont").hide();
+				$("#commNavEntry").css("margin-top", "90px");
+			}
+		}
+
+		function loadApplications () {
+			getUploadedOrInstalledApplications({
+				onSuccess: function(data){
+					$("#appentries").html("");
+					if(data.size==0){
+						$("#appentries").append("<center>It seems like there is no application to be found in the system yet!</center>");
+					}
+
+					apps = data.values.applications;
+					apps.reverse();
+					$.each(apps, function(i, item) { 
+						if(item.online=="online"){
+					    	$("#appentries").append('<li><div id="'+item._id.$oid+'"><img class="newsicon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="newscontentbox"><h4 class="newsheader">'+item.name+'</h4><p class="newscontent">Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div></div></li>');
+					    	if(item.icon!=undefined){
+								loadImage(item.icon, item._id.$oid, "application", {
+									onSuccess: function(data, id){
+										$("#"+id+" img").attr("src", "data:image/png;base64,"+data);
+									}, onError: function(data){
+										// just ignore it
+									}
+								});
+							}
+						}
+					});
+					if($("#appentries").html()==""){
+						$("#appentries").html("There are no applications to be found in the system yet. Sorry. Stay tuned for more to come soon.");
+					} else {
+						$("#appentries li div").click(function(){ 
+							window.location = WEB_URL+"detailApplication.html?id="+$(this).attr("id")+"&type=app&url=market.html"; 
+						});
+					}
+				}, onError: function(data){
+					$("#appentries").html("There are no applications to be found in the system yet. Sorry. Stay tuned for more to come soon.");
+				}
+			});
+		}
+
+		function loadVisualizations () {
+			getApplicationByQuery("", "viz", {
+				onSuccess: function(data){
+					$("#vizentries").html("");
+					if(data.size==0){
+						$("#vizentries").append("<center>It seems like there is no visualizations to be found in the system yet!</center>");
+					}
+
+					apps = data.values.visualizations;
+					apps.reverse();
+					$.each(apps, function(i, item) { 
+						if(item.online=="online"){
+					    	$("#vizentries").append('<li><div id="'+item._id.$oid+'"><img class="newsicon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="newscontentbox"><h4 class="newsheader">'+item.name+'</h4><p class="newscontent">Version: '+item.version+', Installs: '+item.installs+'</p></div></div></li>');
+						    if(item.icon!=undefined){
+								loadImage(item.icon, item._id.$oid, "application", {
+									onSuccess: function(data, id){
+										$("#"+id+" img").attr("src", "data:image/png;base64,"+data);
+									}, onError: function(data){
+										// just ignore it
+									}
+								});
+							}
+						}
+					});
+					$("#vizentries li div").click(function(){ 
+						window.location = WEB_URL+"detailApplication.html?id="+$(this).attr("id")+"&type=viz&url=market.html"; 
+					});
+				}, onError: function(data){
+					$("#vizentries").html("There was an error loading the data from the database. It seems like there is no visualizations to be found in the system yet! We are terribly sorry. Stay tuned for more to come soon.");
+				}
+			});
+		}
+
+		$(document).ready(function() {
+			initialize();
+			$("#visualization-content").hide();
+			$("#visualization-tab").click(function() {
+				loadVisualizations();
+				$("#visualization-content").show();
+				$("#visualization-tab").addClass("selected");
+				$("#application-content").hide();
+				$("#application-tab").removeClass("selected");
+			});
+			$("#application-tab").click(function(){
+				loadApplications();
+				$("#visualization-content").hide();
+				$("#visualization-tab").removeClass("selected");
+				$("#application-content").show();
+				$("#application-tab").addClass("selected");
+			});
+			loadApplications();
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>Market</h1> 
+				<div class="page-actionbox">
+					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
+						<input id="search" type="text"/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li><a href="home.html">Home</a></li>
+					<li><a href="profile.html">Profile</a></li>
+					<li><a href="spaces/spaces.html">Spaces</a></li>
+					<li><a href="circles.html">Circles</a></li>
+					<li class="selectedLi">
+						<a href="apps.html">Apps</a>
+						<ul id="subnavigation" class="page-subnavi">
+							<li class="selectedLi"><a href="market.html">Market</a></li>
+							<li><a href="myApps.html">My Apps</a></li>
+							<li class="appDevCont"><a href="myUploadedApps.html">Uploaded</a></li>
+							<li class="appDevCont"><a href="addNewApp.html">Add App</a></li>
+							<li class="appDevCont"><a href="devGuide.html">Dev. Guide</a></li>
+						</ul>
+					</li>
+					<li id="commNavEntry" style="margin-top:210px;"><a href="community.html">Community</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<div id="app-tabs">
+						<div id="application-tab" class="apptab selected">Applications</div>
+						<div id="visualization-tab" class="apptab">Visualizations</div>
+					</div>
+					<div id="application-content" class="application-content">
+						<h3>These are all the applications available in our system so far:</h3>
+						<p>Click on them to get more information</p></br>
+						<ul id="appentries" class="newsentries"></ul>
+					</div>
+					<div id="visualization-content" class="application-content">
+						<h3>These are all the visualizations available in our system so far:</h3>
+						<p>Click on them to get more information</p></br>
+						<ul id="vizentries" class="newsentries"></ul>
+					</div>
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

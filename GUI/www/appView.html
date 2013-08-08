@@ -9,52 +9,47 @@
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
 
 	<script type="text/javascript">
-		var message;
+
+		var id = "", appData;
 
 		function loadUserInfoIndividual(data){
-			// This will be called after the user information has been loaded
-			// Add or change potential page related content here if needed
+			if(data.type=="institute" || data.type=="admin"){
+				$(".appDevCont").show();
+			} else {
+				$(".appDevCont").hide();
+				$("#commNavEntry").css("margin-top", "90px");
+			}
 		}
 
-		function displayMessage(data){
-			if(data.values.messages==undefined || data.values.messages.length==0){
-				$("#messageMetadata").html("");
-				$("#messageMetadata").css("color", "red");
-				$("#messageMetadata").append("<center>There was an error loading the message. We are terribly sorry.</center>");
-				return false;
+		function initApp () {
+			id = getURLParameter("id");
+			if(id!=undefined){
+				getApplicationDetail(id, "app", {
+					onSuccess: function(data){
+						appData = data.values.applications[0];
+						if(appData.url!=undefined && appData.url.length>0){
+							$("#appFrame").attr("src", "../apps/"+id+"/"+(appData.name.replace(/\s+/g, ''))+"/"+appData.url);
+						} else{ 
+							$("#feedback").html("There was an error loading the application. We could not find the HTML file for the application on the server. Please try again.");
+							$("#feedback").css("color", "red");
+							return false;
+						}
+						$("#page-title").html(appData.name);
+					}, 
+					onError: function(data){
+						$("#feedback").html("There was an error loading the application. Please try again.");
+						$("#feedback").css("color", "red");
+					}
+				});
+			} else {
+				$("#feedback").html("There was an error loading the application. Please try again.");
+				$("#feedback").css("color", "red");
 			}
-			message = data.values.messages[0];
-			$("#messageMetadata").append('</br>&nbsp;&nbsp;Sent at: '+message.timedate+'</i></li>');
-			$("#messageSubject").append("<b>Subject: </b></br>&nbsp;&nbsp;"+message.subject);
-			$("#messageBody").append("<b>Content: </b></br>&nbsp;&nbsp;"+message.message.replace(/\n+/g, "</br></br>"));
-
-			queryUserById(message.senderID, {onSuccess: function(data, id){
-				$("#messageMetadata").prepend("<b>Message from: </b></br>&nbsp;&nbsp;"+data.values.users[0].firstname+" "+data.values.users[0].lastname);
-			}});
 		}
 
 		$(document).ready(function() {
 			initialize();
-			param = getURLParameter("messageID");
-			getMessageById(param, {
-				onSuccess: function(data){
-					displayMessage(data);
-				}, 
-				onError: function(data){
-					$("#messageMetadata").html("");
-					$("#messageMetadata").css("color", "red");
-					$("#messageMetadata").append("<center>There was an error loading the message. We are terribly sorry.</center>");
-				}
-			});
-
-			$("#replyMessageButton").click(function(){
-				window.location = WEB_URL+"newMessage.html?s="+message.subject+"&m="+message.message+"&r="+message.senderID; 
-				return false;
-			});
-			$("#backButton").click(function(){
-				window.location = WEB_URL+"messageInbox.html";
-				return false;
-			});
+			initApp();
 		});
 		
 	</script>
@@ -65,7 +60,7 @@
 		<div class="page-container">
 			<!--Header-->
 			<div class="page-header">
-				<h1>Write a new Message</h1> 
+				<h1 id="page-title">App</h1> 
 				<div class="page-actionbox">
 					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
 					<span id="userInfo" class="userInfo"></span>
@@ -81,27 +76,29 @@
 			<div class="page-content-container">
 				<!--Navi-->
 				<ul id="navivation" class="page-navi">
-					<li class="selectedLi"><a href="home.html">Home</a></li>
+					<li><a href="home.html">Home</a></li>
 					<li><a href="profile.html">Profile</a></li>
 					<li><a href="spaces/spaces.html">Spaces</a></li>
 					<li><a href="circles.html">Circles</a></li>
-					<li><a href="apps.html">Apps</a></li>
-					<li><a href="community.html">Community</a></li>
+					<li class="selectedLi">
+						<a href="apps.html">Apps</a>
+						<ul id="subnavigation" class="page-subnavi">
+							<li><a href="market.html">Market</a></li>
+							<li class="selectedLi"><a href="myApps.html">My Apps</a></li>
+							<li class="appDevCont"><a href="myUploadedApps.html">Uploaded</a></li>
+							<li class="appDevCont"><a href="addNewApp.html">Add App</a></li>
+							<li class="appDevCont"><a href="devGuide.html">Dev. Guide</a></li>
+						</ul>
+					</li>
+					<li id="commNavEntry" style="margin-top:210px;"><a href="community.html">Community</a></li>
 					<li><a href="about.html">About</a></li>
 				</ul>
 				<!--END Navi-->
 
 				<!--Content-->
 				<div class="page-content">
-					<div id="chronic-section">
-						<h3 class="header-text">Detail Message</h3>
-						<button id="backButton" class="big-button">back</button>
-						<br/>
-						<div id="messageMetadata"></div></br>
-						<div id="messageSubject"></div></br>
-						<div id="messageBody"></div>
-						<button id="replyMessageButton" class="big-button">Reply</button>
-					</div>
+					<div id="feedback" class="detailAppFeedback"></div>
+					<iframe class="appFrame" sandbox="allow-same-origin allow-forms allow-scripts allow-top-navigation" id="appFrame" name="appFrame"></iframe>
 				</div>
 				<!--END Content-->
 			</div>

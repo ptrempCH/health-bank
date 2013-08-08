@@ -12,14 +12,48 @@
 
 	<script type="text/javascript">
 
+		function loadUserInfoIndividual(data){
+			if(data.type=="institute" || data.type=="admin"){
+				$(".appDevCont").show();
+			} else {
+				$(".appDevCont").hide();
+				$("#commNavEntry").css("margin-top", "90px");
+			}
+		}
+
+		function loadUsersApps (data) {
+			$("#yourapps-list").html("");
+			if(data.size==0){
+				$("#yourapps-list").append("<center>No applications installed yet!</center>");
+			}
+
+			var apps = data.values.applications;
+			apps.reverse();
+			$.each(apps, function(i, item) {
+			    $("#yourapps-list").append('<li><div id="'+item._id.$oid+'" type="'+item.type+'"><img class="store-preview-icon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="store-preview-content"><a href="appView.html?id='+item._id.$oid+'" class="appLink"><h4 class="store-preview-header">'+item.name+'</h4></a><p class="store-preview-descr">'+item.companyName+', Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div><img class="gearImage" src="../images/gear.png" width="18px"/></div></li>');
+			    loadImage(item.icon, item._id.$oid, "application", {
+					onSuccess: function(data, id){
+						$("#"+id+" .store-preview-icon").attr("src", "data:image/png;base64,"+data);
+					}, onError: function(data){ /*ignore*/ }
+				});
+			});
+			$("#yourapps-list li .gearImage").click(function(){ 
+				window.location = WEB_URL+"detailApplication.html?id="+$(this).parent().attr("id")+"&type="+$(this).parent().attr("type"); 
+			});
+		}
+
 		$(document).ready(function() {
 			initialize();
 			$.get(WEB_URL+'dialogs/not-implemented.html').success(function(data){$('body').append(data); loadedNotYetImplemented();});
-			$("#appstoreButton").click(function(){
-				$( "#notYetImplementedDialog" ).dialog( "open" );
-			});
 			$(".gearImage").click(function(){
 				$( "#notYetImplementedDialog" ).dialog( "open" );
+			});
+			getInstalledApplications('app', {
+				onSuccess: function (data) {
+					loadUsersApps(data);
+				}, onError: function(data){
+					$("#yourapps-list").html('<center>You do not have any applications installed yet. Visit the <a href="market.html">appstore</a> to find new applications.</center>');
+				}
 			});
 		});
 		
@@ -55,8 +89,17 @@
 					<li><a href="profile.html">Profile</a></li>
 					<li><a href="spaces/spaces.html">Spaces</a></li>
 					<li><a href="circles.html">Circles</a></li>
-					<li class="selectedLi"><a href="apps.html">Apps</a></li>
-					<li><a href="community.html">Community</a></li>
+					<li class="selectedLi">
+						<a href="apps.html">Apps</a>
+						<ul id="subnavigation" class="page-subnavi">
+							<li><a href="market.html">Market</a></li>
+							<li><a href="myApps.html">My Apps</a></li>
+							<li class="appDevCont"><a href="myUploadedApps.html">Uploaded</a></li>
+							<li class="appDevCont"><a href="addNewApp.html">Add App</a></li>
+							<li class="appDevCont"><a href="devGuide.html">Dev. Guide</a></li>
+						</ul>
+					</li>
+					<li id="commNavEntry" style="margin-top:210px;"><a href="community.html">Community</a></li>
 					<li><a href="about.html">About</a></li>
 				</ul>
 				<!--END Navi-->
@@ -65,50 +108,13 @@
 				<div class="page-content">
 					<!-- Your apps -->
 					<div id="yourapps" class="store-preview">
-						<h3>Apps you already have installed</h3>
-						<ul id="yourapps-list" class="store-preview-list">
-							<li>
-								<div>
-									<img class="store-preview-icon" src="../images/newRecord-icon.png"/>
-									<div class="store-preview-content">
-										<a href="apps/addMedicalRecordApp.html" class="appLink">
-											<h4 class="store-preview-header">Medical Records</h4>
-										</a>
-										<p class="store-preview-descr">Add a new medical record to your database.</p>
-									</div>
-									<img class="gearImage" src="../images/gear.png" width="18px"/>
-								</div>
-							</li>
-							<li>
-								<div>
-									<img class="store-preview-icon" src="../images/calories-icon.jpg"/>
-									<div class="store-preview-content">
-										<a href="apps/caloriesApp.html" class="appLink">
-											<h4 class="store-preview-header">Intake Calories Counter</h4>
-										</a>
-										<p class="store-preview-descr">Count how much calories you eat.</p>
-									</div>
-									<img class="gearImage" src="../images/gear.png" width="18px"/>
-								</div>
-							</li>
-							<li>
-								<div>
-									<img class="store-preview-icon" src="../images/sports-icon.jpg"/>
-									<div class="store-preview-content">
-										<a href="apps/sportsApp.html" class="appLink">
-											<h4 class="store-preview-header">Activity Calories Counter</h4>
-										</a>
-										<p class="store-preview-descr">Count how many calories you burn.</p>
-									</div>
-									<img class="gearImage" src="../images/gear.png" width="18px"/>
-								</div>
-							</li>
-						</ul>
+						<h3>Apps you already have installed <a href="myApps.html" id="allApps" class="button morenews">All my Apps</a></h3>
+						<ul id="yourapps-list" class="store-preview-list"></ul>
 					</div>
 					<!--END your apps -->
 					<!-- Store Preview -->
 					<div class="store-preview">
-						<h3>Have you already seen these apps?</h3>
+						<h3>Have you already tried these apps? <span style="font-size: 0.5em;">(Recommodations still hard coded)</span></h3>
 						<ul id="store-preview-list" class="store-preview-list">
 							<li>
 								<div>
@@ -148,7 +154,14 @@
 							</li>
 						</ul>
 					</div>
-					<p>Visit our <a href="#" id="appstoreButton">Appstore</a> for more apps and visualizations. </p>
+					<p>Visit the &nbsp;<a href="market.html" class="button" id="appstoreButton" style="margin-top:-5px; float:none;">Appstore</a> &nbsp;for more apps and visualizations. </p>
+					</br></br>
+					<div id="developerContent" class="appDevCont">
+						<h4>For developers:</h4>
+						<p>If you like to add a new app to HealthBank click <a href="addNewApp.html" id="addAppLink">here</a>. </p>
+						<p>To see your current applications click <a href="myUploadedApps.html" id="yourAppsLink">here</a>. </p>
+						<p>To get help and browse through our API click <a href="devGuide.html" id="devGuideLink">here</a>. </p>
+					</div>
 					<!--END Store Preview-->
 				</div>
 				<!--END Content-->
@@ -162,6 +175,7 @@
 	<!-- Bottom Bar -->
     <div class="hb-bottom">
 		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
     	
         <span class="right">
     		<a href="http://www.healthbank.ch">

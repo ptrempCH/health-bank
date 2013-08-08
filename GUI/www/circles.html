@@ -40,7 +40,7 @@
 				var userId = decodeURIComponent(item.userId.$oid);
 				if(userId != user._id.$oid){
 				    if(item.userIcon!=undefined){
-						loadImage(item.userIcon, userId, {onSuccess: function(result, id){loadUsersIcon(result, id);}, onError: function(result){if(result.loggedOut==true){}}});
+						loadImage(item.userIcon, userId, "user", {onSuccess: function(result, id){loadUsersIcon(result, id);}, onError: function(result){if(result.loggedOut==true){}}});
 						textToAppend  = '<div userid="'+userId+'" class="usersearch-box"><img id="'+userId+'" class="usersearch-itemImage"/><h3 class="usersearch-itemheader">';
 						if(item.firstname && item.lastname){
 							textToAppend += decodeURIComponent(item.firstname)+' '+decodeURIComponent(item.lastname)+'</div></li>';
@@ -171,7 +171,7 @@
 								circles.push(item.name);
 								usersInCircles[found]["circles"] = circles;
 								if(curUser.userIcon!=undefined){
-									loadImage(curUser.userIcon, id.userId, {
+									loadImage(curUser.userIcon, id.userId, "user", {
 										onSuccess: function(data, userId){
 											$.each(usersInCircles, function(k, u){ if(u["id"]==id.userId){found = k;} });
 											usersInCircles[found]["img"] = data;
@@ -727,6 +727,7 @@
 	<!-- Bottom Bar -->
     <div class="hb-bottom">
 		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
     	
         <span class="right">
     		<a href="http://www.healthbank.ch">

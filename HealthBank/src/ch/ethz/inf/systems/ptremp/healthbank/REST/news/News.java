@@ -139,7 +139,7 @@ public class News extends HttpServlet {
 			// check if user is logged in and get the records 
 			try {
 				if(!manager.isUserLoggedIn(session, credentials)){
-					errorMessage = "\"Space doGet: You need to be logged in to use this service\"";
+					errorMessage = "\"News doGet: You need to be logged in to use this service\"";
 					wasError = true;
 					isLoggedIn = false;
 				} else {

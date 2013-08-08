@@ -16,6 +16,8 @@
 		// The user ID we are dealing with in this file. This id is different from the current logged in user
 		var id; 
 
+
+
 		/** 
 		* Load the retrieved data of the user we want to see details about to the right place in the page. 
 		* This is not the current logged in users data!
@@ -26,6 +28,9 @@
 				return false;
 			}
 			data = data.values.users[0]; // JSON structure
+			if(data.userIcon!=undefined){
+				loadImage(data.userIcon, "", "user", {onSuccess: function(result, id){$("#detail-icon").attr("src", "data:image/png;base64,"+result);}, onError: function(result){}});
+			}
 			if(data.gender!=undefined){
 				data.gender=decodeURIComponent(data.gender);
 				if(data.gender=="mr"){ data.gender = "Mr.";} else { data.gender = "Mrs.";}
@@ -265,7 +270,7 @@
 				<!--Content-->
 				<div class="page-content">
 					<div class="details">
-						<div class="detail-icon"></div>
+						<img id="detail-icon" class="detail-icon"/>
 						<h2 class="detail-name">Name</h2>
 						<p class="detail-username">Username</p></br>
 						</br>
@@ -292,6 +297,7 @@
 	<!-- Bottom Bar -->
     <div class="hb-bottom">
 		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
     	
         <span class="right">
     		<a href="http://www.healthbank.ch">

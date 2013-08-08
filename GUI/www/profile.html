@@ -229,16 +229,19 @@
 		    	$(".dialog-header").html("Please provide a file.");
 				$(".dialog-header").css("color", "red");
 				$(".dialog-header").css("font-weight", "bold");
+				return false;
 		    }
 		    if(type != "image/png" && type !="image/PNG"){
 		    	$(".dialog-header").html("Only png images are supported so far.");
 				$(".dialog-header").css("color", "red");
 				$(".dialog-header").css("font-weight", "bold");
+				return false;
 		    } 
 		    if(size > 100000){
 		    	$(".dialog-header").html("Only files smaller then 100kB are supported.");
 				$(".dialog-header").css("color", "red");
 				$(".dialog-header").css("font-weight", "bold");
+				return false;
 		    }
 			var formData = new FormData(document.getElementById('icon-form'));
 		    updateUserIcon(formData, {
@@ -812,6 +815,7 @@
 	<!-- Bottom Bar -->
     <div class="hb-bottom">
 		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
     	
         <span class="right">
     		<a href="http://www.healthbank.ch">

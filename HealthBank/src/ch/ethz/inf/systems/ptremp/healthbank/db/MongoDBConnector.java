@@ -85,8 +85,8 @@ public class MongoDBConnector implements DBConnector {
 	public static String DB_NAME;
 	/** The name of the users collection in the DB to use. **/
 	public static String USER_COLLECTION_NAME;
-	/** The name of the institutes collection in the DB to use. **/
-	public static String INSTITUTES_COLLECTION_NAME;
+	/** The name of the applications collection in the DB to use. **/
+	public static String APPLICATION_COLLECTION_NAME;
 	/** The name of the records collection in the DB to use. **/
 	public static String RECORDS_COLLECTION_NAME;
 	/** The name of the spaces collection in the DB to use. **/
@@ -105,9 +105,10 @@ public class MongoDBConnector implements DBConnector {
 	public static boolean DEBUG;
 	
 	/**
-	 * Images folder
+	 * Folder paths
 	 */
-	public static String IPATH;
+	public static String IPATH; // Images
+	public static String APPHTML; // HTML files for applications
 	
 
 /**
@@ -447,9 +448,9 @@ public class MongoDBConnector implements DBConnector {
             if (USER_COLLECTION_NAME == null || USER_COLLECTION_NAME.isEmpty()) {
             	USER_COLLECTION_NAME = "users";
             }
-            INSTITUTES_COLLECTION_NAME = getTextValue(INSTITUTES_COLLECTION_NAME, doc, "INSTITUTES_COLLECTION_NAME");
-            if (INSTITUTES_COLLECTION_NAME == null || INSTITUTES_COLLECTION_NAME.isEmpty()) {
-            	INSTITUTES_COLLECTION_NAME = "institutes";
+            APPLICATION_COLLECTION_NAME = getTextValue(APPLICATION_COLLECTION_NAME, doc, "APPLICATION_COLLECTION_NAME");
+            if (APPLICATION_COLLECTION_NAME == null || APPLICATION_COLLECTION_NAME.isEmpty()) {
+            	APPLICATION_COLLECTION_NAME = "applications";
             }
             RECORDS_COLLECTION_NAME = getTextValue(RECORDS_COLLECTION_NAME, doc, "RECORDS_COLLECTION_NAME");
             if (RECORDS_COLLECTION_NAME == null || RECORDS_COLLECTION_NAME.isEmpty()) {
@@ -473,7 +474,11 @@ public class MongoDBConnector implements DBConnector {
             }
             IPATH = getTextValue(IPATH, doc, "IPATH");
             if (IPATH == null || IPATH.isEmpty()) {
-            	IPATH = "C:\\Temp\\images";
+            	IPATH = "C:\\Temp\\images\\";
+            }
+            APPHTML = getTextValue(APPHTML, doc, "APPHTML");
+            if (APPHTML == null || APPHTML.isEmpty()) {
+            	APPHTML = "C:\\xampp\\htdocs\\GUI\\www\\apps\\";
             }
             
             String debug = "";
