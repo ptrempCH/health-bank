@@ -20,7 +20,7 @@
 		}
 
 		function submit () {
-			if($("#appName").val().length<2 || $("#descr").val().length<2 || $("#version").val().length<1 || $("#index1").val().length<2){
+			if($("#appName").val().length<2 || $("#descr").val().length<2 || $("#version").val().length<1 || ($("#index1").is(":visible") && $("#index1").val().length<2)){
 				$("#feedbackText").html("Please fill out all the fields marked with a (*)!");
 				$("#feedbackText").css("color", "red");
 				$("#feedbackText").css("font-weight", "bold");
@@ -55,6 +55,10 @@
 
 		function loadOriginalData(type){
 			id = getURLParameter("id");
+			urlType = getURLParameter("type");
+			if(urlType!=undefined && urlType.length>0){
+				type = urlType;
+			}
 			if(id!=undefined){
 				getApplicationDetail(id, type, {
 					onSuccess: function(data){
@@ -85,13 +89,17 @@
 							$("#onlineRB").prop("checked", false);
 							$("#offlineRB").prop("checked", true);
 						}
-						if(mydata.index!=undefined){
-							var j = 1;
-							$.each(mydata.index, function(i, item){
-								$("#index"+j).val(item.keyword);
-								$("#index"+j).parent().show();
-								j++;
-							});
+						if(mydata.type=="app"){
+							if(mydata.index!=undefined){
+								var j = 1;
+								$.each(mydata.index, function(i, item){
+									$("#index"+j).val(item.keyword);
+									$("#index"+j).parent().show();
+									j++;
+								});
+							}
+						} else {
+							$("#index1").parent().hide();
 						}
 						adjustHeightOfForm();
 					}, 

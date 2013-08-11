@@ -175,7 +175,7 @@ public class Record extends HttpServlet {
 												if(s!=null && s.length()>0){ spas.add(s); }
 											}
 										}
-										JSONObject resObj = (JSONObject) parser.parse(obj.toString());
+										JSONObject resObj = (JSONObject) parser.parse(recEntry.toString());
 										resObj.put("spaces", spas);
 										resArray.add(resObj);
 										nrRes++;

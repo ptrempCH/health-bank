@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script src="../../js/healthbank.js"></script>
+	<link href="../../css/healthbank.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+
+		var visualizationID = "", spaceID = "";
+
+		function loadUserInfoIndividual(data){
+			// This will be called after the user information has been loaded
+			// Add or change potential page related content here if needed
+		}
+
+		function initVisualizationDialog(data) {
+			$("#visualizationList").html("");
+			if(data.values.visualizations!=undefined){
+				$.each(data.values.visualizations, function(i, item){
+					$("#visualizationList").append("<li id=\""+item._id.$oid+"\" title=\""+item.descr+"\">"+item.name+" by "+item.companyName+"</li></br>");
+				});
+				$("#visualizationList li").click(function(){
+					visualizationID = $(this).attr("id");
+					$("#visualization").val($(this).html());
+					$('#dialog-overlay').click();
+				});
+			} else {
+				return false;
+			}
+		}
+
+		function submit () {
+			name = $("#name").val();
+			descr = $("#descr").val();
+
+			if($("#name").val().length<2 || $("#descr").val().length<2){
+				$("#feedbackText").html("Please fill out all the fields marked with a (*)!");
+				$("#feedbackText").css("color", "red");
+				$("#feedbackText").css("font-weight", "bold");
+				$(".page-content").animate({ scrollTop: 0 }, "slow");
+				return false;
+			}
+
+			if(spaceID!=undefined && spaceID.length>0){
+				editSpaces(spaceID, name, descr, "", visualizationID, {
+					onSuccess: function(data){
+						$("#feedbackText").html("Your space has been saved successfully. Click <a href=\""+WEB_URL+"spaces/spaces.html"+"\">here</a> to go back to the spaces page.");
+						$("#feedbackText").css("color", "green");
+						$("#feedbackText").css("font-weight", "bold");
+						$(".page-content").animate({ scrollTop: 0 }, "slow");
+					}, 
+					onError: function(data){
+						$("#feedbackText").html("There was a problem on the server. We could not save the space on the system. Sorry for that.");
+						$("#feedbackText").css("color", "red");
+						$("#feedbackText").css("font-weight", "bold");
+						$(".page-content").animate({ scrollTop: 0 }, "slow");
+					}
+				});
+			} else {
+			    addSpace(name, descr, "true", visualizationID, {
+					onSuccess: function(data){
+						$("#feedbackText").html("Your space has been saved successfully. Click <a href=\""+WEB_URL+"spaces/spaces.html"+"\">here</a> to go back to the spaces page.");
+						$("#feedbackText").css("color", "green");
+						$("#feedbackText").css("font-weight", "bold");
+						$(".page-content").animate({ scrollTop: 0 }, "slow");
+					}, 
+					onError: function(data){
+						$("#feedbackText").html("There was a problem on the server. We could not add the space to the system. Sorry for that.");
+						$("#feedbackText").css("color", "red");
+						$("#feedbackText").css("font-weight", "bold");
+						$(".page-content").animate({ scrollTop: 0 }, "slow");
+					}
+				});
+			}
+			return false;
+		}
+
+		function clear() {
+			if(confirm("Clear all form content?")){
+				$("#name").val("");
+				$("#descr").val("");
+				$("#visualization").val("");
+			}
+			return false;
+		}
+
+		function textAreaAdjust(o) {
+			old = o.scrollHeight;
+		    o.style.height = "1px";
+		    o.style.height = (25+o.scrollHeight)+"px";
+		    if(old<o.scrollHeight){
+				$("#newApp-form").height(parseInt($("#newApp-form").height())+20);
+			}
+		}
+
+		$(document).ready(function() {
+			initialize();
+			$.get(WEB_URL+'dialogs/getVisualization-dialog.html').success( function(data){
+				$('body').append(data); 
+				getInstalledApplications("viz", {
+					onSuccess: function(data){
+						initVisualizationDialog(data);
+					}, onError: function(data){
+						$("#visualizationList").html("You have not installed any visualization yet. To do so, please go to the <a href=\""+WEB_URL+"market.html?type=viz"+"\">market</a> first.");
+					}
+				});
+			});
+			$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data);});
+
+			$("#feedbackText").html("All fields marked with a (*) are required.");
+			$(".page-content #newSpace-form div label").autoWidth();
+			$("#submitButton").click(function () { submit(); return false; });
+			$("#clearButton").click(function () { clear(); return false; });
+			$("#cancelButton").click(function () { if(confirm("If you cancel, all the data you entered will be lost. Proceed?")){window.location = WEB_URL+"spaces/spaces.html";} return false; });
+			$("#visualization").click(function(){
+				$('#visualization-form').height("300px");
+				$('#visualization-form').width("50%");
+				var maskHeight = $(document).height();  
+				var maskWidth = $(window).width();
+				var dialogTop =  (maskHeight/2) - ($('#visualization-form').height()/2);  
+				var dialogLeft = (maskWidth/2) - ($('#visualization-form').width()/2);
+				$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+
+				$('#dialog-overlay').click(function(){
+					$("#visualization-form, #dialog-overlay").hide();
+					return false;
+				});
+				$('#visualization-form').css({top:dialogTop, left:dialogLeft}).show();
+				return false;
+			});
+			spaceID = getURLParameter("id");
+			if(spaceID!=undefined && spaceID.length>0){
+				loadSpaces({ onSuccess: function(data){
+					$.each(data.values.spaces, function(i, item){
+						if(item._id.$oid == spaceID){
+							$("#name").val(item.name);
+							$("#descr").val(item.descr);
+							if(item.visualization!=undefined){
+								visualizationID = item.visualization;
+								$("#visualization").html($("#visualizationList #"+item.visualization).html());
+							}
+						}
+					});
+				}});
+				
+			}
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>Add a new Space to your account on HealthBank</h1> 
+				<div class="page-actionbox">
+					<img id="mailIcon" src="../../images/mail.png" class="mailIcon" title="Your messages"/>
+					<span id="userInfo" class="userInfo"></span>
+					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
+					<div class="searchbox">
+						<span id="searchIconSpan"><img id="searchIcon" src="../../images/search-icon.png"/></span>
+						<input id="search" type="text"/>
+					</div>
+				</div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<ul id="navivation" class="page-navi">
+					<li><a href="home.html">Home</a></li>
+					<li><a href="profile.html">Profile</a></li>
+					<li class="selectedLi"><a href="spaces/spaces.html">Spaces</a></li>
+					<li><a href="circles.html">Circles</a></li>
+					<li><a href="apps.html">Apps</a></li>
+					<li><a href="community.html">Community</a></li>
+					<li><a href="about.html">About</a></li>
+				</ul>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<h3 class="addRec-header-text">Add a new space to your account on HealthBank.</h3>
+					<div id="feedbackText" class="addRec-feedback"></div>
+					<form name="newSpace-form" id="newSpace-form" class="addRec-form">
+						<!--Input fields-->
+						<div>
+							<label for="name" id="nameLabel" class="label">Name of your space(*)</label> 
+							<input id="name" name="name" type="text" class="input large-input name" placeholder="Name" />
+						</div>
+						<div>
+							<label for="descr" id="descrLabel" class="label">Describe your space(*)</label> 
+							<textarea id="descr" name="descr" class="input large-input descr" placeholder="Description" rows="8" cols="52" onkeyup="textAreaAdjust(this)"></textarea>
+						</div>
+						<div>
+							<label for="visualization" id = "visualizationLabel" class="label">Visualization</label>
+							<input id="visualization" type="text" name="visualization" readonly="readonly" class="input large-input"/>
+						</div>
+						<!--END Input fields-->
+						<!--Buttons-->
+						<div class="addRec-footer">
+							<input id="submitButton" type="submit" name="submit" value="Send" class="big-button addRecButton" />
+							<input id="clearButton" type="submit" name="submit" value="Clear Form" class="big-button addRecButton" />
+							<input id="cancelButton" type="submit" name="submit" value="Cancel" class="big-button addRecButton" />
+						</div>
+						<!--END Buttons-->
+					</form>
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

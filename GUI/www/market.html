@@ -30,7 +30,7 @@
 					apps = data.values.applications;
 					apps.reverse();
 					$.each(apps, function(i, item) { 
-						if(item.online=="online"){
+						if(item.online=="online" && item.type=="app"){
 					    	$("#appentries").append('<li><div id="'+item._id.$oid+'"><img class="newsicon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="newscontentbox"><h4 class="newsheader">'+item.name+'</h4><p class="newscontent">Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div></div></li>');
 					    	if(item.icon!=undefined){
 								loadImage(item.icon, item._id.$oid, "application", {
@@ -57,7 +57,7 @@
 		}
 
 		function loadVisualizations () {
-			getApplicationByQuery("", "viz", {
+			getApplicationByQuery("*", "viz", {
 				onSuccess: function(data){
 					$("#vizentries").html("");
 					if(data.size==0){
@@ -81,7 +81,7 @@
 						}
 					});
 					$("#vizentries li div").click(function(){ 
-						window.location = WEB_URL+"detailApplication.html?id="+$(this).attr("id")+"&type=viz&url=market.html"; 
+						window.location = WEB_URL+"detailApplication.html?id="+$(this).attr("id")+"&type=viz&url=market.html?type=viz"; 
 					});
 				}, onError: function(data){
 					$("#vizentries").html("There was an error loading the data from the database. It seems like there is no visualizations to be found in the system yet! We are terribly sorry. Stay tuned for more to come soon.");
@@ -106,7 +106,12 @@
 				$("#application-content").show();
 				$("#application-tab").addClass("selected");
 			});
-			loadApplications();
+			whatToLoad = getURLParameter("type");
+			if(whatToLoad!=undefined && whatToLoad=="viz"){
+				$("#visualization-tab").click();
+			} else {
+				loadApplications();
+			}
 		});
 		
 	</script>
@@ -160,12 +165,12 @@
 					</div>
 					<div id="application-content" class="application-content">
 						<h3>These are all the applications available in our system so far:</h3>
-						<p>Click on them to get more information</p></br>
+						<p>Click on them to get more information</p><br>
 						<ul id="appentries" class="newsentries"></ul>
 					</div>
 					<div id="visualization-content" class="application-content">
 						<h3>These are all the visualizations available in our system so far:</h3>
-						<p>Click on them to get more information</p></br>
+						<p>Click on them to get more information</p><br>
 						<ul id="vizentries" class="newsentries"></ul>
 					</div>
 				</div>

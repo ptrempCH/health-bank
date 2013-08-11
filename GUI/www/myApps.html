@@ -43,6 +43,27 @@
 			});
 		}
 
+		function loadUsersVisualizations (data) {
+			$("#vizentries").html("");
+			if(data.size==0){
+				$("#vizentries").append("<center>No visualizations installed yet!</center>");
+			}
+
+			visualizations = data.values.visualizations;
+			visualizations.reverse();
+			$.each(visualizations, function(i, item) { 
+			    $("#vizentries").append('<li><div id="'+item._id.$oid+'" type="'+item.type+'"><img class="store-preview-icon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="store-preview-content"><h4 class="store-preview-header">'+item.name+'</h4><p class="store-preview-descr">'+item.companyName+', Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div></div></li>');
+			    loadImage(item.icon, item._id.$oid, "application", {
+					onSuccess: function(data, id){
+						$("#"+id+" .store-preview-icon").attr("src", "data:image/png;base64,"+data);
+					}, onError: function(data){ /*ignore*/ }
+				});
+			});
+			$("#vizentries li div div").click(function(){ 
+				window.location = WEB_URL+"detailApplication.html?id="+$(this).parent().attr("id")+"&type="+$(this).parent().attr("type")+"&url=myApps.html"; 
+			});
+		}
+
 		$(document).ready(function() {
 			initialize();
 			getInstalledApplications('app', {
@@ -50,6 +71,13 @@
 					loadUsersApps(data);
 				}, onError: function(data){
 					$("#appentries").html('<center>It appears like you do not have any applications installed yet. Visit the <a href="market.html" class="button" id="appstoreButton" style="margin-top:-5px; float:none;">Appstore</a> to add some new ones.</br></br></br>If this is not the case, then we are sorry, there must have been an error loading your data, please refresh the page and try again.</center>');
+				}
+			});
+			getInstalledApplications('viz', {
+				onSuccess: function (data) {
+					loadUsersVisualizations(data);
+				}, onError: function(data){
+					$("#vizentries").html('<center>It appears like you do not have any visualizations installed yet. Visit the <a href="market.html?type=viz" class="button" id="appstoreButton" style="margin-top:-5px; float:none;">Appstore</a> to add some new ones.</br></br></br>If this is not the case, then we are sorry, there must have been an error loading your data, please refresh the page and try again.</center>');
 				}
 			});
 		});
@@ -101,8 +129,10 @@
 				<div class="page-content">
 					<div id="apps-section">
 						<h3 id="headerText" style="margin: 10px 0 20px 0;">These are all your installed apps:</h3>
-						<ul id="appentries" class="store-preview-list">
-						</ul>
+						<ul id="appentries" class="store-preview-list"></ul>
+						<br>
+						<h3 id="vizHeaderText" style="margin: 10px 0 20px 0;">These are all your installed visualizations:</h3>
+						<ul id="vizentries" class="store-preview-list"></ul>
 					</div>
 				</div>
 				<!--END Content-->

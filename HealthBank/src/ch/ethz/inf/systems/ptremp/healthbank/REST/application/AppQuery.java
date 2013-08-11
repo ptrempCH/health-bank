@@ -178,6 +178,7 @@ public class AppQuery extends HttpServlet {
 							wasError = true;
 						}
 					} else if(query!=null && query.length()>0){ 
+						query = query.replace("*", "\\w*");
 						Pattern regex = Pattern.compile("\\w*"+query+"\\w*");
 						list.add(regex);
 						regex = Pattern.compile("\\w*"+query.toLowerCase()+"\\w*");

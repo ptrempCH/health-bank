@@ -175,7 +175,10 @@ public class Message extends HttpServlet {
 					} else if(hasNew!=null && hasNew.length()>0){
 						list.add(manager.getUserID(credentials));
 						res = (DBCursor) connector.query(MongoDBConnector.MESSAGES_COLLECTION_NAME, new BasicDBObject("recipientID", new BasicDBObject("$in", list)));
-						if(res!=null & res.hasNext()){
+						if(res==null || !res.hasNext()){
+							errorMessage = "\"Message doGet: We could not find any messages. Send some first.\"";
+							wasError = true;
+						} else {
 							JSONParser parser = new JSONParser();
 							while (res.hasNext()) {
 								DBObject obj = res.next();
@@ -198,13 +201,17 @@ public class Message extends HttpServlet {
 						and.add(new BasicDBObject("recipientID", userId));
 						or.add(new BasicDBObject("$and", and));
 						res = (DBCursor) connector.query(MongoDBConnector.MESSAGES_COLLECTION_NAME, new BasicDBObject("$or", or));
+						if(res==null || !res.hasNext()){
+							errorMessage = "\"Message doGet: There was an error, we did not find any messages. Did you provide the correct sessionKey and credentials?\"";
+							wasError = true;
+						}
 					} else {
 						list.add(manager.getUserID(credentials));
 						res = (DBCursor) connector.query(MongoDBConnector.MESSAGES_COLLECTION_NAME, new BasicDBObject("recipientID", new BasicDBObject("$in", list)));
-					}
-					if(res==null){
-						errorMessage = "\"Message doGet: There was an error, we did not find any messages. Did you provide the correct sessionKey and credentials?\"";
-						wasError = true;
+						if(res==null || !res.hasNext()){
+							errorMessage = "\"Message doGet: There was an error, we did not find any messages. Did you provide the correct sessionKey and credentials?\"";
+							wasError = true;
+						}
 					}
 					if(!wasError){
 						JSONParser parser = new JSONParser();

@@ -238,17 +238,17 @@ public class Space extends HttpServlet {
 	 * - session: This is the current session key of the user
 	 * - name: The name of the space to add
 	 * - descr: The description of the space
-	 * - url: The URL of the space. Defines where to load it from
+	 * - visualization: The associated visualization for this space
 	 * - hidden: (optional)Defines if the space is visible for the user or hidden. defaults to 'false'
 	 * 
 	 * Editing an existing space:
 	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
 	 * - session: This is the current session key of the user
 	 * - id: The id of the space to edit
-	 * - name: (optional, but either name, descr, url or hidden must be set) The name of the space to edit
-	 * - descr: (optional, but either name, descr, url or hidden must be set) The description of the space
-	 * - url: (optional, but either name, descr, url or hidden must be set) The URL of the space. Defines where to load it from
-	 * - hidden: (optional, but either name, descr, url or hidden must be set) Defines if the space is visible for the user or hidden. 
+	 * - name: (optional, but either name, descr, url, visualization or hidden must be set) The name of the space to edit
+	 * - descr: (optional, but either name, descr, url, visualization or hidden must be set) The description of the space
+	 * - visualization: (optional, but either name, descr, url, visualization or hidden must be set) The associated visualization for this space
+	 * - hidden: (optional, but either name, descr, url, visualization or hidden must be set) Defines if the space is visible for the user or hidden. 
 	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
 	 * 
 	 * Changing the circles associated with a space
@@ -289,7 +289,7 @@ public class Space extends HttpServlet {
 			// check record specific parameters
 			name = request.getParameter("name");
 			String descr = request.getParameter("descr");
-			String url = request.getParameter("url");
+			String visualization = request.getParameter("visualization");
 			String hidden = request.getParameter("hidden");
 			String circle = request.getParameter("circle");
 			id = request.getParameter("id");
@@ -301,12 +301,12 @@ public class Space extends HttpServlet {
 					wasError = true;
 					isLoggedIn = false;
 				} else {
-					name = (name!=null)?URLDecoder.decode(name, "UTF-8"):null;
-					descr = (descr!=null)?URLDecoder.decode(descr, "UTF-8"):null;
-					url = (url!=null)?URLDecoder.decode(url, "UTF-8"):null;
-					hidden = (hidden!=null)? URLDecoder.decode(hidden, "UTF-8"): null;
-					id = (id!=null)?URLDecoder.decode(id, "UTF-8"): null;
-					circle = (circle!=null)?URLDecoder.decode(circle, "UTF-8"): null;
+					name = (name!=null && name.length()>0)?URLDecoder.decode(name, "UTF-8"):null;
+					descr = (descr!=null && descr.length()>0)?URLDecoder.decode(descr, "UTF-8"):null;
+					visualization = (visualization!=null && visualization.length()>0)?URLDecoder.decode(visualization, "UTF-8"):null;
+					hidden = (hidden!=null && hidden.length()>0)? URLDecoder.decode(hidden, "UTF-8"): null;
+					id = (id!=null && id.length()>0)?URLDecoder.decode(id, "UTF-8"): null;
+					circle = (circle!=null && circle.length()>0)?URLDecoder.decode(circle, "UTF-8"): null;
 					
 					// check DB connection
 					if(!connector.isConnected()){
@@ -316,14 +316,14 @@ public class Space extends HttpServlet {
 					HashMap<Object, Object> data = new HashMap<Object, Object>();
 					BasicDBList list = new BasicDBList();
 					if(id==null) { // add new space
-						if(name==null || name.length()<2 || descr==null || descr.length()<1 || url==null || url.length()<1){
-							errorMessage = "\"Space doPost: Please provide the parameters 'name', 'descr' and 'url' with the request.\"";
+						if(name==null || name.length()<2 || descr==null || descr.length()<1){
+							errorMessage = "\"Space doPost: Please provide the parameters 'name' and 'descr'with the request.\"";
 							wasError = true;
 						}
 						if(!wasError){
 							data.put("name", name);
 							data.put("descr", descr);
-							data.put("url", url);
+							data.put("visualization", visualization);
 							hidden = (hidden==null)?"false":hidden;
 							data.put("hidden", hidden);
 							DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
@@ -365,11 +365,11 @@ public class Space extends HttpServlet {
 									}
 								}
 								connector.update(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("circles", data))); 
-							} else if(name!=null || descr!=null || url!=null || hidden!=null){ // update space
-								if(name!=null){data.put("name", name);}
-								if(descr!=null){data.put("descr", descr);}
-								if(url!=null){data.put("url", url);}
-								if(hidden!=null){data.put("hidden", hidden);}
+							} else if(name!=null || descr!=null || visualization!=null || hidden!=null){ // update space
+								if(name!=null && name.length()>0){data.put("name", name);}
+								if(descr!=null && descr.length()>0){data.put("descr", descr);}
+								if(visualization!=null && visualization.length()>0){data.put("visualization", visualization);}
+								if(hidden!=null && hidden.length()>0){data.put("hidden", hidden); System.out.println(hidden);}
 								connector.update(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));
 							}
 						}

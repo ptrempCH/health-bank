@@ -19,7 +19,7 @@
 		function initRecipientDialog(data){
 			$("#recipientList").html("");
 			$.each(data.values.users, function(i, item){
-				$("#recipientList").append("<li id=\""+jQuery.parseJSON(item.userId).$oid+"\" >"+item.firstname+" "+item.lastname+"</li></br>");
+				$("#recipientList").append("<li id=\""+jQuery.parseJSON(item.userId).$oid+"\" >"+item.firstname+" "+item.lastname+"</li><br>");
 			});
 			if(recipientId.length>0){
 				$("#recipient").val($("#"+recipientId).html());
@@ -42,9 +42,9 @@
 						$.each(data.values.users, function(i, item){
 							if(item.userId.$oid!=user._id.$oid){
 								if(item.companyname!=undefined){
-									$("#recipientList").append("<li id=\""+item.userId.$oid+"\" >"+item.companyname+"</li></br>");
+									$("#recipientList").append("<li id=\""+item.userId.$oid+"\" >"+item.companyname+"</li><br>");
 								} else {
-									$("#recipientList").append("<li id=\""+item.userId.$oid+"\" >"+item.firstname+" "+item.lastname+"</li></br>");
+									$("#recipientList").append("<li id=\""+item.userId.$oid+"\" >"+item.firstname+" "+item.lastname+"</li><br>");
 								}
 							}
 						});

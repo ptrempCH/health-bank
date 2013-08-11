@@ -418,7 +418,7 @@ public class Application extends HttpServlet {
 								for(String s : indexKeywords){ 
 									if(s.length()>0){indexList.add(new BasicDBObject("keyword", s)); }
 								}
-								data.put("index", indexList);
+								if(type.equals("app")){data.put("index", indexList);}
 								if(name!=null && name.length()>0){data.put("name", name);}
 								if(online!=null && online.length()>0){data.put("online", online);}
 								DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");

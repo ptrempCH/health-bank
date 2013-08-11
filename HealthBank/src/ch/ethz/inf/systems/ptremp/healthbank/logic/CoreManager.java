@@ -300,8 +300,9 @@ public class CoreManager {
 		// Medical
 		data.put("name", "Medical");
 		data.put("descr", "All your medical data");
-		data.put("url", "medicalTimeline.html");
+		//data.put("url", "medicalTimeline.html");
 		data.put("hidden", "false");
+		data.put("visualization", "");
 		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		data.put("timedate", dateFormat.format(new Date()));
 		data.put("userID", userid);
@@ -312,8 +313,9 @@ public class CoreManager {
 		data = new HashMap<Object, Object>();
 		data.put("name", "Wellness");
 		data.put("descr", "All your wellness data");
-		data.put("url", "wellnessTimeline.html");
+		//data.put("url", "wellnessTimeline.html");
 		data.put("hidden", "false");
+		data.put("visualization", "");
 		dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 		data.put("timedate", dateFormat.format(new Date()));
 		data.put("userID", userid);

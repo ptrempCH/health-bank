@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script src="js/caloriesGraphViz.js"></script>
+	<link href="css/caloriesGraphViz.css" rel="stylesheet" type="text/css">
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.1.0/moment.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+	<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['corechart']});
+    </script>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			loadAllCalItems();
+      		google.setOnLoadCallback(drawVisualization);
+		});
+		
+	</script>
+</head>
+<body>
+	<div id="statistics">
+		<div id="statsHeader">
+			<table>
+				<tr>
+					<th>Total data</th>
+					<th></th>
+					<th></th>
+					<th>Todays data</th>
+					<th></th>
+				</tr>
+				<tr>
+					<td>Your total consumtion: </td>
+					<td id="totalConsumption"></td>
+					<td width="30%"></td>
+					<td>Your consumtion today: </td>
+					<td id="todayConsumption"></td>
+				</tr>
+				<tr>
+					<td>Total amount burned: </td>
+					<td id="totalBurned"></td>
+					<td width="30%"></td>
+					<td>Total amount burned today: </td>
+					<td id="todayBurned"></td>
+				</tr>
+				<tr>
+					<td>Consumed/Burned ratio: </td>
+					<td id="totalRatio"></td>
+					<td width="30%"></td>
+					<td>Consumed/Burned ratio today: </td>
+					<td id="todayRatio"></td>
+				</tr>
+				<tr>
+					<td>Days with records: </td>
+					<td id="totalDays"></td>
+				</tr>
+			</table>
+		</div>
+		<br><br><br>
+		<table width="100%">
+			<tr>
+				<td><div id="chart_div"></div></td>
+				<td><div id="chartSports_div"></div></td>
+			</tr>
+		</table>							
+	</div>
+</body>
+</html>

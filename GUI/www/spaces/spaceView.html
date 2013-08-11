@@ -14,10 +14,29 @@
 
 	<script type="text/javascript">
 
+		var mySpaceID = "";
+
+		function setHeader(){
+			if(spaces==undefined){setTimeout(function(){setHeader();}, 100); return false;}
+			$.each(spaces, function(i, item){
+				if(item._id.$oid==mySpaceID){
+					$("#spaces-header").html(item.name+" records: ");
+					$("#tab_"+mySpaceID).addClass("tab-highlight");
+					return false;
+				}
+			});
+		}
+
 		$(document).ready(function() {
 			initialize();
+			mySpaceID = getURLParameter("id");
+			if(mySpaceID==undefined){
+				window.location = WEB_URL+"spaces/spaces.html"; 
+			} else {
+				initializeSpaces("spaces/spaceView.html?id="+mySpaceID, mySpaceID, 0);
+			}
 			$.get(WEB_URL+'dialogs/not-implemented.html').success(function(data){$('body').append(data); loadedNotYetImplemented();});
-			initializeSpaces("spaces/spaces.html", "", 0);
+			setHeader();
 		});
 		
 	</script>
@@ -46,7 +65,7 @@
 				<ul id="navivation" class="page-navi">
 					<li><a href="../home.html">Home</a></li>
 					<li><a href="../profile.html">Profile</a></li>
-					<li class="selectedLi"><a href="spaces.html">Spaces</a></li>
+					<li><a href="spaces.html">Spaces</a></li>
 					<li><a href="../circles.html">Circles</a></li>
 					<li><a href="../apps.html">Apps</a></li>
 					<li><a href="../community.html">Community</a></li>
@@ -57,14 +76,13 @@
 				<!--Content-->
 				<div class="page-content spaces-page-content">
 					<div id="tabs" class="tabs">
-						<div id="all" class="tab tab-highlight"><a href="spaces.html">All Entries</a></div>
+						<div id="all" class="tab"><a href="spaces.html">All Entries</a></div>
 						<div id="userDefTabs"></div>
 						<div id="newtab" class="tab new-tab"><img id="newTabIcon" src="../../images/plus.png" width="18px"/></div>
 					</div>
 					<div id="spaces-chronic-section">
 						<div class="chronic-section-header">
-							<h3 class="header-text">The latest records</h3>
-							<input id="createRecButton" type="submit" name="submit" value="Create New Record" class="big-button" /><br>
+							<h3 id="spaces-header" class="header-text">Medical records:</h3><br>
 							<ul id="filterDropdown">
 							    <li class="filterLabel"><span>Filter entries:&nbsp;</span></li>
 							    <li class="filterDD"><span id="filterTop">My Entries<img src="../../images/navigate_down.png" height="20px"/></span>
@@ -82,10 +100,13 @@
 							</ul>
 						</div>
 						<br>
+						<iframe class="vizFrame" sandbox="allow-same-origin allow-forms allow-scripts allow-top-navigation" id="vizFrame" name="vizFrame"></iframe>
+						<br>
 						<ul id="recordentries" class="recordentries">
 							<center>
 								<img style="height:60px; float:center; display: block; margin-left: auto; margin-right: auto;" src="../../images/loading.gif"></img>
-								Loading...
+								Loading... <br>
+								If this loading screen will not be replaced by content, please check your internet connection. 
 							</center>
 						</ul>
 					</div>

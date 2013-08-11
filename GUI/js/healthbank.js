@@ -109,33 +109,118 @@ function initialize() {
 }
 
 /**
+* Sets the click handler for the hide buttons in the new spaces popup that appears
+* when the user clicks on the '+' icon on any of the spaces pages. This needs to be
+* set each time, one of the spaces 'hidden' status changes, since the DOM element changes
+* with it.
+*/
+function setHideButtonClickHandlers () {
+	$("#currentSpaces .hideSpaceButton").click(function () {
+		$(this).html("Show");
+		$(this).parent().attr("changed", "true");
+		$(this).parent().appendTo("#otherSpaces");
+		setHideButtonClickHandlers();
+	});
+	$("#otherSpaces .hideSpaceButton").click(function () {
+		$(this).html("Hide");
+		$(this).parent().attr("changed", "true");
+		$(this).parent().appendTo("#currentSpaces");
+		setHideButtonClickHandlers();
+	});
+}
+
+/**
+* This sets the tabs in the spaces pages according to the user preferences
+*/
+function setSpacesTabs () {
+	if(user==undefined){
+		setTimeout(function(){
+			setSpacesTabs();
+		}, 100);
+		return false;
+	}
+	if(user.spaceTabOrder!=undefined && user.spaceTabOrder.length>0){
+		$.each(user.spaceTabOrder.split(" "), function(i, item){
+			$.each(spaces, function(j, spa){
+				if(spa._id.$oid == item){
+					//if(spa.hidden=="false"){ $("#userDefTabs").append('<div id="'+spa._id.$oid+'" class="tab" title="'+spa.descr+'"><a href="'+spa.url+'">'+spa.name+'</a></div>'); }
+					if(spa.hidden=="false"){ $("#userDefTabs").append('<div id="tab_'+spa._id.$oid+'" class="tab" title="'+spa.descr+'"><a href="spaceView.html?id='+spa._id.$oid+'">'+spa.name+'</a></div>'); }
+					return false;
+				}
+			});
+		});
+	} else { 
+		if($("#userDefTabs").length>0){
+			$.each(spaces, function (i, item) {
+				//if(item.hidden=="false"){ $("#userDefTabs").append('<div id="'+item._id.$oid+'" class="tab" title="'+item.descr+'"><a href="'+item.url+'">'+item.name+'</a></div>'); }
+				if(item.hidden=="false"){ $("#userDefTabs").append('<div id="tab_'+item._id.$oid+'" class="tab" title="'+item.descr+'"><a href="spaceView.html?id='+item._id.$oid+'">'+item.name+'</a></div>'); }
+			});
+		}
+	}
+}
+
+/**
+* This sets the visualization iFrame on the spaces pages that define a visualization
+*/
+function setVizFrame (space_id) {
+	if(spaces==undefined){
+		setTimeout(function(){
+			setVizFrame(space_id);
+		}, 100);
+		return false;
+	}
+	$.each(spaces, function(i, item){
+		if(item._id.$oid==space_id){
+			if(item.visualization!=undefined){
+				getApplicationDetail(item.visualization, "viz", {
+					onSuccess: function(data){
+						vizData = data.values.visualizations[0];
+						if(vizData.url!=undefined && vizData.url.length>0){
+							$("#vizFrame").attr("src", "../../apps/"+vizData._id.$oid+"/"+(vizData.name.replace(/\s+/g, ''))+"/"+vizData.url);
+						} else{ 
+							$("#vizFrame").html("There was an error loading the visualization. We could not find the HTML file for the visualization on the server. Please try again later.");
+							$("#vizFrame").css("color", "red");
+							return false;
+						}
+					}, onError: function(data){
+						$("#vizFrame").html("There was an error loading the visualization. Please try again later.");
+						$("#vizFrame").css("color", "red");
+					}
+				});
+				$("#vizFrame").show();
+			} else {
+				$("#vizFrame").hide();
+			}
+			return false;
+		}
+	});
+}
+
+/**
 * Initializing spaces pages with loading of the circles, spaces and records (only of the current logged in user),
 * loading HTML snippets for popups and setting the click listener for the newTabIcon.
 *
 * Parameters:
 * - backurl: the url of the space, we are initializing. This is propagated over several steps to loadLatestRecords() where it is needed for clicks on detail views of records.
-* - spacesName: The name of the current space. This is propagated over seceral steps to loadLatestRecords()
+* - spacesID: The id of the current space. This is propagated over seceral steps to loadLatestRecords()
 * - nrOfItems: The amount of records that shall be displayed in the list. Used by loadLatestRecords().
 */
-function initializeSpaces(backurl, spacesName, nrOfItems) {
+function initializeSpaces(backurl, spacesID, nrOfItems) {
 	loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
 	loadSpaces(
 		{onSuccess: function(data){
 			loadedSpaces(data);
-			if($("#userDefTabs").length>0){
-				$.each(spaces, function (i, item) {
-					$("#userDefTabs").append('<div id="'+item.name.toLowerCase().replace(/\s/g,"")+'" class="tab"><a href="'+item.url+'">'+item.name+'</a></div>');
-				});
-			}
+			setSpacesTabs();
+			setVizFrame(spacesID);
 		}, onError: function(){
 			console.log("Error while loading spaces...");
 		}
 	});
-	loadRecords(spacesName, {onSuccess: function(data){loadLatestRecords(data.values.records, backurl, spacesName, nrOfItems);}, onError: function(){loadRecordsError();}});
-	$.get(WEB_URL+'dialogs/circles-form.html').success(function(data){$('body').append(data); loadedExtHTMLForSpaces(backurl, spacesName, nrOfItems);});
-	$.get(WEB_URL+'dialogs/spaces-form.html').success(function(data){$('body').append(data); loadedExtHTMLForSpaces(backurl, spacesName, nrOfItems);});
-	$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data); loadedExtHTMLForSpaces(backurl, spacesName, nrOfItems);});
-	$.get(WEB_URL+'dialogs/newSpace-form.html').success(function(data){$('body').append(data); loadedExtHTMLForSpaces(backurl, spacesName, nrOfItems);});
+	loadRecords(spacesID, {onSuccess: function(data){loadLatestRecords(data.values.records, backurl, spacesID, nrOfItems);}, onError: function(){loadRecordsError();}});
+	$.get(WEB_URL+'dialogs/circles-form.html').success(function(data){$('body').append(data); loadedExtHTMLForSpaces(backurl, spacesID, nrOfItems);});
+	$.get(WEB_URL+'dialogs/spaces-form.html').success(function(data){$('body').append(data); loadedExtHTMLForSpaces(backurl, spacesID, nrOfItems);});
+	$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data); loadedExtHTMLForSpaces(backurl, spacesID, nrOfItems);});
+	$.get(WEB_URL+'dialogs/spacePreferences-form.html').success(function(data){$('body').append(data); loadedExtHTMLForSpaces(backurl, spacesID, nrOfItems);});
 
 	$("#newTabIcon").click(function(){
 		$('#newSpace-form').height("300px");
@@ -148,16 +233,105 @@ function initializeSpaces(backurl, spacesName, nrOfItems) {
 		$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
 		$('#newSpace-form').css({top:dialogTop, left:dialogLeft}).show();
 		$("#currentSpaces").contents().remove();
+		$("#otherSpaces").contents().remove();
 		$("#currentSpaces").append("<li>All Entries</li>");
+		if(user!=undefined && user.spaceTabOrder!=undefined){
+			$.each(user.spaceTabOrder.split(" "), function(i, item){
+				$.each(spaces, function(j, spa){
+					if(spa._id.$oid == item){
+						if(spa.name=="Medical" || spa.name=="Wellness"){
+							if(spa.hidden=="false"){ 
+								$("#currentSpaces").append("<li id=\""+spa._id.$oid+"\" title=\""+spa.descr+"\" >"+spa.name+"<button class='button hideSpaceButton'>Hide</button></li>");
+							} else {
+								$("#otherSpaces").append("<li id=\""+spa._id.$oid+"\" title=\""+spa.descr+"\">"+spa.name+"<button class='button hideSpaceButton'>Show</button></li>");
+							}
+						} else {
+							if(spa.hidden=="false"){ 
+								$("#currentSpaces").append("<li id=\""+spa._id.$oid+"\" title=\""+spa.descr+"\" >"+spa.name+"<button class='button hideSpaceButton'>Hide</button><button class='button editSpaceButton'>Edit</button></li>");
+							} else {
+								$("#otherSpaces").append("<li id=\""+spa._id.$oid+"\" title=\""+spa.descr+"\">"+spa.name+"<button class='button hideSpaceButton'>Show</button><button class='button editSpaceButton'>Edit</button></li>");
+							}
+						}
+						
+						return false;
+					}
+				});
+			});
+		}
 		$.each(spaces, function(i, item){
-			var spaceName = item.name.replace(" ", "");
-			if(spaceName=="Medical" || spaceName=="Wellness"){
-				$("#currentSpaces").append("<li id=\""+item._id.$oid+"\" name=\""+spaceName+"\" value=\""+spaceName+"\">"+item.name+"<button class='button hideSpaceButton'>Hide</button></li></br>");
-			} else {
-				$("#currentSpaces").append("<li id=\""+item._id.$oid+"\" name=\""+spaceName+"\" value=\""+spaceName+"\">"+item.name+"<button class='button hideSpaceButton'>Hide</button><button class='button hideSpaceButton'>Remove</button></li></br>");
+			found = false;
+			if(user!=undefined && user.spaceTabOrder!=undefined){
+				$.each(user.spaceTabOrder.split(" "), function(j, spaID){
+					if(spaID==item._id.$oid){found=true; return false;}
+				});
+			}
+			if(found==false){
+				if(item.name=="Medical" || item.name=="Wellness"){
+					if(item.hidden=="true"){
+						$("#otherSpaces").append("<li id=\""+item._id.$oid+"\" title=\""+item.descr+"\">"+item.name+"<button class='button hideSpaceButton'>Show</button></li>");
+					} else {
+						$("#currentSpaces").append("<li id=\""+item._id.$oid+"\" title=\""+item.descr+"\" >"+item.name+"<button class='button hideSpaceButton'>Hide</button></li>");
+					}
+				} else {
+					if(item.hidden=="true"){
+						$("#otherSpaces").append("<li id=\""+item._id.$oid+"\" title=\""+item.descr+"\">"+item.name+"<button class='button hideSpaceButton'>Show</button><button class='button editSpaceButton'>Edit</button></li>");
+					} else {
+						$("#currentSpaces").append("<li id=\""+item._id.$oid+"\" title=\""+item.descr+"\">"+item.name+"<button class='button hideSpaceButton'>Hide</button><button class='button editSpaceButton'>Edit</button></li>");
+					}
+				}
 			}
 		});
 		$("#currentSpaces").sortable();
+
+		$("#createNewSpaceButton").click(function() {
+			window.location = WEB_URL+"spaces/addSpace.html"; 
+			return false;
+		});
+		$(".editSpaceButton").click(function() {
+			window.location = WEB_URL+"spaces/addSpace.html?id="+$(this).parent().attr("id");
+		});
+		$("#saveSpacesTab").click(function(){
+			/*
+			// 1. Get all items that changed and update the according space entries
+			// 2. Get order of shown spaces and store this order in user entry
+			// 3. Reload page
+			*/
+
+			// 1.
+			$.each($("#currentSpaces li"), function(i, item){
+				if($(this).attr("id")==undefined){return true;}
+				if($(this).attr("changed")=="true"){
+					editSpaces($(this).attr("id"), "", "", "false", "", {});
+				}
+			});
+			$.each($("#otherSpaces li"), function(i, item){
+				if($(this).attr("id")==undefined){return true;}
+				if($(this).attr("changed")=="true"){
+					editSpaces($(this).attr("id"), "", "", "true", "", {});
+				}
+			});
+
+			// 2.
+			s = "";
+			$.each($("#currentSpaces li"), function(i, item){
+			   if($(this).attr("id")!=undefined){
+			   		s += $(this).attr("id")+" ";
+			   }
+			});
+			user.spaceTabOrder = s;
+			updateUserData(user, {
+				onSuccess: function(data){
+					// 3.
+					window.location.reload(true);
+				}, 
+				onError: function(data){
+					alert("Could not save the ordering of your taps. There was an interal error. Sorry about that.")
+				}
+			});
+
+			return false;
+		});
+		setHideButtonClickHandlers();
 		return false;
 	});
 	$("#createRecButton").click(function(){
@@ -174,17 +348,17 @@ function initializeSpaces(backurl, spacesName, nrOfItems) {
 				if(item.userID==user._id.$oid){ found = true; return false; }
 			});
 			if(!found){
-				updateFilterPeopleList(user._id.$oid, true, spacesName, backurl); 
+				updateFilterPeopleList(user._id.$oid, true, spacesID, backurl); 
 			}
 		}
 		else { 
-			updateFilterSelection(spacesName, backurl); 
-			updateFilterPeopleList(user._id.$oid, false, spacesName, backurl); 
+			updateFilterSelection(spacesID, backurl); 
+			updateFilterPeopleList(user._id.$oid, false, spacesID, backurl); 
 		}
 	});
 	$("#filterEveryone").change(function(){
 		$.each(spaces, function(i, item){
-			if(spacesName==item.name){spacesName=item._id.$oid; return false;}
+			if(spacesID==item.name){spacesID=item._id.$oid; return false;}
 		});
 		if(this.checked) {
 			$("#filterTop").html("No Filter<img src=\"../../images/navigate_down.png\" height=\"20px\"/>");
@@ -193,15 +367,15 @@ function initializeSpaces(backurl, spacesName, nrOfItems) {
 			$("#filterMyEntry").each(function(){ this.checked = true; $("#filterMyEntry").change(); });
 			$("#filterIndPeopleList input").each(function(){ 
 				this.checked = false; 
-				updateFilterPeopleList(this.id.substring(7), true, spacesName, backurl);
+				updateFilterPeopleList(this.id.substring(7), true, spacesID, backurl);
 			});
 			$("#filterIndCircleList input").each(function(){ this.checked = false; });
 			wasEveryone = true;
 		}
 		else { 
-			updateFilterSelection(spacesName, backurl); 
+			updateFilterSelection(spacesID, backurl); 
 			if(wasEveryone){
-				updateFilterPeopleList("", false, spacesName, backurl); 
+				updateFilterPeopleList("", false, spacesID, backurl); 
 				wasEveryone=false;
 			}
 		}
@@ -214,9 +388,9 @@ function initializeSpaces(backurl, spacesName, nrOfItems) {
 			$("#filterIndPeopleList input").each(function(){ this.checked = false; });
 		}
 		else { 
-			updateFilterSelection(spacesName, backurl); 
+			updateFilterSelection(spacesID, backurl); 
 			$("#filterIndCircleList input").each(function(){ this.checked = false; });
-			updateFilterCircleList("", false, spacesName, backurl);
+			updateFilterCircleList("", false, spacesID, backurl);
 		}
 	});
 	$("#filterIndPeople").change(function(){
@@ -227,9 +401,9 @@ function initializeSpaces(backurl, spacesName, nrOfItems) {
 			$("#filterIndCircleList input").each(function(){ this.checked = false; });
 		}
 		else { 
-			updateFilterSelection(spacesName, backurl); 
+			updateFilterSelection(spacesID, backurl); 
 			$("#filterIndPeopleList input").each(function(){ this.checked = false; });
-			updateFilterPeopleList("", false, spacesName, backurl);
+			updateFilterPeopleList("", false, spacesID, backurl);
 		}
 	});
 	$("#filterDropdown li").hover(
@@ -241,7 +415,7 @@ function initializeSpaces(backurl, spacesName, nrOfItems) {
     			$('ul', this).slideUp(50);            
 		});
 	$("#filterMyEntry").each(function(){ this.checked = true; });
-	initializeDropDown(spacesName, backurl);
+	initializeDropDown(spacesID, backurl);
 }
 
 function initializeDropDown(space, backurl) {
@@ -276,7 +450,7 @@ function initializeDropDown(space, backurl) {
 
 		var mySpaceId = "";
 		$.each(spaces, function (i, item) {
-			if(item.name==space){
+			if(item._id.$oid==space){
 				mySpaceId = item._id.$oid;
 			}
 		});
@@ -456,9 +630,6 @@ function loadedExtHTMLForSpaces(backurl, spacesName, nrOfItems) {
 			saveSpacesOfRecord($("#SrecordID").val(), backurl, spacesName, nrOfItems);
 			return false;
 		});
-		$("#saveSpacesTab").click(function() {
-			$( "#notYetImplementedDialog" ).dialog( "open" );
-		});
 	}
 }
 
@@ -601,6 +772,7 @@ function updateUserData(userData, callback) {
 		if(userData.height==undefined){userData.height="";}
 		if(userData.weight==undefined){userData.weight="";}
 		if(userData.allowResearch==undefined){userData.allowResearch="n";}
+		if(userData.spaceTabOrder==undefined){userData.spaceTabOrder="";}
 		
 		$.ajax({
 			url: API_URL+"Profile",
@@ -629,7 +801,8 @@ function updateUserData(userData, callback) {
 				birthday : encodeURIComponent(userData.birthday),
 				height : encodeURIComponent(userData.height),
 				weight : encodeURIComponent(userData.weight),
-				allowResearch : encodeURIComponent(userData.allowResearch)
+				allowResearch : encodeURIComponent(userData.allowResearch),
+				spaceTabOrder: encodeURIComponent(userData.spaceTabOrder)
 			},
 			success: function(data){
 				if(data.result=="failed"){
@@ -839,11 +1012,11 @@ function updateRecordSpaces(spaceId, spaces, callback){
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
 **/
-function loadRecords(space_name, callback) {
+function loadRecords(space_id, callback) {
 	callback = callback || {};
 	if(isStorageDefined())
 	{
-		if(space_name==undefined || space_name.length>1){
+		if(space_id==undefined || space_id.length<1){
 			$.ajax({
 				url: API_URL+"Record",
 				type: 'get',
@@ -870,7 +1043,7 @@ function loadRecords(space_name, callback) {
 				url: API_URL+"Record",
 				type: 'get',
 				dataType: 'json',
-				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), spaceId : encodeURIComponent(space_name) },
+				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), spaceId : encodeURIComponent(space_id) },
 				success: function(data){
 					if(data.result=="failed"){
 						if(data.loggedOut=="true"){
@@ -1062,6 +1235,87 @@ function loadSpaces(callback) {
 			type: 'get',
 			dataType: 'json',
 			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError "+data);
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+
+/**
+* Adds a new space to the user
+* Redirects to the login page, if not logged in. 
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - name: The name of the space to create
+* - descr: A description of the space
+* - vizualisation: The id of a visualization the user wants display on this space (so far only one vizualization is supported)
+* - hidden: true or false. If this value is set to true, there will not be a tab for this space on the screen, but the space still exists.
+**/
+function addSpace(name, descr, hidden, viz, callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"Space",
+			type: 'post',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), name : encodeURIComponent(name), descr : encodeURIComponent(descr), hidden : encodeURIComponent(hidden), visualization : encodeURIComponent(viz) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError "+data);
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+
+/**
+* Edits a space entry of the user
+* Redirects to the login page, if not logged in. 
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - id: The id of the space to edit
+* - name: The name of the space to create
+* - descr: A description of the space
+* - vizualisation: The id of a visualization the user wants display on this space (so far only one vizualization is supported)
+* - hidden: true or false. If this value is set to true, there will not be a tab for this space on the screen, but the space still exists.
+**/
+function editSpaces(id, name, descr, hidden, viz, callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"Space",
+			type: 'post',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), name : encodeURIComponent(name), descr : encodeURIComponent(descr), hidden : encodeURIComponent(hidden), visualization : encodeURIComponent(viz), id : encodeURIComponent(id) },
 			success: function(data){
 				if(data.result=="failed"){
 					if(data.loggedOut=="true"){
@@ -1749,11 +2003,11 @@ function loadedSpaces(data){
 *
 * Parameters:
 * - backurl: the url of the space, we are initializing. This is propagated over several steps to loadLatestRecords() where it is needed for clicks on detail views of records.
-* - spacesName: The name of the current space. This is propagated over seceral steps to loadLatestRecords()
+* - spaces_id: The id of the current space. This is propagated over seceral steps to loadLatestRecords()
 * - nrOfItems: The amount of records that shall be displayed in the list. Used by loadLatestRecords().
 * - recordId: The id of the record we want to save the spaces to 
 */
-function saveSpacesOfRecord(recordId, backlink, space_name, nrOfItems){
+function saveSpacesOfRecord(recordId, backlink, space_id, nrOfItems){
 	var selectedSpaces = [];
 	var iter = 0;
 	var s = "";
@@ -1774,7 +2028,7 @@ function saveSpacesOfRecord(recordId, backlink, space_name, nrOfItems){
 			{
 				onSuccess: function(data){
 					$("#circles-form, #dialog-overlay, #spaces-form").hide();
-					loadRecords(space_name, {onSuccess: function(data){loadLatestRecords(data.values.records, backlink, space_name, nrOfItems);}, onError: function(){loadRecordsError();}});
+					loadRecords(space_id, {onSuccess: function(data){loadLatestRecords(data.values.records, backlink, space_id, nrOfItems);}, onError: function(){loadRecordsError();}});
 				}, 
 				onError: function(){
 					d=document.createElement('div');
@@ -1818,11 +2072,11 @@ function saveSpacesOfRecord(recordId, backlink, space_name, nrOfItems){
 *
 * Parameters:
 * - backurl: the url of the space, we are initializing. This is propagated over several steps to loadLatestRecords() where it is needed for clicks on detail views of records.
-* - spacesName: The name of the current space. This is propagated over seceral steps to loadLatestRecords()
+* - spaces_id: The id of the current space. This is propagated over seceral steps to loadLatestRecords()
 * - nrOfItems: The amount of records that shall be displayed in the list. Used by loadLatestRecords().
 * - recordId: The id of the record we want to save the circles to 
 */
-function saveCirclesOfRecord(recordId, backlink, space_name, nrOfItems){
+function saveCirclesOfRecord(recordId, backlink, space_id, nrOfItems){
 	var selectedCircles = [];
 	var iter = 0;
 	var s = "";
@@ -1842,7 +2096,7 @@ function saveCirclesOfRecord(recordId, backlink, space_name, nrOfItems){
 		{
 			onSuccess: function(data){
 				$("#circles-form, #dialog-overlay").hide();
-				loadRecords(space_name, {onSuccess: function(data){loadLatestRecords(data.values.records, backlink, space_name, nrOfItems);}, onError: function(){loadRecordsError();}});
+				loadRecords(space_id, {onSuccess: function(data){loadLatestRecords(data.values.records, backlink, space_id, nrOfItems);}, onError: function(){loadRecordsError();}});
 			}, 
 			onError: function(){
 				d=document.createElement('div');
@@ -1879,11 +2133,11 @@ function sortRecords () {
 *
 * Parameters:
 * - backurl: the url of the space, we are initializing. 
-* - spacesName: The name of the current space. 
+* - spaces_id: The id of the current space. 
 * - nrOfItems: The amount of records that shall be displayed in the list.
 * - recordId: The id of the record we want to save the spaces to 
 */
-function loadLatestRecords(data, backlink, space_name, nrOfItems) {
+function loadLatestRecords(data, backlink, space_id, nrOfItems) {
 	$("#recordentries").html("");
 	if(data==undefined || data.length==0){
 		$("#recordentries").append("<center>No entries yet!</center>");
@@ -1892,7 +2146,7 @@ function loadLatestRecords(data, backlink, space_name, nrOfItems) {
 	records = data;
 	sortRecords();
 
-	if(space_name==undefined || space_name.length<1){
+	if(space_id==undefined || space_id.length<1){
 		$.each(records, function(i, item) {
 			if(item.app==undefined || item.app!="profile"){
 				if(item.indP!=undefined && item.indP.length>0){
@@ -1941,8 +2195,8 @@ function loadLatestRecords(data, backlink, space_name, nrOfItems) {
 	} else {
 		var spaceID = "";
 		$.each(spaces, function(i, item){
-			if(item.name==space_name){ spaceID = item._id.$oid;}
-			else if(item._id.$oid == space_name) { spaceID = space_name;}
+			if(item.name==space_id){ spaceID = item._id.$oid;}
+			else if(item._id.$oid == space_id) { spaceID = space_id;}
 		});
 		$.each(records, function(i, item) {
 			if(item.app==undefined || item.app!="profile"){

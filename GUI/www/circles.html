@@ -400,7 +400,7 @@
 				$("#spaces-form p").html("All record of this circle will be visible in the selected space(s).")
 				$.each(spaces, function(i, item){
 					var spaceName = item.name.replace(" ", "");
-					$("#space").append("<input type=\"checkbox\" id=\""+item._id.$oid+"\" name=\""+spaceName+"\" value=\""+spaceName+"\">"+item.name+"</input></br>");
+					$("#space").append("<input type=\"checkbox\" id=\""+item._id.$oid+"\" name=\""+spaceName+"\" value=\""+spaceName+"\">"+item.name+"</input><br>");
 					if(item.circles!=undefined){
 						$.each(item.circles, function(j,cir){
 							if(cir == circleId){ $("#"+item._id.$oid).prop('checked', true); }

@@ -72,14 +72,16 @@
 							hasInstalled = true;
 							return false;
 						}
-					} else if(type="viz" && item.viz!=undefined){
+					} else if(type=="viz" && item.viz!=undefined){
 						if(item.viz==id){
 							hasInstalled = true;
 							return false;
 						}
-					} else {
-						window.location = WEB_URL+"apps.html";
-					}
+					} /*else {
+						setTimeout(function(){
+							window.location = WEB_URL+"apps.html";
+						},5000);
+					}*/
 				});
 			}
 			if(hasInstalled){
@@ -139,7 +141,13 @@
 			$("#backButton").click(function(){
 				url = getURLParameter("url");
 				if(url!=undefined){ window.location = WEB_URL + url; }
-				else { window.location = WEB_URL + "market.html"; }
+				else { 
+					if(type!=undefined && type=="viz"){
+						window.location = WEB_URL + "market.html?type=viz"; 
+					} else {
+						window.location = WEB_URL + "market.html"; 
+					}
+				}
 				return false;
 			});
 		});

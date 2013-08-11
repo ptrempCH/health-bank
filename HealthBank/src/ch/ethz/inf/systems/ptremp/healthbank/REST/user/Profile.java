@@ -456,6 +456,7 @@ public class Profile extends HttpServlet {
 				String height = request.getParameter("height");
 				String weight = request.getParameter("weight");
 				String allowResearch = request.getParameter("allowResearch");
+				String spaceTabOrder = request.getParameter("spaceTabOrder");
 				gender = (gender!=null)?URLDecoder.decode(gender, "UTF-8"):null;
 				firstname = (firstname!=null)?URLDecoder.decode(firstname, "UTF-8"):null;
 				lastname = (lastname!=null)?URLDecoder.decode(lastname, "UTF-8"):null;
@@ -477,6 +478,7 @@ public class Profile extends HttpServlet {
 				height = (height!=null)?URLDecoder.decode(height, "UTF-8"):null;
 				weight = (weight!=null)?URLDecoder.decode(weight, "UTF-8"):null;
 				allowResearch = (allowResearch!=null)?URLDecoder.decode(allowResearch, "UTF-8"):null;
+				spaceTabOrder = (spaceTabOrder!=null)?URLDecoder.decode(spaceTabOrder, "UTF-8"):null;
 				
 				String md5 = "";
 				if(password!=null){
@@ -519,6 +521,7 @@ public class Profile extends HttpServlet {
 						if(birthday!=null && birthday.length()>0){data.put("birthday", birthday);}
 						if(height!=null && height.length()>0){data.put("height", height);}
 						if(weight!=null && weight.length()>0){data.put("weight", weight);}
+						if(spaceTabOrder!=null && spaceTabOrder.length()>0){data.put("spaceTabOrder", spaceTabOrder);}
 						if(allowResearch!=null && allowResearch.length()>0){
 							data.put("allowResearch", allowResearch);
 							if(allowResearch.equals("y")){
