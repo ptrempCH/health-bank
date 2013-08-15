@@ -23,11 +23,11 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
-import org.apache.tomcat.util.http.fileupload.FileItem;
-import org.apache.tomcat.util.http.fileupload.FileUploadException;
-import org.apache.tomcat.util.http.fileupload.disk.DiskFileItemFactory;
-import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -180,7 +180,8 @@ public class Application extends HttpServlet {
 									DBObject obj = (DBObject) res.next();
 									JSONObject resObj = (JSONObject) parser.parse(obj.toString());
 									String curOnline = (String) resObj.get("online");
-									if(curOnline!=null && curOnline.equals("online")){
+									String isFor = (String) resObj.get("isFor");
+									if(curOnline!=null && curOnline.equals("online") && (isFor==null || !isFor.equals("institutes"))){
 										resArray.add(resObj);
 									}
 								}
@@ -282,7 +283,7 @@ public class Application extends HttpServlet {
 		String errorMessage = "";
 		boolean wasError = false;
 		boolean isLoggedIn = true;
-		String session = "", credentials = "", name = "", descr = "", whatIsNew = "", version = "", type = "", online = "", icon = "", htmlFileName = "", cssFileName = "", jsFileName = "", id = "";
+		String session = "", credentials = "", name = "", descr = "", whatIsNew = "", version = "", type = "", online = "", icon = "", htmlFileName = "", cssFileName = "", jsFileName = "", id = "", isFor = "";
 		ArrayList<String> indexKeywords = new ArrayList<String>();
         File htmlFile = null, cssFile = null, jsFile = null;
         InputStream htmlFileIS = null, cssFileIS = null, jsFileIS = null;
@@ -296,6 +297,7 @@ public class Application extends HttpServlet {
 		HashMap<Object, Object> data = new HashMap<Object, Object>();
 		// START MULTIPART
 		if (ServletFileUpload.isMultipartContent(request)) {
+			System.out.println("Application doPost: We received a multipart request");
 			try {
                 //Create GridFS object
 				GridFS fs = new GridFS( connector.getRootDatabase(), MongoDBConnector.APPLICATION_COLLECTION_NAME);
@@ -365,6 +367,8 @@ public class Application extends HttpServlet {
 						case "type":
 							type = item.getString();
 							break;
+						case "isFor":
+							isFor = item.getString();
 						case "online":
 							online = item.getString();
 							break;
@@ -421,6 +425,7 @@ public class Application extends HttpServlet {
 								if(type.equals("app")){data.put("index", indexList);}
 								if(name!=null && name.length()>0){data.put("name", name);}
 								if(online!=null && online.length()>0){data.put("online", online);}
+								if(isFor!=null && isFor.length()>0){data.put("isFor", isFor);}
 								DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 								data.put("timedate", dateFormat.format(new Date()));
 								if(htmlFileName!=null && htmlFileName.length()>0){data.put("url", htmlFileName);}
