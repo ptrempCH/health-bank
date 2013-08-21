@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="../../css/devGuide.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+			$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			$(window).resize(function() {
+				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div class="dev-page">
+		<!--Logo-->
+		<div class="dev-logo">
+			<a href="../home.html"><img src="../../images/logo.png"/></a>
+		</div>
+		<!--END Logo-->
+		<!--Header-->
+		<div class="dev-header">
+			<h1>Tutorial to Create a New Visualization</h1> 
+		</div>
+		<!--END Header-->
+
+		<!--Navi-->
+		<div class="dev-navi">
+			<br><br><br>
+			<p><a href="devCreateApp.html">Create an Application</a></p><br>
+			<p><a href="devCreateViz.html">Create a Visualization</a></p><br>
+			<p><a href="devApiServer.html">API Ref. Server</a></p><br>
+			<p><a href="devApiClient.html">API Ref. Client</a></p><br>
+			<p><a href="devDemos.html">Demos</a></p><br>
+		</div>
+		<!--END Navi-->
+
+		<!--Content-->
+		<div class="dev-content">
+			<br>
+			<h3>Getting Started in Building a Visualization for Health Bank<sup>&copy;</sup></h3>
+			<br>
+			<p>Let us start by giving you a short introduction about the purpose of visualizations in the Health Bank<sup>&copy;</sup> system. <br>A visualization should allow the user to illustrate data he or she has already in our system. For a running app one could think of a visualization that illustrates an aggregation of the latest entries or shows a map of the last track. Visualizations are displayed alongside the spaces pages in the Health Bank<sup>&copy;</sup> system in so called dashboards. Users first have to install visualizations and cann then add currently only one of them to a space. Visualizations shall also have the possibility to illustrate data of multiple users, namly of all the users the currently logged in user has access to. This stays in contrast to the applications which are only allowed to add new data to the current user.</p>
+			<br><br>
+			<p>A visualization on Health Bank<sup>&copy;</sup> is usually displayed within an <a href="http://www.w3.org/TR/2011/WD-html5-20110525/the-iframe-element.html#the-iframe-element">iFrame</a>. This iFrame is usually placed as a so called dashboard on top of the entries list in the different spaces. It consists of an HTML file and if needed an additional CSS and JavaScript file. To access our <a href="devApiClient.html">client API</a> all it needs is a call to 'parent' within JavaScript code e.g parent.addRecord(). A step by step introduction on how this might look like is given in the <a href="devDemos/devDemoViz.html">demos section</a>.</p>
+			<br><br>
+		</div>
+		<!--END Content-->
+	</div>
+	<!--END Page-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

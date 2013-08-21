@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Random;
 
 import org.bson.types.ObjectId;
 
@@ -29,6 +30,8 @@ import com.mongodb.MongoException;
 public class CoreManager {
 
 	private MongoDBConnector connector; 
+	private static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	private static Random rnd = new Random();
 	
 	/**
 	 * Standard Constructor
@@ -324,6 +327,19 @@ public class CoreManager {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Creates a random string of given length using alphanumeric values
+	 * @param len The length of the string to generate
+	 * @return A random string of length len
+	 */
+	public String randomString( int len ) 
+	{
+	   StringBuilder sb = new StringBuilder( len );
+	   for( int i = 0; i < len; i++ ) 
+	      sb.append( AB.charAt( rnd.nextInt(AB.length()) ) );
+	   return sb.toString();
 	}
 
 }

@@ -131,9 +131,9 @@
 			receivedSubject = getURLParameter("s");
 			receivedRecipient = getURLParameter("r");
 			receivedMessage = getURLParameter("m");
-			if(receivedSubject!=undefined){$("#subject").val("Re: "+receivedSubject);}
-			if(receivedMessage!=undefined){$("#message").val("\n\n----------------------------\nIn Reply to: \n\n"+receivedMessage);}
-			if(receivedRecipient!=undefined){recipientId=receivedRecipient;}
+			if(receivedSubject!=undefined){$("#subject").val("Re: "+decodeURIComponent(receivedSubject));}
+			if(receivedMessage!=undefined){$("#message").val("\n\n----------------------------\nIn Reply to: \n\n"+decodeURIComponent(receivedMessage));}
+			if(receivedRecipient!=undefined){recipientId=decodeURIComponent(receivedRecipient);}
 		});
 		
 	</script>
@@ -145,29 +145,13 @@
 			<!--Header-->
 			<div class="page-header">
 				<h1>Write a new Message</h1> 
-				<div class="page-actionbox">
-					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
-					<span id="userInfo" class="userInfo"></span>
-					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
-					<div class="searchbox">
-						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
-						<input id="search" type="text"/>
-					</div>
-				</div>
+				<div class="page-actionbox"></div>
 			</div>
 			<!--END Header-->
 
 			<div class="page-content-container">
 				<!--Navi-->
-				<ul id="navivation" class="page-navi">
-					<li class="selectedLi"><a href="home.html">Home</a></li>
-					<li><a href="profile.html">Profile</a></li>
-					<li><a href="spaces/spaces.html">Spaces</a></li>
-					<li><a href="circles.html">Circles</a></li>
-					<li><a href="apps.html">Apps</a></li>
-					<li><a href="community.html">Community</a></li>
-					<li><a href="about.html">About</a></li>
-				</ul>
+				<div id="nav-container"></div>
 				<!--END Navi-->
 
 				<!--Content-->
@@ -208,7 +192,7 @@
 	
 	<!-- Bottom Bar -->
     <div class="hb-bottom">
-		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.</span>
         <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
     	
         <span class="right">

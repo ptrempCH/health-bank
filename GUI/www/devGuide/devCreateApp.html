@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="../../css/devGuide.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+			$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			$(window).resize(function() {
+				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div class="dev-page">
+		<!--Logo-->
+		<div class="dev-logo">
+			<a href="../home.html"><img src="../../images/logo.png"/></a>
+		</div>
+		<!--END Logo-->
+		<!--Header-->
+		<div class="dev-header">
+			<h1>Tutorial to Create a New Application</h1> 
+		</div>
+		<!--END Header-->
+
+		<!--Navi-->
+		<div class="dev-navi">
+			<br><br><br>
+			<p><a href="devCreateApp.html">Create an Application</a></p><br>
+			<p><a href="devCreateViz.html">Create a Visualization</a></p><br>
+			<p><a href="devApiServer.html">API Ref. Server</a></p><br>
+			<p><a href="devApiClient.html">API Ref. Client</a></p><br>
+			<p><a href="devDemos.html">Demos</a></p><br>
+		</div>
+		<!--END Navi-->
+
+		<!--Content-->
+		<div class="dev-content">
+			<br>
+			<h3>Getting Started in Building an Application for Health Bank<sup>&copy;</sup></h3>
+			<br>
+			<p>Let us start by giving you a short introduction about the purpose of applications in the Health Bank<sup>&copy;</sup> system. <br>An application in this system shall allow users to integrate services they know such as the mobile running app Runtastic as well as interesting new services like keeping track of your drug consumption. Their purpose is to gather information and store it on the Health Bank<sup>&copy;</sup> system so that it can be used for complex queries. For the user the main benefit is that its data is not spread across dozens of different platforms but under his control here in the Health Bank<sup>&copy;</sup> system. <br><br>There are actually two different ways of how to write an application for Health Bank<sup>&copy;</sup>. One way is to extend the functionality of our page by adding interesting features like the example with the drug register. Applications like this run on our server and are actively used by the users of our system. The second approach for an app is that on our server there is just the set up and the actual app runs on the companies server. As an example on how this might work let us take a company that runs a mobile step counter application. This application is available in the different stores and counts the number of step a person takes each day. To integrate their data to our system that company can build an app that helps the user to set up the connection to the companies website by logging in its account for example. Additionally the user can select a few settings which will be stored on the companies website. To push the data finally to us the company will use our REST API to directly push data to the users account via the users ID and the app secret we created for them (Details on auth token see <a href="devApiServer/devApiServerUserAuth">Authentication</a>).</p>
+			<br><br>
+			<p>An application on Health Bank<sup>&copy;</sup> is usually displayed within an <a href="http://www.w3.org/TR/2011/WD-html5-20110525/the-iframe-element.html#the-iframe-element">iFrame</a>. It consists of an HTML file and if needed an additional CSS and JavaScript file. To access our <a href="devApiClient.html">client API</a> all it needs is a call to 'parent' within JavaScript code e.g parent.addRecord(). A step by step introduction on how this might look like is given in the <a href="devDemos/devDemoApp.html">demos section</a>.</p>
+			<br><br>
+			<p>Here is the detailed procedure for an application that works without the need of a user interaction on our platform:</p>
+			<ol>
+				<li>An institute uploads a new application to the Health Bank<sup>&copy;</sup> system.</li>
+				<li>The system produces an app ID and an app secret which are only visible for the author of the application.</li>	
+				<li>A user installs the application. Hence the author of the app gets to know the userID and assigns it to the user on its server.</li>
+				<li>The user produced some data on the institutes server (e.g. Runtastic).</li>
+				<li>The institute calls the Health Bank<sup>&copy;</sup> token REST request with the app secret, appID and userID and gets a access token specific for the user and application.</li>
+				<li>The institute can now call the addRecord request with the apppD, userID and access token without the need for the user to log in first.</li>
+			</ol><br>
+		</div>
+		<!--END Content-->
+	</div>
+	<!--END Page-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

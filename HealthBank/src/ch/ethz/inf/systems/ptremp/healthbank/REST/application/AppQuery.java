@@ -120,6 +120,12 @@ public class AppQuery extends HttpServlet {
 	 */
 	@SuppressWarnings("unchecked")
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		/*String authHeader = request.getHeader("Authorization");
+		Enumeration<String> headers = request.getHeaderNames();
+		while(headers.hasMoreElements()){
+			System.out.println("Header: "+ headers.nextElement());
+		}*/
+		
 		response.setContentType("application/json");
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		String errorMessage = "";
@@ -169,6 +175,10 @@ public class AppQuery extends HttpServlet {
 							while(res.hasNext()){
 								resObj = (JSONObject) parser.parse(res.next().toString());
 								String curType = (String) resObj.get("type");
+								String companyId = (String) resObj.get("companyID");
+								if(companyId!=null && !manager.getUserID(credentials).equals(companyId)){
+									resObj.remove("secret");
+								}
 								if(curType!=null && curType.equals(type)){
 									resArray.add(resObj);
 								}
@@ -199,6 +209,10 @@ public class AppQuery extends HttpServlet {
 						if(res!=null && res.hasNext()){
 							while(res.hasNext()){
 								resObj = (JSONObject) parser.parse(res.next().toString());
+								String companyId = (String) resObj.get("companyID");
+								if(companyId!=null && !manager.getUserID(credentials).equals(companyId)){
+									resObj.remove("secret");
+								}
 								String curType = (String) resObj.get("type");
 								String curOnline = (String) resObj.get("online");
 								if(curType!=null && curType.equals(type) && curOnline!=null && curOnline.equals("online")){
@@ -210,29 +224,43 @@ public class AppQuery extends HttpServlet {
 							wasError = true;
 						}
 					} else {
-						list.add(new ObjectId(manager.getUserID(credentials)));
-						res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
+//						list.add(new ObjectId(manager.getUserID(credentials)));
+						list.add(manager.getUserID(credentials));
+//						res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
+						res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("userID", new BasicDBObject("$in", list)));
 						if(res!=null && res.hasNext()){
-							BasicDBObject myUser = (BasicDBObject) res.next();
-							BasicDBList myUsersApps = (BasicDBList)  myUser.get("application");
-							if(myUsersApps != null){
-								list = new BasicDBList();
-								for(Object o : myUsersApps){
-									BasicDBObject appID = (BasicDBObject) o;
-									String s = appID.getString("app");
-									if(s!=null){
-										list.add(new ObjectId(s));
-									} else {
-										s = appID.getString("viz");
-										if(s!=null){
-											list.add(new ObjectId(s));
-										}
-									}
+							list = new BasicDBList();
+//							BasicDBObject myUser = (BasicDBObject) res.next();
+//							BasicDBList myUsersApps = (BasicDBList)  myUser.get("application");
+//							if(myUsersApps != null){
+//								for(Object o : myUsersApps){
+//									BasicDBObject appID = (BasicDBObject) o;
+//									String s = appID.getString("app");
+//									if(s!=null){
+//										list.add(new ObjectId(s));
+//									} else {
+//										s = appID.getString("viz");
+//										if(s!=null){
+//											list.add(new ObjectId(s));
+//										}
+//									}
+//								}
+							while(res.hasNext()){
+								BasicDBObject installedApp = (BasicDBObject) res.next();
+								String appID = (String) installedApp.get("appID");
+								if(appID!=null && appID.length()>0 && ObjectId.isValid(appID)){
+									list.add(new ObjectId(appID));
 								}
+							}
+							if(list.size()>0){
 								res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
 								if(res != null && res.hasNext()){
 									while(res.hasNext()){
 										resObj = (JSONObject) parser.parse(res.next().toString());
+										String companyId = (String) resObj.get("companyID");
+										if(companyId!=null && !manager.getUserID(credentials).equals(companyId)){
+											resObj.remove("secret");
+										}
 										String curType = (String) resObj.get("type");
 										String curOnline = (String) resObj.get("online");
 										if(curType!=null && curType.equals(type) && curOnline!=null && curOnline.equals("online")){
@@ -243,7 +271,7 @@ public class AppQuery extends HttpServlet {
 							} 
 						}
 						if(resArray.isEmpty()){
-							errorMessage = "\"AppQuery: We did not find any applications for the currently logged in user.!\"";
+							errorMessage = "\"AppQuery: We did not find any applications for the currently logged in user!\"";
 							wasError = true;
 						}
 					}

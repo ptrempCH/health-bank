@@ -329,24 +329,13 @@ public class Profile extends HttpServlet {
 		// START USERICON
 		if (ServletFileUpload.isMultipartContent(request)) {
 			try {
-				String userIcon = "";
+				String userIconName = ""; 
+				Object userIcon = null;
                 //Create GridFS object
 				GridFS fs = new GridFS( connector.getRootDatabase(), MongoDBConnector.USER_COLLECTION_NAME);
 				List<FileItem> items = new ServletFileUpload(new DiskFileItemFactory()).parseRequest(request);
 		        for (FileItem item : items) {
-		            if (!item.isFormField()) {
-		                // Process form file field (input type="file").
-		                InputStream filecontent = item.getInputStream();
-		                String filename = item.getName();
-		                filename = URLDecoder.decode(filename, "UTF-8");
-
-		                //Save image into database
-		                GridFSInputFile in = fs.createFile( filecontent );
-		                in.setFilename(filename);
-		                in.setContentType(item.getContentType());
-		                in.save();
-		                userIcon = filename;
-		            } else {
+		            if (item.isFormField()) {
 		            	if(item.getFieldName().equals("session")){
 		            		session = item.getString();
 		            	} else if(item.getFieldName().equals("credentials")){
@@ -375,15 +364,37 @@ public class Profile extends HttpServlet {
 					if(!wasError){
 						JSONParser parser = new JSONParser();
 						DBObject obj = res.next();
+						ObjectId userID = (ObjectId) obj.get("_id");
+						for (FileItem item : items) {
+							if (!item.isFormField()) {
+							    // Process form file field (input type="file").
+							    InputStream filecontent = item.getInputStream();
+							    String filename = item.getName();
+							    filename = URLDecoder.decode(filename, "UTF-8");
+							
+							    //Save image into database
+							    GridFSInputFile in = fs.createFile( filecontent );
+							    in.setFilename(filename);
+							    in.setContentType(item.getContentType());
+							    in.setId(ObjectId.get());
+							    if(userID!=null){in.put("userID", userID);}
+							    in.save();
+							    userIconName = filename;
+							    userIcon = in.getId();
+							    break;
+							} 
+						}
+
 						JSONObject resObj = (JSONObject) parser.parse(obj.toString());
 						if(resObj.keySet().contains("userIcon")){
 							String s = resObj.get("userIcon").toString();
-							if(s!=null){ 
-								fs.remove(s);
+							if(s!=null && ObjectId.isValid(s)){ 
+								fs.remove(new ObjectId(s));
 							}
 						}
 					}
-					data.put("userIcon", userIcon);
+					if(userIcon!=null){data.put("userIcon", userIcon);}
+					if(userIconName!=null && userIconName.length()>0){data.put("userIconName", userIconName);}
 					if(!wasError){
 						connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));
 

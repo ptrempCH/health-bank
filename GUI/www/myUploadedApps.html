@@ -20,9 +20,9 @@
 			apps.reverse();
 			$.each(apps, function(i, item) {
 				if(item.type=="app"){
-			    	$("#appentries").append('<li><div id="'+item._id.$oid+'"><img class="store-preview-icon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="store-preview-content"><h4 class="store-preview-header">'+item.name+'</h4><p class="store-preview-descr">Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div><img class="gearImage" src="../images/gear.png" width="18px"/></div></li>');
+			    	$("#appentries").append('<li><div id="'+item._id.$oid+'" type="'+item.type+'"><img class="store-preview-icon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="store-preview-content"><h4 class="store-preview-header">'+item.name+'</h4><p class="store-preview-descr">Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div><img class="gearImage" src="../images/gear.png" width="18px"/></div></li>');
 			    } else {
-			    	$("#appentries").append('<li><div id="'+item._id.$oid+'" type="viz"><img class="store-preview-icon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="store-preview-content"><h4 class="store-preview-header">'+item.name+' (Visualization)</h4><p class="store-preview-descr">Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div></div></li>');
+			    	$("#appentries").append('<li><div id="'+item._id.$oid+'"  type="'+item.type+'"><img class="store-preview-icon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="store-preview-content"><h4 class="store-preview-header">'+item.name+' (Visualization)</h4><p class="store-preview-descr">Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div><img class="gearImage" src="../images/gear.png" width="18px"/></div></li>');
 			    }
 			    loadImage(item.icon, item._id.$oid, "application", {
 					onSuccess: function(data, id){
@@ -31,15 +31,11 @@
 				});
 			});
 			$("#apps-section #appentries li div div").click(function(){ 
-				if($(this).parent().attr("type")=="viz"){
-					window.location = WEB_URL+"editAppDetails.html?id="+$(this).parent().attr("id")+"&type=viz";
-				} else {
-					window.location = WEB_URL+"appView.html?id="+$(this).parent().attr("id"); 
-				}
+				window.location = WEB_URL+"myUploadedAppDetail.html?id="+$(this).parent().attr("id")+"&type="+$(this).parent().attr("type"); 
 				return false;
 			});
 			$("#apps-section #appentries li .gearImage").click(function(){ 
-				window.location = WEB_URL+"editAppDetails.html?id="+$(this).parent().attr("id"); 
+				window.location = WEB_URL+"editAppDetails.html?id="+$(this).parent().attr("id")+"&type="+$(this).parent().attr("type"); 
 				return false;
 			});
 		}
@@ -72,38 +68,13 @@
 			<!--Header-->
 			<div class="page-header">
 				<h1>My Uploaded Apps</h1> 
-				<div class="page-actionbox">
-					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
-					<span id="userInfo" class="userInfo"></span>
-					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
-					<div class="searchbox">
-						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
-						<input id="search" type="text"/>
-					</div>
-				</div>
+				<div class="page-actionbox"></div>
 			</div>
 			<!--END Header-->
 
 			<div class="page-content-container">
 				<!--Navi-->
-				<ul id="navivation" class="page-navi">
-					<li><a href="home.html">Home</a></li>
-					<li><a href="profile.html">Profile</a></li>
-					<li><a href="spaces/spaces.html">Spaces</a></li>
-					<li><a href="circles.html">Circles</a></li>
-					<li class="selectedLi">
-						<a href="apps.html">Apps</a>
-						<ul id="subnavigation" class="page-subnavi">
-							<li><a href="market.html">Market</a></li>
-							<li><a href="myApps.html">My Apps</a></li>
-							<li class="appDevCont selectedLi"><a href="myUploadedApps.html">Uploaded</a></li>
-							<li class="appDevCont"><a href="addNewApp.html">Add App</a></li>
-							<li class="appDevCont"><a href="devGuide.html">Dev. Guide</a></li>
-						</ul>
-					</li>
-					<li id="commNavEntry" style="margin-top:210px;"><a href="community.html">Community</a></li>
-					<li><a href="about.html">About</a></li>
-				</ul>
+				<div id="nav-container"></div>
 				<!--END Navi-->
 
 				<!--Content-->

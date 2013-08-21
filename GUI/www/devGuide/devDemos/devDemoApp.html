@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
+
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushCss.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushXml.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+			$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			$(window).resize(function() {
+				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div class="dev-page">
+		<!--Logo-->
+		<div class="dev-logo">
+			<a href="../../home.html"><img src="../../../images/logo.png"/></a>
+		</div>
+		<!--END Logo-->
+		<!--Header-->
+		<div class="dev-header">
+			<h1>Demo Application</h1> 
+		</div>
+		<!--END Header-->
+
+		<!--Navi-->
+		<div class="dev-navi">
+			<br><br><br>
+			<p><a href="../devCreateApp.html">Create an Application</a></p><br>
+			<p><a href="../devCreateViz.html">Create a Visualization</a></p><br>
+			<p><a href="../devApiServer.html">API Ref. Server</a></p><br>
+			<p><a href="../devApiClient.html">API Ref. Client</a></p><br>
+			<p><a href="../devDemos.html">Demos</a></p><br>
+			<ul>
+				<li>&nbsp;&nbsp;<a href="devDemoApp.html">Application Demo</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devDemoViz.html">Visualization Demo</a></li><br>
+			</ul>
+		</div>
+		<!--END Navi-->
+
+		<!--Content-->
+		<div class="dev-content">
+			<br>
+			<h3>Walkthrough of the standard Medical Record application</h3>
+			<br>
+			<p>First of a few facts about an application built for the Health Bank<sup>&copy;</sup> system. <br>An application is displayed in an <a href="http://www.w3.org/TR/2011/WD-html5-20110525/the-iframe-element.html#the-iframe-element">iFrame</a> on the app view page and consists mainly of an HTML document. This document can contain JavaScript and CSS components. The more it is possible to upload a individual JavaScript as well as an individual CSS file together with the HTML file for the app. In this tutorial we describe an approach where matters are mostly kept seperate.</p>
+			<br>
+			<p>First let us have a look on the final product as it is currently present in Health Bank<sup>&copy;</sup>.</p>
+			<br>
+			<div class="devImageContainer">
+				<img src="../../../images/devGuide/medicalRecordScreener.png"/><br>
+				<span class="devImageCaption">Medical Record Application Screenshot</span>
+			</div>
+			<br>
+			<p>So to beginn we create an empty HTML file and fill it with the basic structure of the page as seen in the screenshot.</p>
+			<br>
+			<script type="syntaxhighlighter" class="brush: html"><![CDATA[
+			<html>
+				<head>
+					<meta charset="UTF-8">
+					<script src="http://code.jquery.com/jquery-1.10.1.min.js"/>
+					<link href="css/medicalRecordApp.css" rel="stylesheet" type="text/css">
+					<script src="js/medicalRecordApp.js"/>
+				</head>
+				<body>
+					<div class="page-content">
+						<h3 class="addRec-header-text">Add a new entry to your health record.</h3>
+						<div id="addRec-feedback" class="addRec-feedback"></div>
+						<form name="addRec-form" id="addRec-form" class="addRec-form" action="" method="post">
+							<!--Input fields-->
+							<div>
+								<label for="name" id="nameLabel" class="label">Name(*)</label> 
+								<input id="name" name="name" type="text" class="input name" placeholder="Name" />
+							</div>
+							<div>
+								<label for="cause" id="causeLabel" class="label">Cause</label> 
+								<input id="cause" name="name" type="text" class="input name" placeholder="Cause" />
+							</div>
+							<div>
+								<label for="doctor" id="doctorLabel" class="label">Doctor</label> 
+								<input id="doctor" name="name" type="text" class="input name" placeholder="Doctor" />
+							</div>
+							<div>
+								<label for="descr" id="descrLabel" class="label descr">Description(*)</label>
+								<textarea id="descr" name="description" class="input descr" placeholder="Description" rows="5" cols="50" onkeyup="textAreaAdjust(this)"></textarea>
+							</div>
+							<div>
+								<label for="file" id = "fileLabel" class="label">File</label>
+								<input id="file" type="file" name="file" class="input"/>
+								<span style="color: red">Comming soon!</span>
+							</div>
+							<!--END Input fields-->
+							<!--Buttons-->
+							<div class="addRec-footer">
+								<input id="submitButton" type="submit" name="submit" value="Add" class="big-button addRecButton" />
+								<input id="clearButton" type="submit" name="submit" value="Clear Form" class="big-button addRecButton" />
+							</div>
+							<!--END Buttons-->
+						</form>
+					</div>
+				</body>
+			</html>
+			]]></script>
+
+			<p>This is a simple HTML form with text fields for the name of the new record, the cause of the medical problem and the doctor who treated the user. The more the form contains a text area where the user can give a more detailed description about the problem. Finally there is a file upload option if the user wants to add e.g. an x-ray. With a 'clear' button the user can clear all the entries of the form and the 'add' button sends the information to the server. On top of the form there is a header and a div for feedback such as e.g. missing fields, connection errors etc. </p>
+			<br>
+			<p>The according css is rather straight forward and will be saved as a seperate CSS file called medicalRecordApp.css</p>
+			<br>
+			<script type="syntaxhighlighter" class="brush: css"><![CDATA[
+				@import url(http://fonts.googleapis.com/css?family=Bree+Serif);
+				* {
+					margin: 0;
+					padding: 0;
+					border: 0;
+				}
+				body {
+					font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+					font-weight:300;
+					text-align: left;
+					text-decoration: none;
+					overflow:hidden;
+					width: 100%;
+					height: 100%;
+				}
+				// buttons
+				.big-button{
+					float: right;
+					padding: 4px 8px;
+					
+					font-family: 'Bree Serif', serif;
+					font-weight: 300;
+					font-size: 15px;
+					color: #fff;
+					text-shadow: 0px 1px 0 rgba(0,0,0,0.25);
+					background: #56c2e1;
+					border: 1px solid #46b3d3;
+					border-radius: 5px;
+					cursor: pointer;
+					box-shadow: inset 0 0 2px rgba(256,256,256,0.75);
+					-moz-box-shadow: inset 0 0 2px rgba(256,256,256,0.75);
+					-webkit-box-shadow: inset 0 0 2px rgba(256,256,256,0.75);
+				}
+				.big-button:hover {
+					background: #3f9db8;
+					border: 1px solid rgba(256,256,256,0.75);
+					
+					box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+					-moz-box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+					-webkit-box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+				}
+				.big-button:focus {
+					position: relative;
+					bottom: -1px;
+					background: #56c2e1;
+					box-shadow: inset 0 1px 6px rgba(256,256,256,0.75);
+					-moz-box-shadow: inset 0 1px 6px rgba(256,256,256,0.75);
+					-webkit-box-shadow: inset 0 1px 6px rgba(256,256,256,0.75);
+				}
+				.button{
+					float: left;
+					padding: 2px 2px;
+					font-family: 'Bree Serif', serif;
+					font-weight: 300;
+					font-size: 15px;
+					color: #fff;
+					text-shadow: 0px 1px 0 rgba(0,0,0,0.25);
+					background: #56c2e1;
+					border: 1px solid #46b3d3;
+					border-radius: 5px;
+					cursor: pointer;
+					box-shadow: inset 0 0 2px rgba(256,256,256,0.75);
+					-moz-box-shadow: inset 0 0 2px rgba(256,256,256,0.75);
+					-webkit-box-shadow: inset 0 0 2px rgba(256,256,256,0.75);
+				}
+				.button:hover {
+					background: #3f9db8;
+					border: 1px solid rgba(256,256,256,0.75);
+					
+					box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+					-moz-box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+					-webkit-box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+				}
+				.button:focus {
+					position: relative;
+					bottom: -1px;
+					background: #56c2e1;
+					box-shadow: inset 0 1px 6px rgba(256,256,256,0.75);
+					-moz-box-shadow: inset 0 1px 6px rgba(256,256,256,0.75);
+					-webkit-box-shadow: inset 0 1px 6px rgba(256,256,256,0.75);
+				}
+				// header
+				.page-content .addRec-header-text {
+					height: 20px;
+					margin: 20px;
+				}
+				// feedback text
+				.page-content .addRec-feedback {
+					margin: 50px auto 0 auto;
+					text-align: center;
+				}
+				// form
+				.page-content .addRec-form {
+					border: 1px solid;
+					border-radius: 10px;
+					padding: 20px 25px 20px 25px;
+					height: 500px;
+					width: 50%;
+					margin: 5px auto 0 auto;
+					line-height: 50px;
+					box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+					-moz-box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+					-webkit-box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+				}
+				/* Input fields */
+				.page-content .addRec-form div {
+					padding: 0 0 0 10px;
+					margin-bottom: 10px;
+					border-radius: 5px;
+					box-shadow: inset 0 1px 3px rgba(0,0,0,0.50);
+					-moz-box-shadow: inset 0 1px 3px rgba(0,0,0,0.50);
+					-webkit-box-shadow: inset 0 1px 3px rgba(0,0,0,0.50);
+				}
+				.page-content .addRec-form .input, .page-content .addRec-form .label {
+					display: inline-block;
+				}
+				.page-content .addRec-form .label {
+					vertical-align: top;
+				}
+				.page-content .addRec-form .name {
+					width: 60%;
+					height: 30px;
+				}
+				.page-content .addRec-form .input {
+					font-weight: 400;
+					font-size: 14px;
+					color: #9d9e9e;
+					text-shadow: 1px 1px 0 rgba(256,256,256,1.0);
+					max-height: 120px;
+					max-width: 80%;
+					background: #fff;
+					border: 1px solid #fff;
+					border-radius: 5px;
+					margin: 20px 10px 0 10px;
+					transition: none;
+					box-shadow: inset 0 1px 3px rgba(0,0,0,0.50);
+					-moz-box-shadow: inset 0 1px 3px rgba(0,0,0,0.50);
+					-webkit-box-shadow: inset 0 1px 3px rgba(0,0,0,0.50);
+				}
+				.page-content .addRec-form .input:hover {
+					background: #dfe9ec;
+					color: #414848;
+				}
+				.page-content .addRec-form .input:focus {
+					background: #dfe9ec;
+					color: #414848;
+					box-shadow: inset 0 1px 2px rgba(0,0,0,0.25);
+					-moz-box-shadow: inset 0 1px 2px rgba(0,0,0,0.25);
+					-webkit-box-shadow: inset 0 1px 2px rgba(0,0,0,0.25);
+				}
+				.page-content .addRec-form .large-input {
+					width: 60%;
+					height: 30px;
+				}
+				.page-content .addRec-form .addRec-footer .addRecButton {
+					margin: 10px 10px 0 0 !important;
+				}
+			]]></script><br>
+			<p>Now we have the boring static part completed and need to start building the functionality. This will be done in the seperate JavaScript file medicalRecordApp.js. <br>We start with a few basic functions such as textAreaAdjust(o). This function gets called when the user stats typing in the textarea body. It enlarges the text area so that the user does not need to scroll to much. Next we define the function clear() that resets all the fields in the form. 
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				function textAreaAdjust(o) {
+				    o.style.height = "1px";
+				    o.style.height = (25+o.scrollHeight)+"px";
+				}
+				function clear() {
+					$("#name").val("");
+					$("#descr").val("");
+					$("#cause").val("");
+					$("#doctor").val("");
+					$("#file").val("");
+				}
+			]]></script><br>
+			<p>Now we need to implement the sending of the data to the server. To do so we write a function submit(), get all the values the user entered and check if the input is valid. If there is a problem we inform the user via the feedback field. When everything is fine, we can finally call the client API and use the function addRecord(name, descr, values, callback) to send the data. Since our app is loaded within an iFrame we can use a call to 'parent' to access the client API. The addRecord function takes the name and description of the new record as an argument. The more a JSON object 'values' that contains other values we like to store for our record. In the case of this application this will be the content of the 'cause' and 'doctor' fields. The last argument of addRecord a callback which we can use to pass an onSuccess and an onError function to get informed, when the AJAX call to the server was successfull or ended in an error. Please keep in mind that the user has to be logged in to use this API function. Else he or she will be redirected to the login screen without adding the new record to the server. The following snippet shows the finished submit function.
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				function submit(){
+					var name = $("#name").val();
+					var descr = $("#descr").val();
+					if(name==undefined || name.length<1 || descr==undefined || descr.length<1 || descr=="Enter your description of the record here..."){
+						$("#addRec-feedback").html("Please fill out all the form fields with a (*).");
+						$("#addRec-feedback").css("color", "red");
+						return false;
+					} 
+					var cause = ($("#cause").val()!=undefined || $("#cause").val()=="")?$("#cause").val():"";
+					var doctor = ($("#doctor").val()!=undefined || $("#doctor").val()=="")?$("#doctor").val():"";
+					parent.addRecord(
+						name, 
+						descr, 
+						"{ \"app\" : \"addRecord\", \"cause\": \""+cause+"\", \"doctor\": \""+doctor+"\" }", 
+						{
+							onSuccess: function(data){
+								$("#addRec-feedback").html(data.message+"<br/>To see all your records click <a id=\"seeAllRecsButton\">here</a>.");
+								$("#addRec-feedback").css("color", "green");
+								$("#seeAllRecsButton").click(function () {
+									window.top.location = parent.WEB_URL+"spaces/spaces.html";
+								});
+							}, 
+							onError: function(message){
+								$("#addRec-feedback").html(message); 
+								$("#addRec-feedback").css("color", "red");
+							}
+						}
+					);
+				}
+			]]></script><br>
+			<p>Finally we need to set the click listener for the buttons and initialize the feedback field. To do so we use the jQuery ready() function on $(document) which gets called, when the DOM has finished loading. 
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				$(document).ready(function() {
+					$("#submitButton").click(function(){
+						submit();
+						return false;
+					});
+					$("#clearButton").click(function(){
+						clear();
+						return false;
+					});
+					$("#addRec-feedback").html("All fields marked with a (*) are required.");
+				});
+			]]></script><br><br>
+			<p>After we have created the three files (HTML, CSS and JavaScript) locally it is now time to upload them to the Health Bank<sup>&copy;</sup> system. To do so you need to login to your Health Bank<sup>&copy;</sup> institute account and navigate to <a href="../../apps.html">apps</a> page. There click on <a href="../../addNewApp.html">Add App</a> and fill out the form. </p>
+			<br>
+			<div class="devImageContainer">
+				<img src="../../../images/devGuide/addAppScreener.png"/><br>
+				<span class="devImageCaption">Add new Application Screenshot</span>
+			</div>
+			<br>
+			<p>You can name your application, describe it as detailed as possible (users like to know what they install), give your application a nice icon and select your three files for HTML, CSS and JavaScript respecivelly. Make sure that you have selected application rather then visualization, since we are working on an application that uploads data here rather then an illustration of existing data (visualization). The field 'Who is it for?' lets you decide if you want to make your app visible only for users, only for institutes or for both. With the online field you can decide if you want your app to be visible in the market or not. If you select offline the app will be uploaded as well, but is not visible for anybody besides you yet. This may help you the test the application before you give it a go. <br>
+			A special word about the last field, index keyword. It is very important that you provide us with one to five keywords that you use to store your records. This will help us a lot in making our search engine on top of the records substantionally faster and more efficient. Since 'name' and 'descr' are mandatory for every record you do not have to enter these keywords. For the Medical Record application we are talking about here keywords would e.g. be 'cause' and 'doctor'.
+			</p>
+			<br>
+			<p>
+			You can view all your applications by clicking on the <a href="../../myUploadedApps.html">uploaded</a> link in the navigation. From the list of your applications there you will see your app secret, app ID and by clicking on the gear icon you can change the application. If you edit you app, do not forget to tell the user about your new functionality with the help of the 'whats new' field. <b>Happy Coding!</b>
+			</p>
+			<br><br>
+			<p>As you may have noticed, we did not illustrate the way files are uploaded. This is because this feature is not yet implemented. We will update this tutorial as soon as this functionality is ready to be used. Thank you for your patience.</p>
+		</div>
+		<!--END Content-->
+	</div>
+	<!--END Page-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

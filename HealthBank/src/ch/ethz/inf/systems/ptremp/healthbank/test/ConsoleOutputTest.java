@@ -10,6 +10,7 @@ import com.mongodb.DBCursor;
 import ch.ethz.inf.systems.ptremp.healthbank.db.MongoDBConnector;
 import ch.ethz.inf.systems.ptremp.healthbank.exceptions.IllegalQueryException;
 import ch.ethz.inf.systems.ptremp.healthbank.exceptions.NotConnectedException;
+import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
 
 /**
  * This class was build with the intention to test the connection to the database server. 
@@ -68,6 +69,8 @@ public class ConsoleOutputTest {
 			connector.disconnect();
 			System.out.println();
 			System.out.println("Thanks for using this. Bye");
+			CoreManager manager = new CoreManager();
+			System.out.println(manager.randomString(32));
 		} catch (NotConnectedException e) {
 			System.out.println(e.getMessage());
 		} catch (UnknownHostException e) {

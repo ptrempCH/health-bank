@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+			$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			$(window).resize(function() {
+				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div class="dev-page">
+		<!--Logo-->
+		<div class="dev-logo">
+			<a href="../../home.html"><img src="../../../images/logo.png"/></a>
+		</div>
+		<!--END Logo-->
+		<!--Header-->
+		<div class="dev-header">
+			<h1>API Reference for the REST Requests to the Server - News</h1> 
+		</div>
+		<!--END Header-->
+
+		<!--Navi-->
+		<div class="dev-navi">
+			<br><br><br>
+			<p><a href="../devCreateApp.html">Create an Application</a></p><br>
+			<p><a href="../devCreateViz.html">Create a Visualization</a></p><br>
+			<p><a href="../devApiServer.html">API Ref. Server</a></p><br>
+			<ul>
+				<li>&nbsp;&nbsp;<a href="devApiServerUser.html">User</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerUserAuth.html">Authentication</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerRecord.html">Records</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerApplication.html">Applications</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerNews.html">News</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerMessage.html">Messages</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerFile.html">File</a></li><br>
+			</ul>
+			<p><a href="../devApiClient.html">API Ref. Client</a></p><br>
+			<p><a href="../devDemos.html">Demos</a></p><br>
+		</div>
+		<!--END Navi-->
+
+		<!--Content-->
+		<div class="dev-content">
+			<br>
+			<h3>REST API for News</h3>
+			<br>
+			<p>The news category actually contains only one servlet. All the news related tasks can be done via GET and POST requests to /News or /news. As we will see later on the POST request can be used by an admin to add and edit news entries (yes, PUT would have been a reasonable idea), GET by any kind of user to receive the news. Lets have a look at the individual requests one after another.</p>
+			<br><br>
+			<h4>Add news entry</h4>
+			<p>New news entries can only be added by an admin. The reason for this is that news entries are very Health Bank<sup>&copy;</sup> related and we do not want any institute to post ads or similar here. The POST request is straight forward and is explaind in this JavaDoc from the servlet:</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to create and edit news entries 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Create a new news entry:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - title: The title of the news entry
+				 * - prev: A short preview for the news entry
+				 * - content: The actual content of the news entry in HTML
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 */
+			]]></script><br>
+			<p>The parameters contain a tilte and a preview which is shown in the list view. The actual content is provided via the content attribute and visible when the user clicks on an item in the list to get the detail view. </p>
+			<br><br>
+			<h4>Edit a news entry</h4>
+			<p>This call is very similar to the add request but includes the id for the news entry to edit. Let us have a look at the JavaDoc again:</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to create and edit news entries 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Edit a certain news entry:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The id of the news entry to be queried
+				 * - title: The title of the news entry
+				 * - prev: A short preview for the news entry
+				 * - content: The actual content of the news entry in HTML
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 */
+			]]></script><br>
+			<br><br>
+			<h4>Query news entries</h4>
+			<p>There are two ways of querying news entries. One method is to make a GET request without any special parameters (besides session and credentials, see <a href="devApiServerUserAuth.html">authentication</a>), which will return all the news entries that are in the system yet. The other method is to provide an ID for a certain news entry in which case the result will be the information about this particular news entry alone. Here is the respective JavaDoc:</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to load one or multiple news entries. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Query one single news entry:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The id of the news entry to be queried
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * All news entries:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * The information is stored in the 'values' attribute of the resulting JSON string.
+				 */
+			]]></script><br>
+			<p>As it is stated in the last line of the documentation all the news entries are within the values field of the returned JSON. <br>Here is an example of a valid query request and its result:<br>GET -> <i>http://129.132.227.147:8080/HealthBank/News?session=b5844ea2e7afd4555bccab34d2facf51&credentials=aC5tdXN0ZXJtYW5uQHRlc3QuY2g6aG11MTIzNA</i></p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				{
+				    "result": "success",
+				    "loggedOut": "false",
+				    "values": {
+				        "news": [
+				            {
+				                "content": "Changelog:</br>\n<ul>\n<li>News are now real news and not hardcoded anymore</li>\n<li>Admins can add new news entries</li>\n<li>Users can see news entries in details</li>\n<li>There is a new news page that contains all the previous news</li>\n<li>Spaces can now be assigned to and removed from records</li>\n<li>Circles can now be assigned to and removed from records</li>\n<li>There is a checkbox to allow research access</li>\n<li>There is a circle for research when then checkbox is clicked</li>\n<li>GUI code was cleaned a lot</li>\n<li>Many Bug fixes</li>\n<li>Medical and Wellness Spaces are now functional</li>\n<li>Circle page is now fully functional</li>\n<li>Updated the two apps and fixed visualization bug</li>\n<li>By clicking on another user, one can now inspect its personal data</li>\n<li>Much more...</li>\n</ul>",
+				                "title": "Version 0.2 of HealthBank is online",
+				                "_id": {
+				                    "$oid": "51cd7e91e4b0ac7b68345685"
+				                },
+				                "timedate": "06/28/2013 14:16:17",
+				                "authorID": "51a0cca9e4b0bf21b91365b2",
+				                "prev": "Finally we updated the version on the public server to 0.2"
+				            },
+				            {
+				                "content": "Changelog:</br>\n<ul>\n<li>A new messaging system has been introduced. Use the message icon on the top right to contact other users in the system.</li>\n<li>In the spaces users can no use filter options to view and inspect data from users in its circle.</li>\n<li>Due to changes to the data structure all the assignments to spaces have been deleted and need to be reset.</li>\n<li>In the very bottom of the page a link for a feedback document is now given. Please tell us about all the tiny and huge problems you might face, while using this site.</li>\n<li>Many Bug fixes</li>\n<li>Much more...</li>\n</ul>",
+				                "title": "Version 0.3 of HealthBank is online",
+				                "_id": {
+				                    "$oid": "51f85dede4b0d343510896b5"
+				                },
+				                "timedate": "07/31/2013 02:44:29",
+				                "authorID": "51a0cca9e4b0bf21b91365b2",
+				                "prev": "New messaging system and ability to view others records"
+				            },
+				            ...
+				        ]
+				    }
+				}
+			]]></script><br>
+		</div>
+		<!--END Content-->
+	</div>
+	<!--END Page-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

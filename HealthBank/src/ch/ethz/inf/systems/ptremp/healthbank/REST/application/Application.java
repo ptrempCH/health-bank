@@ -171,7 +171,7 @@ public class Application extends HttpServlet {
 								errorMessage = "\"Application doGet: We could not find any application. Have you already provided one?\"";
 								wasError = true;
 							}
-						} else {
+						} else { // user
 							DBCursor res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, null);
 							if(res!=null && res.hasNext()){
 								JSONParser parser = new JSONParser();
@@ -181,6 +181,7 @@ public class Application extends HttpServlet {
 									JSONObject resObj = (JSONObject) parser.parse(obj.toString());
 									String curOnline = (String) resObj.get("online");
 									String isFor = (String) resObj.get("isFor");
+									resObj.remove("secret");
 									if(curOnline!=null && curOnline.equals("online") && (isFor==null || !isFor.equals("institutes"))){
 										resArray.add(resObj);
 									}
@@ -235,9 +236,10 @@ public class Application extends HttpServlet {
 	}
 
 	/**
-	 * For this POST request only multipart content is accepted. Hence you shall use a form to send the data.
-	 * With this request the caller (provided it is a institute user), may add new applications or visualizations to the HealthBank system.
-	 * The more it shall be possible to edit existing applications/visualizations. 
+	 * With this POST request the caller (provided it is a institute user), may add new applications or visualizations to the HealthBank system.
+	 * The more it shall be possible to edit existing applications/visualizations. For these two operations the caller shall use multipart content from
+	 * a form.
+	 * The more it shall be possible to update the app secret via a 'normal' POST request, without multipart content.
 	 * 
 	 * For a successful call the following parameters need to be present in the form:
 	 * Add new item:
@@ -273,7 +275,12 @@ public class Application extends HttpServlet {
 	 * 			least one and up to five keywords that are actually used for the stored records. This will be used by our index mechanism to make access easier.
 	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
 	 * 
-	 * 
+	 * Get a new app secret:
+	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+	 * - session: This is the current session key of the user
+	 * - id: The if of the application/visualization to edit
+	 * - secret: The existing secret for the application
+	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
 	 * 
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
@@ -437,6 +444,7 @@ public class Application extends HttpServlet {
 									if(whatIsNew!=null && whatIsNew.length()>0){data.put("whatIsNew", whatIsNew);}
 									connector.update(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));
 								} else { // new app
+									data.put("secret", manager.randomString(32));
 									data.put("companyID", manager.getUserID(credentials));
 									data.put("companyName", user.get("companyname"));
 									data.put("nrOfInstalls", 0);
@@ -506,16 +514,96 @@ public class Application extends HttpServlet {
 				if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage);}
 			}
 		} // FINISH MULTIPART
-		else {
+		else { // update secret part
 			String callback = request.getParameter("callback");
+			credentials = request.getParameter("credentials");
+			session = request.getParameter("session");
+			String secret = request.getParameter("secret");
+			id = request.getParameter("id");
+			
+			if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
+				errorMessage = "\"Application: Please provide the parameters 'credentials' and 'session' with the request.\"";
+				wasError = true;
+			} else if(secret==null || secret.length()<2 || id==null || id.length()<2 || !ObjectId.isValid(id)){
+				errorMessage = "\"Application: Please use multipart request to do anything else then to update your app secret.\"";
+				wasError = true;
+			}
+			if(!wasError){
+				credentials = URLDecoder.decode(credentials, "UTF-8");
+				session = URLDecoder.decode(session, "UTF-8");
+				credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
+				secret = URLDecoder.decode(secret, "UTF-8");
+				id = URLDecoder.decode(id, "UTF-8");
+				
+				// check DB connection
+				if(connector==null || !connector.isConnected()){
+					manager.reconnect();
+				}
+				
+				// check if user is logged in
+				try {
+					if(manager.isUserLoggedIn(session, credentials)){
+						BasicDBList list = new BasicDBList();
+						list.add(new ObjectId(id));
+						DBCursor res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
+						if(res!=null && res.hasNext()){
+							BasicDBObject app = (BasicDBObject) res.next();
+							if(app!=null){
+								String companyID = (String) app.get("companyID"); // first check that the current user is the owner of this app
+								if(companyID != null && companyID.equals(manager.getUserID(credentials))){
+									String savedSecret = (String) app.get("secret");
+									if(savedSecret!=null && savedSecret.equals(secret)){
+										connector.update(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("secret", manager.randomString(32))));
+									}else{
+										errorMessage = "\"Application: The provided secret does not match the current app secret.\"";
+										wasError = true;
+									}
+								} else{
+									errorMessage = "\"Application: You are not the author of the application with the provided id.\"";
+									wasError = true;
+								}
+							} else{
+								errorMessage = "\"Application: The provided id is not a valid application id.\"";
+								wasError = true;
+							}
+						} else{
+							errorMessage = "\"Application: The provided id is not a valid application id.\"";
+							wasError = true;
+						}
+						
+					} else {
+						errorMessage = "\"Application: Either your session timed out or you forgot to send me the session and credentials.\"";
+						wasError = true;
+						isLoggedIn = false;
+					}
+				} catch (IllegalQueryException e) {
+					errorMessage = "\"Application: There was an error. Did you provide the correct parameters? Error: "+e.getMessage()+"\"";
+					wasError = true;
+				} catch (NotConnectedException e) {
+					errorMessage = "\"Application: We lost connection to the DB. Please try again later. Sorry for that.\"";
+					wasError = true;
+				} 
+			}
 			
 			if(callback!=null && callback.length()>0){
 				callback = URLDecoder.decode(callback, "UTF-8");
-				response.getOutputStream().println(callback+"( { \"result\": \"failed\", \"error\": \"Please use a multipart request for the purpose of adding or editing applications.\" } );");
-				if(MongoDBConnector.DEBUG){System.out.println("Someone accessed Application not via multipart");}
+				if(!wasError) {
+					response.getOutputStream().println(callback+"( { \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Changed secret successfully.\" }");
+					if(MongoDBConnector.DEBUG){System.out.println("Changed secret of app with appId: "+id+"!");}
+				}
+				else {
+					response.getOutputStream().println(callback+"( { \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\": "+errorMessage+" }");
+					if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage+"!");}
+				}
 			} else {
-				response.getOutputStream().println("{ \"result\": \"failed\", \"error\": \"Please use a multipart request for the purpose of adding or editing applications.\" } );");
-				if(MongoDBConnector.DEBUG){System.out.println("Someone accessed Application not via multipart");}
+				if(!wasError) {
+					response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Changed secret successfully.\" }");
+					if(MongoDBConnector.DEBUG){System.out.println("Changed secret of app with appId: "+id+"!");}
+				}
+				else {
+					response.getOutputStream().println("{ \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\": "+errorMessage+" }");
+					if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage+"!");}
+				}
 			} 
 		}
 		

@@ -20,6 +20,12 @@
 		}
 
 		function loadApplications () {
+			if(user==undefined){ 
+				setTimeout(function(){ 
+					loadApplications(); 
+				}, 100);
+				return false; 
+			}
 			getUploadedOrInstalledApplications({
 				onSuccess: function(data){
 					$("#appentries").html("");
@@ -30,7 +36,7 @@
 					apps = data.values.applications;
 					apps.reverse();
 					$.each(apps, function(i, item) { 
-						if(item.online=="online" && item.type=="app"){
+						if(item.online=="online" && item.type=="app" && (item.isFor==undefined || (user.type!="user" && item.isFor!="users") || (user.type=="user" && item.isFor!="institutes"))){
 					    	$("#appentries").append('<li><div id="'+item._id.$oid+'"><img class="newsicon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="newscontentbox"><h4 class="newsheader">'+item.name+'</h4><p class="newscontent">Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div></div></li>');
 					    	if(item.icon!=undefined){
 								loadImage(item.icon, item._id.$oid, "application", {
@@ -67,8 +73,8 @@
 					apps = data.values.visualizations;
 					apps.reverse();
 					$.each(apps, function(i, item) { 
-						if(item.online=="online"){
-					    	$("#vizentries").append('<li><div id="'+item._id.$oid+'"><img class="newsicon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="newscontentbox"><h4 class="newsheader">'+item.name+'</h4><p class="newscontent">Version: '+item.version+', Installs: '+item.installs+'</p></div></div></li>');
+						if(item.online=="online" && item.type=="viz" && (item.isFor==undefined || (user.type!="user" && item.isFor!="users") || (user.type=="user" && item.isFor!="institutes"))){
+					    	$("#vizentries").append('<li><div id="'+item._id.$oid+'"><img class="newsicon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="newscontentbox"><h4 class="newsheader">'+item.name+'</h4><p class="newscontent">Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div></div></li>');
 						    if(item.icon!=undefined){
 								loadImage(item.icon, item._id.$oid, "application", {
 									onSuccess: function(data, id){
@@ -80,9 +86,13 @@
 							}
 						}
 					});
-					$("#vizentries li div").click(function(){ 
-						window.location = WEB_URL+"detailApplication.html?id="+$(this).attr("id")+"&type=viz&url=market.html?type=viz"; 
-					});
+					if($("#vizentries").html()==""){
+						$("#vizentries").html("There are no visualizations to be found in the system yet. Sorry. Stay tuned for more to come soon.");
+					} else {
+						$("#vizentries li div").click(function(){ 
+							window.location = WEB_URL+"detailApplication.html?id="+$(this).attr("id")+"&type=viz&url=market.html?type=viz"; 
+						});
+					}
 				}, onError: function(data){
 					$("#vizentries").html("There was an error loading the data from the database. It seems like there is no visualizations to be found in the system yet! We are terribly sorry. Stay tuned for more to come soon.");
 				}
@@ -123,38 +133,13 @@
 			<!--Header-->
 			<div class="page-header">
 				<h1>Market</h1> 
-				<div class="page-actionbox">
-					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
-					<span id="userInfo" class="userInfo"></span>
-					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
-					<div class="searchbox">
-						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
-						<input id="search" type="text"/>
-					</div>
-				</div>
+				<div class="page-actionbox"></div>
 			</div>
 			<!--END Header-->
 
 			<div class="page-content-container">
 				<!--Navi-->
-				<ul id="navivation" class="page-navi">
-					<li><a href="home.html">Home</a></li>
-					<li><a href="profile.html">Profile</a></li>
-					<li><a href="spaces/spaces.html">Spaces</a></li>
-					<li><a href="circles.html">Circles</a></li>
-					<li class="selectedLi">
-						<a href="apps.html">Apps</a>
-						<ul id="subnavigation" class="page-subnavi">
-							<li class="selectedLi"><a href="market.html">Market</a></li>
-							<li><a href="myApps.html">My Apps</a></li>
-							<li class="appDevCont"><a href="myUploadedApps.html">Uploaded</a></li>
-							<li class="appDevCont"><a href="addNewApp.html">Add App</a></li>
-							<li class="appDevCont"><a href="devGuide.html">Dev. Guide</a></li>
-						</ul>
-					</li>
-					<li id="commNavEntry" style="margin-top:210px;"><a href="community.html">Community</a></li>
-					<li><a href="about.html">About</a></li>
-				</ul>
+				<div id="nav-container"></div>
 				<!--END Navi-->
 
 				<!--Content-->
@@ -184,7 +169,7 @@
 	
 	<!-- Bottom Bar -->
     <div class="hb-bottom">
-		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.</span>
         <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
     	
         <span class="right">

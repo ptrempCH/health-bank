@@ -112,29 +112,35 @@ public class Logout extends HttpServlet {
 			credentials = URLDecoder.decode(credentials, "UTF-8");
 			session = URLDecoder.decode(session, "UTF-8");
 			credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
-			
-			// check DB connection
-			if(connector==null || !connector.isConnected()){
-				manager.reconnect();
+			if(credentials.lastIndexOf(':')<=0){
+				errorMessage = "\"Please provide the correct parameters 'credentials' and 'session' with the request.\"";
+				wasError = true;
 			}
 			
-			// check if user is logged in
-			BasicDBList list = new BasicDBList();
-			list.add(credentials.substring(0, credentials.lastIndexOf(':')));
-			try {
-				if(manager.isUserLoggedIn(session, credentials)){
-					connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), 
-							new BasicDBObject("$set", new BasicDBObject("session_key", "").append("session_expires", "")));
-				} else {
-					errorMessage = "\"Either your session timed out or you forgot to send me the session and credentials.\"";
+			if(!wasError){
+				// check DB connection
+				if(connector==null || !connector.isConnected()){
+					manager.reconnect();
+				}
+				
+				// check if user is logged in
+				BasicDBList list = new BasicDBList();
+				list.add(credentials.substring(0, credentials.lastIndexOf(':')));
+				try {
+					if(manager.isUserLoggedIn(session, credentials)){
+						connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), 
+								new BasicDBObject("$set", new BasicDBObject("session_key", "").append("session_expires", "")));
+					} else {
+						errorMessage = "\"Either your session timed out or you forgot to send me the session and credentials.\"";
+						wasError = true;
+					}
+				} catch (IllegalQueryException e) {
+					errorMessage = "\"There was an error. Did you provide the correct username and password? Error: "+e.getMessage()+"\"";
+					wasError = true;
+				} catch (NotConnectedException e) {
+					errorMessage = "\"We lost connection to the DB. Please try again later. Sorry for that.\"";
 					wasError = true;
 				}
-			} catch (IllegalQueryException e) {
-				errorMessage = "\"There was an error. Did you provide the correct username and password? Error: "+e.getMessage()+"\"";
-				wasError = true;
-			} catch (NotConnectedException e) {
-				errorMessage = "\"We lost connection to the DB. Please try again later. Sorry for that.\"";
-				wasError = true;
 			}
 		}
 				

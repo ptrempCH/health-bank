@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="../../css/devGuide.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+			$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			$(window).resize(function() {
+				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div class="dev-page">
+		<!--Logo-->
+		<div class="dev-logo">
+			<a href="../home.html"><img src="../../images/logo.png"/></a>
+		</div>
+		<!--END Logo-->
+		<!--Header-->
+		<div class="dev-header">
+			<h1>API Reference for the JavaScript calls on the Client</h1> 
+		</div>
+		<!--END Header-->
+
+		<!--Navi-->
+		<div class="dev-navi">
+			<br><br><br>
+			<p><a href="devCreateApp.html">Create an Application</a></p><br>
+			<p><a href="devCreateViz.html">Create a Visualization</a></p><br>
+			<p><a href="devApiServer.html">API Ref. Server</a></p><br>
+			<p><a href="devApiClient.html">API Ref. Client</a></p><br>
+			<ul>
+				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientUser.html">User</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientUserAuth.html">Authentication</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientRecord.html">Records</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientApplication.html">Applications</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientNews.html">News</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientMessage.html">Messages</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientImage.html">Images</a></p><br>
+			</ul>
+			<p><a href="devDemos.html">Demos</a></p><br>
+		</div>
+		<!--END Navi-->
+
+		<!--Content-->
+		<div class="dev-content">
+			<br>
+			<h3>JavaScript API for Accessing the Client functionality</h3>
+			<br>
+			<p>In order to meet all the different REST services running on the Tomcat Server and for plenty of other things we provide many JavaScript functions that you can use for your applications and visualizations. Each of the functions is described later in one of the different categories. For all the functions that involve AJAX calls to the server there is the callback parameter which allows you to defined an onSuccess and an onError function which gets called respectively.<br>We grouped similar functions together and present one after the other in the following chapters:</p>
+			<br>
+			<ul>
+				<li><a href="devApiClient/devApiClientUser.html">User:</a> In this group we discuss access to the user profile, changing circle and space associations for a user as well as making queries on users.</li>
+				<li><a href="devApiClient/devApiClientUserAuth.html">Authentication:</a> In this group we discuss registering, logging in and out for users and institutes. The more we discuss access tokens for applications.</li>
+				<li><a href="devApiClient/devApiClientRecord.html">Records:</a> Here we discuss adding records to the system and querying them again.</li>
+				<li><a href="devApiClient/devApiClientApplication.html">Applications:</a> This group deals with adding, editing applications, users installing them and asking queries on them.</li>
+				<li><a href="devApiClient/devApiClientNews.html">News:</a> Dealing with news entries is discussed in this group.</li>
+				<li><a href="devApiClient/devApiClientMessage.html">Messages:</a> Sending and receiving messesges between users and institutes is talked about here.</li>
+				<li><a href="devApiClient/devApiClientImage.html">Images:</a> This group deals with images such as user icons etc.</li> 
+			</ul>
+		</div>
+		<!--END Content-->
+	</div>
+	<!--END Page-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

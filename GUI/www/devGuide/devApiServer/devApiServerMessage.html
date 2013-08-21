@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+			$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			$(window).resize(function() {
+				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div class="dev-page">
+		<!--Logo-->
+		<div class="dev-logo">
+			<a href="../../home.html"><img src="../../../images/logo.png"/></a>
+		</div>
+		<!--END Logo-->
+		<!--Header-->
+		<div class="dev-header">
+			<h1>API Reference for the REST Requests to the Server - Messages</h1> 
+		</div>
+		<!--END Header-->
+
+		<!--Navi-->
+		<div class="dev-navi">
+			<br><br><br>
+			<p><a href="../devCreateApp.html">Create an Application</a></p><br>
+			<p><a href="../devCreateViz.html">Create a Visualization</a></p><br>
+			<p><a href="../devApiServer.html">API Ref. Server</a></p><br>
+			<ul>
+				<li>&nbsp;&nbsp;<a href="devApiServerUser.html">User</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerUserAuth.html">Authentication</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerRecord.html">Records</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerApplication.html">Applications</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerNews.html">News</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerMessage.html">Messages</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerFile.html">File</a></li><br>
+			</ul>
+			<p><a href="../devApiClient.html">API Ref. Client</a></p><br>
+			<p><a href="../devDemos.html">Demos</a></p><br>
+		</div>
+		<!--END Navi-->
+
+		<!--Content-->
+		<div class="dev-content">
+			<br>
+			<h3>REST API for Messages</h3>
+			<br>
+			<p>The message category contains of a single Servlet. The POST request is used for sending new messages whereas the GET request offers several possibilites to query a single or multiple messages.<br>In general a message contains a header or subject and a content and it is sent from one user to another. A user can be a basic user or an institute. Users do not have to have another user in its circle in order to contact them. At the moment everyone can contact everyone else in the system. To avoid spam messages we restricted sending messages only to one recipient at a time for now.<br>In the following we go through the different main tasks.</p>
+			<br><br>
+			<h4>Add new message</h4>
+			<p>To send a new message we have to submit subject and content as well as to define the recipient. The POST request is straight forward and is explaind in this JavaDoc from the servlet:</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to send a new message
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Create a new news entry:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - recipient: The recipient of the message
+				 * - subject: A short preview for the news entry
+				 * - message: The actual content of the news entry in HTML
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 */
+			]]></script>
+			<br><br>
+			<h4>Check for new unread messages</h4>
+			<p>We cann ask the system if the current logged in user has any new messages. This is done via a GET request. Let us have a look at the JavaDoc again:</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to check if there are new mails and to retrieve one or multiple messages. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Query if there are new messages:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - hasNew: Set this parameter to any value with at least one characters to check if there are new messages
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 */
+			]]></script><br>
+			<br><br>
+			<h4>Query received messages</h4>
+			<p>There are two ways of querying received messages. One method is to make a GET request without any special parameters (besides session and credentials, see <a href="devApiServerUserAuth.html">authentication</a>), which will return all the received messages so far. The other method is to provide an ID for a certain message entry in which case the result will be the information about this particular message entry alone. Here is the respective JavaDoc:</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to check if there are new mails and to retrieve one or multiple messages. 
+				 * 
+				 * Query one single message:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The id of the message to be queried
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * Get all received messages:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * The information is stored in the 'values' attribute of the resulting JSON string.
+				 */
+			]]></script><br>
+			<p>As it is stated in the last line of the documentation all the message entries are within the values field of the returned JSON. <br>Here is an example of a valid query request and its result:<br>GET -> <i>http://129.132.227.147:8080/HealthBank/Message?session=b5844ea2e7afd4555bccab34d2facf51&credentials=aC5tdXN0ZXJtYW5uQHRlc3QuY2g6aG11MTIzNA</i></p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				{
+				    "result": "success",
+				    "loggedOut": "false",
+				    "values": {
+				        "messages": [
+				            {
+				                "message": "And here is the very first reply! Yeah!\n\n----------------------------\nIn Reply to: \n\nThis is the first ever test message. Fingers crossed...",
+				                "_id": {
+				                    "$oid": "51de9e39e76ebcfbdfc0d6bb"
+				                },
+				                "timedate": "07/11/2013 13:59:53",
+				                "subject": "Re: The first message of all time",
+				                "senderID": "51d6ebdb9a37482c1166199d",
+				                "read": "true",
+				                "recipientID": "516e5c0962dd0156a0236630"
+				            }
+				        ]
+				    }
+				}
+			]]></script><br>
+		</div>
+		<!--END Content-->
+	</div>
+	<!--END Page-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

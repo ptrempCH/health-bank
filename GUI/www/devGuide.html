@@ -21,6 +21,21 @@
 
 		$(document).ready(function() {
 			initialize();
+			$("#createApp").click(function(){
+				window.location = WEB_URL+"devGuide/devCreateApp.html"; 
+			});
+			$("#createViz").click(function(){
+				window.location = WEB_URL+"devGuide/devCreateViz.html"; 
+			});
+			$("#apiRefServer").click(function(){
+				window.location = WEB_URL+"devGuide/devApiServer.html"; 
+			});
+			$("#apiRefClient").click(function(){
+				window.location = WEB_URL+"devGuide/devApiClient.html"; 
+			});
+			$("#demos").click(function(){
+				window.location = WEB_URL+"devGuide/devDemos.html"; 
+			});
 		});
 		
 	</script>
@@ -32,50 +47,38 @@
 			<!--Header-->
 			<div class="page-header">
 				<h1>Developer Guide</h1> 
-				<div class="page-actionbox">
-					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
-					<span id="userInfo" class="userInfo"></span>
-					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
-					<div class="searchbox">
-						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
-						<input id="search" type="text"/>
-					</div>
-				</div>
+				<div class="page-actionbox"></div>
 			</div>
 			<!--END Header-->
 
 			<div class="page-content-container">
 				<!--Navi-->
-				<ul id="navivation" class="page-navi">
-					<li><a href="home.html">Home</a></li>
-					<li><a href="profile.html">Profile</a></li>
-					<li><a href="spaces/spaces.html">Spaces</a></li>
-					<li><a href="circles.html">Circles</a></li>
-					<li class="selectedLi">
-						<a href="apps.html">Apps</a>
-						<ul id="subnavigation" class="page-subnavi">
-							<li><a href="market.html">Market</a></li>
-							<li><a href="myApps.html">My Apps</a></li>
-							<li class="appDevCont"><a href="myUploadedApps.html">Uploaded</a></li>
-							<li class="appDevCont"><a href="addNewApp.html">Add App</a></li>
-							<li class="appDevCont selectedLi"><a href="devGuide.html">Dev. Guide</a></li>
-						</ul>
-					</li>
-					<li id="commNavEntry" style="margin-top:210px;"><a href="community.html">Community</a></li>
-					<li><a href="about.html">About</a></li>
-				</ul>
+				<div id="nav-container"></div>
 				<!--END Navi-->
 
 				<!--Content-->
 				<div class="page-content">
-					</br>
-					</br>
-					<p>This is still work in progress!</p>
-					</br>
-					</br>
-					<p>Later on, you will find all information you need as a developer to write the moste estonishing applications for HealthBank<sup>&copy;</sup>.</p>
-					</br></br>
-					<p>We hope to see you soon!</p>
+					<br>
+					<h3 class="devGuideHeader">Get started as a developer</h3>
+					<br><br>
+
+					<div id="createApp" class="devGuideButton devGuideLeft">
+						<span>Create an application</span>
+					</div>
+					<div id="apiRefServer" class="devGuideButton devGuideRight">
+						<span>API ref. for server (REST)</span>
+					</div>
+					<br><br><br><br>
+					<div id="createViz" class="devGuideButton devGuideLeft">
+						<span>Create a visualization</span>
+					</div>
+					<div id="apiRefClient" class="devGuideButton devGuideRight">
+						<span>API ref. for client (JS)</span>
+					</div>
+					<br><br><br><br>
+					<div id="demos" class="devGuideButton devGuideLeft">
+						<span>Demos</span>
+					</div>
 				</div>
 				<!--END Content-->
 			</div>

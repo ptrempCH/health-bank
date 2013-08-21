@@ -2,6 +2,11 @@ package ch.ethz.inf.systems.ptremp.healthbank.REST.application;
 
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
@@ -94,7 +99,6 @@ public class AppInstall extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		// TODO testing
 		response.setContentType("application/json");
 		response.addHeader("Access-Control-Allow-Origin", "*");
 		String errorMessage = "";
@@ -125,6 +129,7 @@ public class AppInstall extends HttpServlet {
 			// check if user is logged in
 			try {
 				if(manager.isUserLoggedIn(session, credentials)){
+					HashMap<Object, Object> data = new HashMap<Object, Object>();
 					BasicDBList list = new BasicDBList();
 					DBCursor res;
 					if(id!=null && id.length()>0){
@@ -132,7 +137,7 @@ public class AppInstall extends HttpServlet {
 						res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
 						if(res!=null && res.hasNext()){
 							BasicDBObject obj = (BasicDBObject) res.next();
-							String type = (String) obj.get("type");
+//							String type = (String) obj.get("type");
 							int nrOfInstalls = -1;
 							try{
 								nrOfInstalls = obj.getInt("nrOfInstalls");
@@ -142,39 +147,60 @@ public class AppInstall extends HttpServlet {
 							}
 						
 							list = new BasicDBList();
-							list.add(new ObjectId(manager.getUserID(credentials)));
-							BasicDBObject queryObject = new BasicDBObject("_id", new BasicDBObject("$in", list));
-							res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, queryObject);
+//							list.add(new ObjectId(manager.getUserID(credentials)));
+							list.add(manager.getUserID(credentials));
+//							BasicDBObject queryObject = new BasicDBObject("_id", new BasicDBObject("$in", list));
+//							res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, queryObject);
+							BasicDBObject q1 = new BasicDBObject("userID", new BasicDBObject("$in", list));
+							BasicDBObject q2 = new BasicDBObject("appID", id);
+							ArrayList<BasicDBObject> myList = new ArrayList<BasicDBObject>();
+							myList.add(q1);
+							myList.add(q2);
+							BasicDBObject and = new BasicDBObject("$and", myList);
+							res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, and);
 							if(res!=null && res.hasNext()){
-								BasicDBObject user = (BasicDBObject) res.next();
-								BasicDBList usersApps = (BasicDBList) user.get("application");
-								boolean found = false;
-								if(usersApps!=null){
-									for(Object o : usersApps){
-										if(((BasicDBObject) o).toString().contains(id)){found=true;}
-									}
-								}
-								if(found){ // uninstall
-									if(type.contains("app")){
-										connector.update(MongoDBConnector.USER_COLLECTION_NAME, queryObject, new BasicDBObject("$pull", new BasicDBObject("application", new BasicDBObject("app", id))));
-									} else if(type.contains("viz")){
-										connector.update(MongoDBConnector.USER_COLLECTION_NAME, queryObject, new BasicDBObject("$pull", new BasicDBObject("application", new BasicDBObject("viz", id))));
-									}		
+								System.out.println("AppInstall doPost: res is not null or res has next");
+//								BasicDBObject user = (BasicDBObject) res.next();
+//								BasicDBList usersApps = (BasicDBList) user.get("application");
+//								boolean found = false;
+//								if(usersApps!=null){
+//									for(Object o : usersApps){
+//										if(((BasicDBObject) o).toString().contains(id)){found=true;}
+//									}
+//								}
+//								if(found){ // uninstall
+//									if(type.contains("app")){
+//										connector.update(MongoDBConnector.USER_COLLECTION_NAME, queryObject, new BasicDBObject("$pull", new BasicDBObject("application", new BasicDBObject("app", id))));
+//									} else if(type.contains("viz")){
+//										connector.update(MongoDBConnector.USER_COLLECTION_NAME, queryObject, new BasicDBObject("$pull", new BasicDBObject("application", new BasicDBObject("viz", id))));
+//									}		
 									installed = "Uninstalled";
+									
+									
+									connector.delete(MongoDBConnector.APPLICATION_COLLECTION_NAME, and);
 									if(nrOfInstalls>0){nrOfInstalls--;}
 								} else {  // install
-									if(type.contains("app")){
-										connector.update(MongoDBConnector.USER_COLLECTION_NAME, queryObject, new BasicDBObject("$push", new BasicDBObject("application", new BasicDBObject("app", id))));
-									} else if(type.contains("viz")){
-										connector.update(MongoDBConnector.USER_COLLECTION_NAME, queryObject, new BasicDBObject("$push", new BasicDBObject("application", new BasicDBObject("viz", id))));
-									}
+
+									System.out.println("AppInstall doPost: res is null or res has no next");
+//									if(type.contains("app")){
+//										connector.update(MongoDBConnector.USER_COLLECTION_NAME, queryObject, new BasicDBObject("$push", new BasicDBObject("application", new BasicDBObject("app", id))));
+//									} else if(type.contains("viz")){
+//										connector.update(MongoDBConnector.USER_COLLECTION_NAME, queryObject, new BasicDBObject("$push", new BasicDBObject("application", new BasicDBObject("viz", id))));
+//									}
+									
+									data.put("userID", manager.getUserID(credentials));
+									data.put("appID", id);
+									DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+									data.put("timedate", dateFormat.format(new Date()));
+									connector.insert(MongoDBConnector.APPLICATION_COLLECTION_NAME, data);
+									
 									if(nrOfInstalls!=-1){nrOfInstalls++;}
 								}
 								if(nrOfInstalls!=-1){
 									list.add(new ObjectId(id));
 									connector.update(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("nrOfInstalls", nrOfInstalls)));
 								}
-							}
+//							}
 						} else {
 							errorMessage = "\"AppInstall: We are sorry, but there is no application with this id to be found in the database.\"";
 							wasError = true;

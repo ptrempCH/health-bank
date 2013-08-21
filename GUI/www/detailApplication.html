@@ -11,7 +11,7 @@
 
 	<script type="text/javascript">
 		var id, type, url, mydata;
-		var hasInstalled;
+		var hasInstalled = false;
 
 		function loadUserInfoIndividual(data){
 			if(data.type=="institute" || data.type=="admin"){
@@ -33,6 +33,7 @@
 					$("#installButton").click( function(){
 						uninstall();
 					});
+					$("#openAppButton").show();
 				}, onError: function(data) {
 					$("#feedback").html("There was an error installing the application. Please try again.");
 					$("#feedback").css("color", "red");
@@ -51,6 +52,7 @@
 					$("#installButton").click( function(){
 						install();
 					});
+					$("#openAppButton").hide();
 				}, onError: function(data) {
 					$("#feedback").html("There was an error uninstalling the application. Please try again.");
 					$("#feedback").css("color", "red");
@@ -59,41 +61,39 @@
 		}
 
 		function initInstallButton () {
-			if(user==undefined){
-				setTimeout(function () {
-					initInstallButton();
-				}, 100);
-				return false;
-			}
-			if(user.application!=undefined){
-				$.each(user.application, function(i, item){
-					if(type=="app" && item.app!=undefined){
-						if(item.app==id){
+			getInstalledApplications(type, {
+				onSuccess: function(data){
+					mydata = undefined;
+					if(type=="app"){
+						mydata = data.values.applications;
+					} else if(type="viz"){
+						mydata = data.values.visualizations;
+					}
+					$.each(mydata, function(i, item){
+						if(item._id.$oid == id){
 							hasInstalled = true;
 							return false;
 						}
-					} else if(type=="viz" && item.viz!=undefined){
-						if(item.viz==id){
-							hasInstalled = true;
-							return false;
-						}
-					} /*else {
-						setTimeout(function(){
-							window.location = WEB_URL+"apps.html";
-						},5000);
-					}*/
-				});
-			}
-			if(hasInstalled){
-				$("#installButton").val("Uninstall");
-				$("#installButton").click( function(){
-					uninstall();
-				});
-			} else {
-				$("#installButton").click( function(){
-					install();
-				});
-			}
+					});
+					if(hasInstalled){
+						$("#installButton").val("Uninstall");
+						$("#installButton").click( function(){
+							uninstall();
+						});
+					} else {
+						$("#installButton").click( function(){
+							install();
+						});
+						$("#openAppButton").hide();
+					}
+				}, onError: function(data){
+					hasInstalled = false;
+					$("#installButton").click( function(){
+						install();
+					});
+					$("#openAppButton").hide();
+				}
+			});
 		}
 
 		function loadApplication(){
@@ -105,8 +105,12 @@
 						mydata = undefined;
 						if(type=="app"){
 							mydata = data.values.applications[0];
+							$("#openAppButton").click(function(){
+								window.location = WEB_URL + "appView.html?id="+id; 
+							});
 						} else if(type="viz"){
 							mydata = data.values.visualizations[0];
+							$("#openAppButton").hide();
 						}
 
 						$("#name").html(mydata.name);
@@ -161,38 +165,13 @@
 			<!--Header-->
 			<div class="page-header">
 				<h1>Application Detail</h1> 
-				<div class="page-actionbox">
-					<img id="mailIcon" src="../images/mail.png" class="mailIcon" title="Your messages"/>
-					<span id="userInfo" class="userInfo"></span>
-					<input id="logoutButton" type="submit" name="submit" value="Logout" class="page-logout-button" />
-					<div class="searchbox">
-						<span id="searchIconSpan"><img id="searchIcon" src="../images/search-icon.png"/></span>
-						<input id="search" type="text"/>
-					</div>
-				</div>
+				<div class="page-actionbox"></div>
 			</div>
 			<!--END Header-->
 
 			<div class="page-content-container">
 				<!--Navi-->
-				<ul id="navivation" class="page-navi">
-					<li><a href="home.html">Home</a></li>
-					<li><a href="profile.html">Profile</a></li>
-					<li><a href="spaces/spaces.html">Spaces</a></li>
-					<li><a href="circles.html">Circles</a></li>
-					<li class="selectedLi">
-						<a href="apps.html">Apps</a>
-						<ul id="subnavigation" class="page-subnavi">
-							<li class="selectedLi"><a href="market.html">Market</a></li>
-							<li><a href="myApps.html">My Apps</a></li>
-							<li class="appDevCont"><a href="myUploadedApps.html">Uploaded</a></li>
-							<li class="appDevCont"><a href="addNewApp.html">Add App</a></li>
-							<li class="appDevCont"><a href="devGuide.html">Dev. Guide</a></li>
-						</ul>
-					</li>
-					<li id="commNavEntry" style="margin-top:210px;"><a href="community.html">Community</a></li>
-					<li><a href="about.html">About</a></li>
-				</ul>
+				<div id="nav-container"></div>
 				<!--END Navi-->
 
 				<!--Content-->
@@ -211,6 +190,7 @@
 					</br></br></br>
 					<button id="backButton" class="button">Back</button>
 					<input id="installButton" type="submit" name="submit" value="Install" class="button" />
+					<button id="openAppButton" class="button">Open Application</button>
 				</div>
 				<!--END Content-->
 			</div>
@@ -222,7 +202,7 @@
 	
 	<!-- Bottom Bar -->
     <div class="hb-bottom">
-		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.</span>
         <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
     	
         <span class="right">

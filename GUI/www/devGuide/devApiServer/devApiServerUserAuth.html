@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+			$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			$(window).resize(function() {
+				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			});
+		});
+
+		SyntaxHighlighter.all();
+		setTimeout(function(){
+			style = { width:"80%", margin:"0 auto 0 auto"};
+			$(".syntaxhighlighter").parent().css(style);
+		}, 300);
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div class="dev-page">
+		<!--Logo-->
+		<div class="dev-logo">
+			<a href="../../home.html"><img src="../../../images/logo.png"/></a>
+		</div>
+		<!--END Logo-->
+		<!--Header-->
+		<div class="dev-header">
+			<h1>API Reference for the REST Requests to the Server - Authentication</h1> 
+		</div>
+		<!--END Header-->
+
+		<!--Navi-->
+		<div class="dev-navi">
+			<br><br><br>
+			<p><a href="../devCreateApp.html">Create an Application</a></p><br>
+			<p><a href="../devCreateViz.html">Create a Visualization</a></p><br>
+			<p><a href="../devApiServer.html">API Ref. Server</a></p><br>
+			<ul>
+				<li>&nbsp;&nbsp;<a href="devApiServerUser.html">User</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerUserAuth.html">Authentication</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerRecord.html">Records</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerApplication.html">Applications</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerNews.html">News</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerMessage.html">Messages</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerFile.html">File</a></li><br>
+			</ul>
+			<p><a href="../devApiClient.html">API Ref. Client</a></p><br>
+			<p><a href="../devDemos.html">Demos</a></p><br>
+		</div>
+		<!--END Navi-->
+
+		<!--Content-->
+		<div class="dev-content">
+			<br>
+			<h3>REST API for Authentication Process</h3>
+			<br>
+			<p>There are four main modules that go under the word authentication. These are <a href="#register">registering</a> a user or institute, <a href="#login">logging in</a> to and <a href="#logout">logging out</a> of the system as well as getting an <a href="#token">access token</a> for applications. Each of the four modules will be described in detail below.</p>
+			<br><br>
+			<h4 id="register">Register</h4>
+			<p>In order to register a new user or institute we need to do a POST request on /Register, /register or /reg. This is taken from the JavaDocs of the doPost request of the according servlet:</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to register a new user in the system. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL. At the moment there are two different
+				 * possibilities for this POST call. One for 'normal' users and one for institutes. 
+				 * Users:
+				 * - pw: This is the chosen password for the user in a hashed form for security. (So far Base64, which is not that secure...)
+				 * - username: This is the chosen user name. If the name already exists, an error message is returned to the caller
+				 * - firstname: The first name of the user
+				 * - lastname: The last name of the user
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * Institutes:
+				 * - pw: This is the chosen password for the user in a hashed form for security. (So far Base64, which is not that secure...)
+				 * - username: This is the chosen user name. If the name already exists, an error message is returned to the caller
+				 * - companyname: The name of the company
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 */
+			]]></script>
+			<br>
+			<p>As an example let us construct the call for registering user Hans Mustermann with username 'h.mustermann@test.ch' and password 'hmu1234'. First we need to hash the password together with the username with the Base64 algorithm (For the Health Bank<sup>&copy;</sup> website we used <a href="https://github.com/carlo/jquery-base64">this jQuery plugin</a>) for security reasons. Yes this is not really secure, especially now that we told you about it. The matter is on our TODO list and will be adapted in a later release. Using this hash algorithm we create our credentials from 'h.mustermann@test.ch:hmu1234' into 'aC5tdXN0ZXJtYW5uQHRlc3QuY2g6aG11MTIzNA'. <br>Now we can construct the URL:<br>POST-> <i>http://129.132.227.147:8080/HealthBank/Register?username=h.mustermann@test.ch&firstname=Hans&lastname=Mustermann&pw=aC5tdXN0ZXJtYW5uQHRlc3QuY2g6aG11MTIzNA</i><br>As a result we get:</p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				{
+				    "result": "success",
+				    "message": "registered new user: h.mustermann@test.ch. Please log in to continue."
+				}
+			]]></script>
+			<br><br>
+			<h4 id="login">Login</h4>
+			<p>For this Servlet we support both a GET and a POST request. The GET request can be used to check whether the user is still logged in or if the session expired already. Usually a session expires after one hour of inactivity. The POST request will do the actual login. These are again the respective JavaDoc entries for the two requests:<br>GET:</p><br>
+			
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to check whether the user is still logged in or not.
+				 * If the user is still logged in, this call will automatically update the expiration time of the
+				 * session by one hour from the current time. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 */
+			]]></script>
+			<p>POST:</p>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to log a user into the system.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * - username: This is the user name for the user to be logged in.
+				 * - pw: This is the password for the user in a hashed form for security. (So far we use Base64, which is not particularly save...)
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 */
+			]]></script><br>
+			<p>As described in the register description above we do not transmit the password in clear form but hash it with the (also not so save) Base64 algorithm as a combination of username and password (For the Health Bank<sup>&copy;</sup> website we used <a href="https://github.com/carlo/jquery-base64">this jQuery plugin</a>). A login request for user Hans Mustermann with user name h.mustermann@test.ch would therefore look like this:<br>POST -> <i>http://129.132.227.147:8080/HealthBank/Login?username=h.mustermann@test.ch&pw=aC5tdXN0ZXJtYW5uQHRlc3QuY2g6aG11MTIzNA</i><br>Where aC5tdXN0ZXJtYW5uQHRlc3QuY2g6aG11MTIzNA is the result of a base64 hash of 'username:password'. The answer from the server in this case would be:<br>Success:</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				{
+				    "result": "success",
+				    "message": "logged in as: h.mustermann@test.ch",
+				    "session": "b5844ea2e7afd4555bccab34d2facf51"
+				}
+			]]></script><br>
+			<p>Error:</p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				{
+				    "result": "failed",
+				    "error": "wrong password"
+				}
+			]]></script><br>
+			<p>A few more words about our login and session process:<br>
+			The client is responsible to remember the credentials (the Base64 hashed value of 'username:password') and the session id received after a successfully login. On our website we use the new <a href="http://www.html5rocks.com/en/tutorials/offline/storage/">HTML client storage</a> facility to remember these values. These two values need to be passed with every further request to the REST API to identify the current user. Using this approach we could get rid of cookies alltogether for now. The session key is valid for one hour after the last activity. Each REST request with the current session id will reset the session expires attribute on the server and hence keep the session alive.  
+			</p>
+			<br><br>
+			<h4 id="logout">Logout</h4>
+			<p>The logout request is rather simple. Opposed to the login request it will turn the session key invalid effective immediately so that all fututre requests to the REST API with this user will lead to errors. The JavaDoc of the POST request (There is no GET request possible here, neither PUT or DELETE) looks like this:</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to log the user out of the system. This will reset the session key and expires time.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 */
+			]]></script><br>
+			<p>As you can see we need to specify the parameters credentials and session as with every request to the REST API (besides register and login). This leads to: <br>
+			POST -> <i>http://129.132.227.147:8080/HealthBank/Logout?session=b5844ea2e7afd4555bccab34d2facf51&credentials=aC5tdXN0ZXJtYW5uQHRlc3QuY2g6aG11MTIzNA</i><br>The result looks like this:
+			</p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				{
+				    "result": "success",
+				    "message": "logged out successfully"
+				}
+			]]></script><br>
+			<br><br>
+			<h4 id="token">Token</h4>
+			<p>The token request is somewhat special and has little to do with the user itself. This request was introduced for the purpose of making the adding of new records to a user from an application that is not actively clicked on by the user more secure. In other words, this has to be used by apps that want to upload new records to the server using the server REST API directly rather then the user interface on the Health Bank<sup>&copy;</sup> website. In order for an application to be able there are multiple steps involved:</p><br>
+			<ol>
+				<li>An institute uploads a new application to the Health Bank<sup>&copy;</sup> system.</li>
+				<li>The system produces an app ID and an app secret which are only visible for the author of the application.</li>	
+				<li>A user installs the application. Hence the author of the app gets to know the userID and assigns it to the user on its server.</li>
+				<li>The user produced some data on the institutes server (e.g. Runtastic).</li>
+				<li>The institute calls the Health Bank<sup>&copy;</sup> token REST request with the app secret, appID and userID and gets a access token specific for the user and application.</li>
+				<li>The institute can now call the addRecord request with the apppD, userID and access token without the need for the user to log in first.</li>
+			</ol><br>
+			<p>A token is only valid for a single record upload. An institute can always request a new secret if need be. The JavaDoc of the GET request looks like this (Only GET supported in this servlet): 
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to get a user specific token for an application
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * - appID: The application identification (ObjectID) of the calling application
+				 * - userID: The ObjectID of the user the token shall be valid for
+				 * - secret: The application secret of the calling application
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 */
+			]]></script><br>
+			<p>A request could therefore look like this:
+			GET -> <i>http://129.132.227.147:8080/HealthBank/Token?secret=7GZLNXSWI3ZWSP004GBU7SKURTO2MLVE&userID=519e9af5d0d942b98e1ee707&appID=5202avb3370ac3211098564a43</i><br>The result looks like this:
+			</p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				{ 
+					"result": "success", 
+					"token" : 0a706d0cbb4b95fc4331b2bf86072478 
+				}
+			]]></script><br>
+		</div>
+		<!--END Content-->
+	</div>
+	<!--END Page-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

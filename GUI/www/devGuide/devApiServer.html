@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="../../css/devGuide.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+			$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			$(window).resize(function() {
+				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div class="dev-page">
+		<!--Logo-->
+		<div class="dev-logo">
+			<a href="../home.html"><img src="../../images/logo.png"/></a>
+		</div>
+		<!--END Logo-->
+		<!--Header-->
+		<div class="dev-header">
+			<h1>API Reference for the REST Requests to the Server</h1> 
+		</div>
+		<!--END Header-->
+
+		<!--Navi-->
+		<div class="dev-navi">
+			<br><br><br>
+			<p><a href="devCreateApp.html">Create an Application</a></p><br>
+			<p><a href="devCreateViz.html">Create a Visualization</a></p><br>
+			<p><a href="devApiServer.html">API Ref. Server</a></p><br>
+			<ul>
+				<li>&nbsp;&nbsp;<a href="devApiServer/devApiServerUser.html">User</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServer/devApiServerUserAuth.html">Authentication</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServer/devApiServerRecord.html">Records</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServer/devApiServerApplication.html">Applications</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServer/devApiServerNews.html">News</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServer/devApiServerMessage.html">Messages</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServer/devApiServerFile.html">File</a></li><br>
+			</ul>
+			<p><a href="devApiClient.html">API Ref. Client</a></p><br>
+			<p><a href="devDemos.html">Demos</a></p><br>
+		</div>
+		<!--END Navi-->
+
+		<!--Content-->
+		<div class="dev-content">
+			<br>
+			<h3>REST API for Accessing the Server</h3>
+			<br>
+			<p>There are quite a few REST services running on the Tomcat Server. Each of the services as described later on are defined in a Java Servlet. The task of these services is to interact with the <a href="http://www.mongodb.org/">MongoDB</a> database in the background. The services talk via JSON data to make life easier for JavaScript developers as well as for talking to the database.<br>We grouped similar services together and present one after the other in the following chapters:</p>
+			<br>
+			<ul>
+				<li><a href="devApiServer/devApiServerUser.html">User:</a> In this group we discuss access to the user profile, changing circle and space associations for a user as well as making queries on users.</li>
+				<li><a href="devApiServer/devApiServerUserAuth.html">Authentication:</a> In this group we discuss registering, logging in and out for users and institutes. The more we discuss access tokens for applications.</li>
+				<li><a href="devApiServer/devApiServerRecord.html">Records:</a> Here we discuss adding records to the system and querying them again.</li>
+				<li><a href="devApiServer/devApiServerApplication.html">Applications:</a> This group deals with adding, editing applications, users installing them and asking queries on them.</li>
+				<li><a href="devApiServer/devApiServerNews.html">News:</a> Dealing with news entries is discussed in this group.</li>
+				<li><a href="devApiServer/devApiServerMessage.html">Messages:</a> Sending and receiving messesges between users and institutes is talked about here.</li>
+				<li><a href="devApiServer/devApiServerFile.html">File:</a> This group deals with files such as images, x-ray etc.</li> 
+			</ul>
+		</div>
+		<!--END Content-->
+	</div>
+	<!--END Page-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

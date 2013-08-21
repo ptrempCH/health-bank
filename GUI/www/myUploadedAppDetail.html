@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+	<script src="../js/healthbank.js"></script>
+	<script src="../js/moment.min.js"></script>
+	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+
+	<script type="text/javascript">
+		var id, type, url, mydata;
+		var hasInstalled;
+
+		function loadUserInfoIndividual(data){
+			if(data.type=="institute" || data.type=="admin"){
+				$(".appDevCont").show();
+			} else {
+				$(".appDevCont").hide();
+				$("#commNavEntry").css("margin-top", "90px");
+			}
+		}
+
+		function loadApplication(){
+			id = getURLParameter("id");
+			type = getURLParameter("type");
+			if(id!=undefined && type!=undefined){
+				getApplicationDetail(id, type, {
+					onSuccess: function(data){
+						mydata = undefined;
+						if(type=="app"){
+							mydata = data.values.applications[0];
+						} else if(type="viz"){
+							mydata = data.values.visualizations[0];
+						}
+
+						$("#name").html(mydata.name);
+						$("#descr").html("<b>Description: </b></br>"+mydata.descr);
+						if(mydata.whatIsNew!=undefined && mydata.whatIsNew.length>0){$("#whatIsNew").html("<b>What is new?: </b><br>"+mydata.whatIsNew);}
+						$("#info").html("&nbsp;&nbsp;&nbsp;<b>Author: </b><font id=\"authorID\" value=\""+mydata.companyID+"\">"+mydata.companyName+"</font><br>&nbsp;&nbsp;&nbsp;<b>Created on: </b>"+moment(mydata.timedate).format('MMMM Do YYYY')+"<br>&nbsp;&nbsp;&nbsp;<b>Version: </b>"+mydata.version+"<br>&nbsp;&nbsp;&nbsp;<b>Installs so far: </b>"+mydata.nrOfInstalls+"<br><br>&nbsp;&nbsp;&nbsp;<b>App ID: </b>"+mydata._id.$oid+"<br>&nbsp;&nbsp;&nbsp;<b>Secret: </b>"+mydata.secret+"<span id=\"infoImg\"><img src=\"../images/info.jpg\"/></span><span title=\"Get a new secret.\" id=\"refreshImg\"><img src=\"../images/refresh.png\"/></span>");
+						if(mydata.icon!=undefined){
+							loadImage(mydata.icon, "", "application", {
+								onSuccess: function(data, id){
+									$("#icon").attr("src", "data:image/png;base64,"+data);
+								}, onError: function(data){
+									$("#icon").attr("src", WEB_URL+'../images/news-icon.jpg');
+								}
+							});
+						}
+						$( "#info #infoImg" ).click(function() {
+							$( "#secretDialog" ).dialog( "open" );
+						});
+						$( "#info #refreshImg" ).click(function() {
+							if(confirm("Do you really want to create a new secret?")){
+								refreshAppSecret(mydata._id.$oid, mydata.secret, {
+									onSuccess: function(data){
+										loadApplication();
+									}, onError: function(data){
+										alert("There was a problem while refreshing your app secret. Try again later.");
+									}
+								});
+							}
+						});
+					}, 
+					onError: function(data){
+						$("#feedback").html("There was an error loading the application. Please try again.");
+						$("#feedback").css("color", "red");
+					}
+				});
+			} else {
+				$("#feedback").html("There was an error loading the application. Please try again.");
+				$("#feedback").css("color", "red");
+			}
+		}
+
+		$(document).ready(function() {
+			initialize();
+			loadApplication();
+			$("#backButton").click(function(){
+				window.location = WEB_URL + "myUploadedApps.html"; 
+				return false;
+			});
+
+			$( "#secretDialog" ).dialog({
+				autoOpen: false,
+				show: {
+					effect: "scale",
+					duration: 200
+				},
+				hide: {
+					effect: "scale",
+					duration: 200
+				}
+			});
+			$("#editButton").click(function(){
+				window.location = WEB_URL + "editAppDetails.html?id="+id+"&type="+type; 
+			});
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div id="hb-page">
+		<div class="page-container">
+			<!--Header-->
+			<div class="page-header">
+				<h1>Application Detail</h1> 
+				<div class="page-actionbox"></div>
+			</div>
+			<!--END Header-->
+
+			<div class="page-content-container">
+				<!--Navi-->
+				<div id="nav-container"></div>
+				<!--END Navi-->
+
+				<!--Content-->
+				<div class="page-content">
+					<div id="feedback" class="detailAppFeedback"></div>
+					<div id="appInfoBox" class="myAppInfoBox">
+						<img id="icon" class="appIcon"/>
+						<div class="appNameInfoBox">
+							<h3 id="name" class="appName"> </h3></br>
+							<div id="info" class="appInfo"></div>
+						</div>
+					</div>
+					</br>
+					<div id="descr" class="appDescr"></div></br>
+					<div id="whatIsNew" class="appWhatsNew"> </div>
+					</br></br></br>
+					<button id="backButton" class="button">Back</button>
+					<input id="editButton" type="submit" name="submit" value="Edit" class="button myUploadedAppDetailEditButton" />
+				</div>
+				<!--END Content-->
+			</div>
+		</div>
+	</div>
+	<!--END Page-->
+	
+	<!--Bg Gradient--><div class="gradient-page"></div><!--END Bg Gradient-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.</span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+	<div id="secretDialog" title="Info dialog for app secret">
+		<p>This secret has to be used, if you like to add data from an external source. Have a look at the <a href="devGuide.html">Dev. Guide</a>.</p>
+	</div>
+</body>
+</html>

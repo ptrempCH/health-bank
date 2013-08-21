@@ -227,8 +227,6 @@ public class News extends HttpServlet {
 	 * - content: The actual content of the news entry in HTML
 	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
 	 * 
-	 * The information is stored in the 'values' attribute of the resulting JSON string.
-	 * 
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

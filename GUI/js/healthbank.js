@@ -39,6 +39,8 @@ function checkLogin() {
 				} else { /* don't do anything, since we are still logged in. */	}
 			}
 		});
+	} else {
+		window.location = WEB_URL+"login.html";
 	}
 }
 
@@ -76,29 +78,7 @@ function logout() {
 */
 function initialize() {
 	checkLogin();
-	setSearchAnimation();
-	getUserData({onSuccess: function(data){loadUserInfo(data);}});
-	$("#logoutButton").click(function(){
-		logout();
-		return false;
-	});
-	$("#userInfo").click(function(){
-		window.location = WEB_URL+"profile.html";
-		return false;
-	});
-	$("#search").keyup(function(event){
-	    if(event.keyCode == 13){
-	    	if($("#search").val()!=undefined && $("#search").val().length>0){
-	    		if(typeof(Storage)!=="undefined") {
-					localStorage.setItem("hb_query", $("#search").val());
-				}
-	        	window.location = WEB_URL + "queryResult.html?";
-	       	}
-	    }
-	});
-	$("#mailIcon").click(function(){
-		window.location = WEB_URL+"messageInbox.html"; 
-	});
+	initializeActionBox();
 	queryHaveNewMessage({ onSuccess: function(data){
 		if(data.values.messages.length>0 && data.values.messages[0].hasNew=="true"){
 			$("#mailIcon").attr("src", "../images/newmail.png");
@@ -106,6 +86,87 @@ function initialize() {
 			$('#mailIcon').trigger('hover'); 
 		}
 	}});
+	initializeNavigation();
+}
+
+/**
+* Initialize the action box at the top right of the page
+*/
+function initializeActionBox () {
+	$.get(WEB_URL+'dialogs/page-actionbox.html').success(
+		function(data){
+			$('.page-actionbox').append(data); 
+			getUserData({onSuccess: function(data){loadUserInfo(data);}});
+			$("#logoutButton").click(function(){
+				logout();
+				return false;
+			});
+			$("#userInfo").click(function(){
+				window.location = WEB_URL+"profile.html";
+				return false;
+			});
+			$("#search").keyup(function(event){
+			    if(event.keyCode == 13){
+			    	if($("#search").val()!=undefined && $("#search").val().length>0){
+			    		if(typeof(Storage)!=="undefined") {
+							localStorage.setItem("hb_query", $("#search").val());
+						}
+			        	window.location = WEB_URL + "queryResult.html?";
+			       	}
+			    }
+			});
+			$("#mailIcon").click(function(){
+				window.location = WEB_URL+"messageInbox.html"; 
+			});
+			s = window.location.pathname;
+			if(s.indexOf("space")>0 || s.indexOf("Space")>0 || s.indexOf("News")>0){
+				$.each($(".page-actionbox img"), function(i, item){
+					$(this).attr("src", "../"+$(this).attr("src"));
+				});
+			}
+			setSearchAnimation();
+		}
+	);
+}
+
+/**
+* Initialize the navigation at the left of the page
+*/
+function initializeNavigation () {
+	if(user==undefined){
+		setTimeout(function () {
+			initializeNavigation();
+		});
+		return false;
+	} 
+	$.get(WEB_URL+'dialogs/navigation.html').success(
+		function(data){
+			$('#nav-container').append(data); 
+			if(user.type=="institute" || user.type=="admin"){
+				$(".appDevCont").show();
+			} else {
+				$(".appDevCont").hide();
+			}
+			s = window.location.pathname;
+			if(s.indexOf("app")>0 || s.indexOf("App")>0 || s.indexOf("market")>0 || s.indexOf("devGuide")>0){
+				$("#apps_subnavigation").show();
+				$("#nav_apps").addClass("selectedLi");
+				if(user.type=="institute" || user.type=="admin"){
+					$("#nav_community").css("margin-top", "210px");
+				} else {
+					$("#nav_community").css("margin-top", "90px");
+				}
+			} else {
+				$("#apps_subnavigation").hide();
+			}
+			if(s.indexOf("space")>0 || s.indexOf("Space")>0 || s.indexOf("News")>0){
+				$.each($("#navivation a"), function(i, item){
+					$(this).attr("href", "../"+$(this).attr("href"));
+				});
+			}
+			$("#nav_"+s.substring(s.lastIndexOf("/")+1, s.lastIndexOf("."))).addClass("selectedLi")
+		}
+	);
 }
 
 /**
@@ -419,7 +480,7 @@ function initializeSpaces(backurl, spacesID, nrOfItems) {
 }
 
 function initializeDropDown(space, backurl) {
-	if(circles==undefined || spaces==undefined){
+	if(circles==undefined || spaces==undefined || user==undefined){
 		setTimeout(function(){
 			initializeDropDown(space, backurl);
 		}, 100);
@@ -658,13 +719,13 @@ function loadedNotYetImplemented() {
 function setSearchAnimation() {
 	$("#search").focus(function(){
 		setTimeout(function(){$("#search").select();},500);
-		$("#search").css("width", "190px");
+		$("#search").css("width", "185px");
 		$("#searchIconSpan").css("margin-left", "0px");
 		$("#logoutButton").css("margin-right", "0px");
 		$("#searchIcon").attr('src',WEB_URL+"../images/search-icon-selected.png");
 	});
 	$('#search').blur(function() {
-		$("#search").css("width", "120px");
+		$("#search").css("width", "119px");
 		$("#searchIconSpan").css("margin-left", "70px");
 		$("#logoutButton").css("margin-right", "-70px");
 		$("#searchIcon").attr('src',WEB_URL+"../images/search-icon.png");
@@ -1842,38 +1903,67 @@ jQuery.fn.autoWidth = function(options)
 }
 
 /**
-* Helper function to load an user icon from the server
+* Helper function to load an user or application icon from the server
 *
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
-* - iconName: The name of the icon to load from the server
+* - icon: The name or id of the icon to load from the server
 * - type: The type of the image you would like to receive. Use 'application' for an app icon and 'user' for a user icon
 * - userId: the user id that belongs to the user we are loading the image from
 */
-function loadImage(iconName, userId, type, callback){
+function loadImage(icon, userId, type, callback){
 	callback = callback || {};
 	if(isStorageDefined())
 	{
-		$.ajax({
-			url: API_URL+"Image",
-			type: 'get',
-			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), type: encodeURIComponent(type), name : (iconName!=undefined)?encodeURIComponent(iconName):encodeURIComponent("defaultUserIcon")},
-			success: function(data){
-				if(data.result=="failed"){
-					if(data.loggedOut=="true"){
-						window.location = WEB_URL+"login.html"; 
+		if(icon.$oid!=undefined){
+			$.ajax({
+				url: API_URL+"Image",
+				type: 'get',
+				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), type: encodeURIComponent(type), id : encodeURIComponent(icon.$oid)},
+				success: function(data){
+					if(data.result=="failed"){
+						if(data.loggedOut=="true"){
+							window.location = WEB_URL+"login.html"; 
+						}
+						if(callback.onError){
+							console.log("calling onError");
+					        callback.onError(data);
+					    }
+					} else { 
+						if(callback.onSuccess){
+					        callback.onSuccess(data, userId);
+					    }
 					}
-					if(callback.onError){
-						console.log("calling onError");
-				        callback.onError(data);
-				    }
-				} else { 
-					if(callback.onSuccess){
-				        callback.onSuccess(data, userId);
-				    }
-				}
-			}
-		});
+				},
+				error: function (request, status, error) {
+			        alert(JSON.parse(request.responseText));
+			    }
+			});
+		} else {
+			$.ajax({
+				url: API_URL+"Image",
+				type: 'get',
+				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), type: encodeURIComponent(type), name : (icon!=undefined)?encodeURIComponent(icon):encodeURIComponent("defaultUserIcon")},
+				success: function(data){
+					if(data.result=="failed"){
+						if(data.loggedOut=="true"){
+							window.location = WEB_URL+"login.html"; 
+						}
+						if(callback.onError){
+							console.log("calling onError");
+					        callback.onError(data);
+					    }
+					} else { 
+						if(callback.onSuccess){
+					        callback.onSuccess(data, userId);
+					    }
+					}
+				},
+				error: function (request, status, error) {
+			        alert(JSON.parse(request.responseText));
+			    }
+			});
+		}
 	}
 }
 
@@ -2609,6 +2699,7 @@ function addNewApplication(formData, callback) {
 	if(callback.onError!=undefined){oXHR.addEventListener('error', callback.onError, false);}
 	oXHR.open('POST', API_URL+"application");
 	oXHR.send(formData);
+
 }
 
 /**
@@ -2736,7 +2827,7 @@ function getInstalledApplications(type, callback) {
 
 /**
 * This function queries for all the applications or visualizations the current user has created and added to the system already
-* If the current user is a standard user, this will return all the applicatio and visualizations that are installed on the system so far.
+* If the current user is a standard user, this will return all the applicatio and visualizations that are present on the system so far.
 *
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
@@ -2774,7 +2865,7 @@ function getUploadedOrInstalledApplications(callback) {
 *
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
-* - id: The if of the applications or visualizations to install or uninstall
+* - id: The id of the applications or visualizations to install or uninstall
 */
 function inAndUninstallApplication(id, callback) {
 	callback = callback || {};
@@ -2785,6 +2876,42 @@ function inAndUninstallApplication(id, callback) {
 			type: 'post',
 			dataType: 'json',
 			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id: encodeURIComponent(id) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function allows to get a new app secret provided the logged in user is the owner of the app.
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - id: The id of the applications or visualizations to update the secret
+* - secret: The current secret of the application/visualization
+*/
+function refreshAppSecret(id, secret, callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"application",
+			type: 'post',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id: encodeURIComponent(id), secret: encodeURIComponent(secret) },
 			success: function(data){
 				if(data.result=="failed"){
 					if(data.loggedOut=="true"){
