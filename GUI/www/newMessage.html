@@ -18,9 +18,11 @@
 
 		function initRecipientDialog(data){
 			$("#recipientList").html("");
-			$.each(data.values.users, function(i, item){
-				$("#recipientList").append("<li id=\""+jQuery.parseJSON(item.userId).$oid+"\" >"+item.firstname+" "+item.lastname+"</li><br>");
-			});
+			if(data!=undefined && data.length>0){
+				$.each(data.values.users, function(i, item){
+					$("#recipientList").append("<li id=\""+jQuery.parseJSON(item.userId).$oid+"\" >"+item.firstname+" "+item.lastname+"</li><br>");
+				});
+			}
 			if(recipientId.length>0){
 				$("#recipient").val($("#"+recipientId).html());
 			}
@@ -65,7 +67,10 @@
 			$("#circleUsersButton").click(function(){
 				queryUsersInCircles({onSuccess: function(data){initRecipientDialog(data);}});
 			});
-		}
+			if($("#recipientList").html()==""){
+				$("#recipientList").html("No user found");
+			}
+}
 
 		function submit(){
 			if(recipientId==undefined || $("#subject").val().length<1 || $("#message").val().length<1){
@@ -89,7 +94,19 @@
 
 		$(document).ready(function() {
 			initialize();
-			$.get(WEB_URL+'dialogs/getRecipient-dialog.html').success(function(data){$('body').append(data); queryUsersInCircles({onSuccess: function(data){initRecipientDialog(data);}});});
+			$.get(WEB_URL+'dialogs/getRecipient-dialog.html').success(
+				function(data){
+					$('body').append(data); 
+					queryUsersInCircles({
+						onSuccess: function(data){
+							initRecipientDialog(data);
+						}, 
+						onError: function(data){
+							initRecipientDialog("");
+						}
+					});
+				}
+			);
 			$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data);});
 
 			$("#submitButton").click(function(){

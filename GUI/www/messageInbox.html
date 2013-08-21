@@ -31,7 +31,11 @@
 					$("#recordentries").append('<li id="'+item._id.$oid+'" class="readMessage '+item.senderID+'"><h3 class="recordlist-itemheader">'+decodeURIComponent(item.subject)+'</h3><i>'+decodeURIComponent(item.subject)+'. Sent at: '+item.timedate+'</i></li>');
 				}
 				queryUserById(item.senderID, {onSuccess: function(data, id){
-					$("."+id+" h3").html(data.values.users[0].firstname+" "+data.values.users[0].lastname);
+					if(data.values.users[0].firstname!=undefined && data.values.users[0].lastname!=undefined){
+						$("."+id+" h3").html(data.values.users[0].firstname+" "+data.values.users[0].lastname);
+					} else if(data.values.users[0].companyname!=undefined){
+						$("."+id+" h3").html(data.values.users[0].companyname);
+					}
 				}});
 			});	
 

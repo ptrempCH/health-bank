@@ -12,11 +12,11 @@
 
 	<script type="text/javascript">
 
-		var entry;
+		var entry, id, fileID;
 
 		function loadID(data){
 			if(typeof(Storage)!=="undefined") {
-					var id = localStorage.getItem("hb_detailId");
+					id = localStorage.getItem("hb_detailId");
 					if(data.size==0){
 						$(".detail-name").html("<center>There was an error loading your data. We are so sorry!</center>");
 						return false;
@@ -31,7 +31,11 @@
 					    	$(".detail-app").html("<b>App: </b>"+decodeURIComponent(data.values.records[item].app));
 					    	var s = "<b>Other values: </b><br/>";
 					    	$.each(data.values.records[item], function(key, value){
-					    		if(key!=undefined && key!="name" && key!="_id" && key!="timedate" && key!="descr" && key!="app" && key!="userID" && key!="spaces" && key!="circles"){
+					    		if(key=="fileName"){
+					    			s += "<p style=\"margin-left:10px\"><b>"+key+":</b>  <a id=\"fileLink\" href=\"javascript:void(0)\">"+decodeURIComponent(value)+"</a><p>"
+					    		} else if(key=="fileID"){
+					    			fileID = value.$oid;
+					    		} else if(key!=undefined && key!="name" && key!="_id" && key!="timedate" && key!="descr" && key!="app" && key!="userID" && key!="spaces" && key!="circles"){
 					    			s += "<p style=\"margin-left:10px\"><b>"+key+":</b>  "+decodeURIComponent(value)+"<p>"
 					    		}
 							});
@@ -40,6 +44,23 @@
 							entry = data.values.records[item];
 					    }
 					});
+					if(fileID!=undefined && fileID.length>0){
+						/*if($("#fileLink").html().indexOf("png")>0){
+							loadFile(fileID, {
+								onSuccess: function(data){
+									$(".page-content").append('<img src="data:image/png;base64,'+data+'" />')
+								}
+							});
+						}*/
+
+						$("#fileLink").click(function(){
+							if(isStorageDefined())
+							{
+								window.open(API_URL+"File?session="+mySession+"&credentials="+myCredentials+"&id="+fileID);
+							}
+							return false;
+						});
+					}
 			}
 		}
 		function loadRecordsError(){

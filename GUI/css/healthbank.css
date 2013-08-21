@@ -1818,6 +1818,17 @@ MESSAGES PAGES
 .unreadMessage {
 	background-color: #F4A460 !important;
 }
+.messageBox {
+	border: 1px solid;
+	border-radius: 5px;
+} 
+
+.messageBackButton {
+	margin-top: -20px;
+}
+.messageReplyButton {
+	margin-top: 10px;
+}
 
 /*****************
 APPLICATION PAGES

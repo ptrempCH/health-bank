@@ -99,7 +99,7 @@ public class Image extends HttpServlet {
 	 * 
 	 * Via id:
 	 * - type: This values is used to decide whether the caller wants to receive a user icon (value for type="user") or application icon (value for type="application")
-	 * - id: The id of the news entry to be queried
+	 * - id: The id of the image entry to be queried
 	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
 	 * - session: This is the current session key of the user
 	 * 

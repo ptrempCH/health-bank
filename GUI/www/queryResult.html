@@ -14,6 +14,10 @@
 
 
 		function loadQueryResult(data) {
+			if(user==undefined){
+				setTimeout(function(){loadQueryResult(data);}, 100);
+				return false;
+			}
 			$("#resultentries").html("");
 			if(data.values.records==undefined || data.values.records.length<1){
 				$("#resultentries").append("<center>No entries found!</center>");

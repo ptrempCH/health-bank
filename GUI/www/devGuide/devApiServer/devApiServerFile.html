@@ -74,8 +74,9 @@
 			<br>
 			<h3>REST API for Files</h3>
 			<br>
-			<p>The files category contains so far only one servlet. The /image or /Image servlet is used to retrieve images from the server which are stored in the database itself like e.g. the user icons or the application icons. Since we only want to get data from this service, just GET requests are allowed. This requests is best described with its JavaDoc:</p>
+			<p>The files category contains so far two servlets. The /image or /Image servlet is used to retrieve images from the server which are stored in the database itself like e.g. the user icons or the application icons. The /File or /file servlet on the other hand to retrieve files stored together with records. Since we only want to get data from these services, just GET requests are allowed. This requests are best described with its JavaDocs:</p>
 			<br>
+			<h4>Image:</h4>
 			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
 				/**
 				 * The GET request allows the caller to retrieve an image from the database
@@ -94,7 +95,20 @@
 				 * - session: This is the current session key of the user
 				 */
 			]]></script><br>
-			<p>The name parameter is the name of the image we like to retrieve. If we know the id of the icon, we can query by this value. The returned data is of the type of the image and contains the actual image data. It can be viewed by adding the data directly to the source of the img tag like this:<script type="syntaxhighlighter" class="brush: html"><![CDATA[<img src=\"data:image/png;base64,"+data+"\""/>]]></script><br>Since in contrast to the other services we are not dealing with JSON data here in the return message, there will be no error message if something goes wrong. Instead you will get an HTTP 400, 403, 404 or 500 So far only images are supported and no files such as x-rays. This issue will be addressed in further releases.</p>
+			<p>The name parameter is the name of the image we like to retrieve. If we know the id of the icon, we can query by this value. The returned data is of the type of the image and contains the actual image data. It can be viewed by adding the data directly to the source of the img tag like this PNG:<script type="syntaxhighlighter" class="brush: html"><![CDATA[<img src=\"data:image/png;base64,"+data+"\""/>]]></script><br>Since in contrast to the other services we are not dealing with JSON data here in the return message, there will be no error message if something goes wrong. Instead you will get an HTTP 400, 403, 404 or 500 error message. </p><br>
+			<h4>Files:</h4>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to retrieve a file from the database
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * - id: The id of the file entry to be queried
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * 
+				 */
+			]]></script><br>
+			<p>Simialar to the image we can query by id here. The returned data is of the type of the file and contains the actual data. For the error messages there are the same rules as for the image query. If the file is an image, you can add it the same way using the src attribute of the img tag.</p><br>
 		</div>
 		<!--END Content-->
 	</div>

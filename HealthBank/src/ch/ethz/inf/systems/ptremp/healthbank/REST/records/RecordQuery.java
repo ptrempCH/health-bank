@@ -208,6 +208,9 @@ public class RecordQuery extends HttpServlet {
 							}
 						}
 					} else if(query!=null && query.length()>0){
+						if(query.equals("*")){
+							query = "\\w*";
+						}
 						Pattern regex = Pattern.compile("\\w*"+query+"\\w*");
 						list.add(regex);
 						regex = Pattern.compile("\\w*"+query.toLowerCase()+"\\w*");

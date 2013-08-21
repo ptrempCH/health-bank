@@ -1,12 +1,14 @@
 package ch.ethz.inf.systems.ptremp.healthbank.REST.records;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLDecoder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -17,6 +19,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -27,6 +33,8 @@ import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import com.mongodb.gridfs.GridFS;
+import com.mongodb.gridfs.GridFSInputFile;
 
 import ch.ethz.inf.systems.ptremp.healthbank.REST.user.authentication.Token;
 import ch.ethz.inf.systems.ptremp.healthbank.db.MongoDBConnector;
@@ -277,7 +285,7 @@ public class Record extends HttpServlet {
 	 * - values: A JSON string that contains additional values for the record
 	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
 	 * 
-	 * Insert from app for user that is not currently installed
+	 * Insert from app for user that is not currently logged in
 	 * - userID: The id of the user the record shall be assigned to
 	 * - appID: The id of the application that likes to store this record
 	 * - token: The token received from the call to {@link Token} 
@@ -299,7 +307,7 @@ public class Record extends HttpServlet {
 	 * TODO:
 	 * 	- Implement deletion of entries
 	 * 	- Implement editing of entries besides circles and spaces
-	 * 	- File upload
+	 * 	- test File upload
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("application/json");
@@ -307,210 +315,80 @@ public class Record extends HttpServlet {
 		String errorMessage = "";
 		boolean wasError = false;
 		boolean isLoggedIn = true;
-		String name = "", id = "", userID = "";
+		String name = "", id = "", userID = "", descr = "", values = "", callback = "", credentials = "", session = "";
 		
-		String appID = request.getParameter("appID");
-		if(appID!=null && appID.length()>0){ // call from external server using push 
-			userID = request.getParameter("userID");
-			String token = request.getParameter("token");
-			if(token==null || token.length()<2 || userID==null || userID.length()<2){
-				errorMessage = "\"Record doPost: Please provide the parameters 'userID', 'appID' and 'token' with the request.\"";
-				wasError = true;
-			} else {
-				token = URLDecoder.decode(token, "UTF-8");
-				userID = URLDecoder.decode(userID, "UTF-8");
-				appID = URLDecoder.decode(appID, "UTF-8");
-				try{
-					BasicDBObject q1 = new BasicDBObject("userID", userID);
-					BasicDBObject q2 = new BasicDBObject("appID", appID);
-					ArrayList<BasicDBObject> myList = new ArrayList<BasicDBObject>();
-					myList.add(q1);
-					myList.add(q2);
-					BasicDBObject and = new BasicDBObject("$and", myList);
-					DBCursor res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, and);
-					if(res==null || !res.hasNext()){
-						wasError=true;
-						errorMessage = "Record doPost: User does not have this app installed!";
-					} else {
-						BasicDBObject install = (BasicDBObject) res.next();
-						if(install!=null){
-							String savedToken = install.getString("token");
-							if(savedToken.equals(token)){
-								String expiresToken = install.getString("token_expires");
-								DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-								Date d = dateFormat.parse(expiresToken);
-								if(d.before(new Date())){
-									wasError=true;
-									errorMessage = "Record doPost: Token is expired. Please get another one!";
-								} else {
-									name = request.getParameter("name");
-									String descr = request.getParameter("descr");
-									String values = request.getParameter("values");
-									if(name==null || name.length()<2 || values==null || values.length()<5 || descr==null || descr.length()<1){
-										errorMessage = "\"Record doPost: Please provide the parameters 'name', 'descr' and 'values' with the request.\"";
-										wasError = true;
-									}
-									if(!wasError){
-										name = URLDecoder.decode(name, "UTF-8");
-										descr = URLDecoder.decode(descr, "UTF-8");
-										values = URLDecoder.decode(values, "UTF-8");
-										
-										// check DB connection
-										if(!connector.isConnected()){
-											manager.reconnect();
-										}
-										
-										HashMap<Object, Object> data = new HashMap<Object, Object>();
-										data.put("name", name);
-										data.put("descr", descr);
-										data.put("timedate", dateFormat.format(new Date()));
-										JSONParser jsonParser = new JSONParser();
-										JSONObject json = (JSONObject) jsonParser.parse(values);
-										for(Object key : json.keySet()){
-											Object value = json.get(key);
-											data.put(key, value);
-										}
-										data.put("appID", appID);
-										data.put("userID", userID);
-										
-										// TODO  File upload
-										
-										connector.insert(MongoDBConnector.RECORDS_COLLECTION_NAME, data);
-										connector.update(MongoDBConnector.APPLICATION_COLLECTION_NAME, and, new BasicDBObject("$set", new BasicDBObject("token", "")));
-									}
-								}
-							} else {
-								wasError=true;
-								errorMessage = "Record doPost: Token is not valid. Use Token utility first to get a user specific access token!";
-							}
-						} else {
-							wasError=true;
-							errorMessage = "Record doPost: User does not have this app installed!";
+		// START MULTIPART
+		if (ServletFileUpload.isMultipartContent(request)) {
+			System.out.println("Record doPost: We received a multipart request");
+			try {
+				GridFS fs = new GridFS( connector.getRootDatabase(), MongoDBConnector.RECORDS_COLLECTION_NAME);
+				GridFSInputFile in  = null;
+				List<FileItem> items = new ServletFileUpload(new DiskFileItemFactory()).parseRequest(request);
+		        for (FileItem item : items) {
+		            if (!item.isFormField()) {
+		                // Process form file field (input type="file")
+		            	InputStream filecontent = item.getInputStream();
+		                String filename = item.getName();
+		                filename = URLDecoder.decode(filename, "UTF-8");
+						//Save image into database
+		                in = fs.createFile( filecontent );
+		                in.setFilename(filename);
+		                in.setContentType(item.getContentType());
+		                in.setId(ObjectId.get());
+		                //in.save();
+		            } else {
+		            	switch (item.getFieldName()) {
+						case "session":
+							session = item.getString();
+							break;
+						case "credentials":
+							credentials = item.getString();
+							break;
+						case "name":
+							name = item.getString();
+							break;
+						case "descr":
+							descr = item.getString();
+							break;
+						case "values":
+							values = item.getString();
+							break;
+						default:
+							break;
 						}
-					}
-				} catch (NotConnectedException e) {
-					errorMessage = "\"Record doPost: We lost connection to the DB. Please try again later. Sorry for that.\"";
+		            }
+		        }
+
+		        BasicDBList list = new BasicDBList();
+		        if(credentials==null || credentials.length()<1 || session==null || session.length()<1){
+		        	errorMessage = "\"Record doPost: You need to provide the attributes credential and sesssion.\"";
 					wasError = true;
-				} catch (IllegalQueryException e) {
-					errorMessage = "\"Record doPost: There was an internal error. Please contact an administrator and provide him/her with this message: "+e.getMessage()+"\"";
-					wasError = true;
-				} catch (java.text.ParseException e) {
-					errorMessage = "\"Record doPost: There was an internal parse error. Please contact an administrator and provide him/her with this message: "+e.getMessage()+"\"";
-					wasError = true;
-				} catch (ParseException e) {
-					errorMessage = "\"Record doPost: There was an error while parsing your JSON in parameter values. Did you provide correct JSON? Error: "+e.getMessage()+"\"";
-					wasError = true;
-				}
-				
-				if(!wasError) {
-					response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Entry stored successfully\" }");
-					if(MongoDBConnector.DEBUG){System.out.println("Stored record with name "+name+" to the user with userID "+userID);}
-				}
-				else {
-					response.getOutputStream().println("{ \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\" : \""+errorMessage+"\" }");
-					if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage);}
-				}
-			}
-			
-		} else {
-			// check parameters user specific parameters
-			String callback = request.getParameter("callback");
-			String credentials = request.getParameter("credentials");
-			String session = request.getParameter("session");
-			if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
-				errorMessage = "\"Record doPost: Please provide the parameters 'pw' and 'username' with the request.\"";
-				wasError = true;
-			}
-			if(!wasError){
-				credentials = URLDecoder.decode(credentials, "UTF-8");
-				session = URLDecoder.decode(session, "UTF-8");
-				credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
-				
-				// check record specific parameters
-				try {
-					// check if user is logged in and save the new value
+		        } else {
+			        credentials = URLDecoder.decode(credentials, "UTF-8");
+					credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
+					session = URLDecoder.decode(session, "UTF-8");
+					if(credentials.contains(":")){list.add(credentials.substring(0, credentials.lastIndexOf(':')));}
+		        
 					if(!manager.isUserLoggedIn(session, credentials)){
 						errorMessage = "\"Record doPost: You need to be logged in to use this service\"";
 						wasError = true;
 						isLoggedIn = false;
 					} else {
-						id = request.getParameter("id");
-						if(id!=null && id.length()>0){ // update circles
-							id = URLDecoder.decode(id, "UTF-8");
-							String circle = request.getParameter("circle");
-							String space = request.getParameter("space");
-							BasicDBList objectList = new BasicDBList();
-							if(circle!=null){
-								circle = URLDecoder.decode(circle, "UTF-8");
-								for(String s: circle.split(" ")){
-									objectList.add(new BasicDBObject("circle", s));
-								}
-								BasicDBList list = new BasicDBList();
-								list.add(new ObjectId(id));
-								connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("circles", objectList)));
-							} else  if(space!=null){
-								space = URLDecoder.decode(space, "UTF-8");
-								HashMap<Object, Object> data = new HashMap<Object, Object>();
-								BasicDBList and = new BasicDBList();
-								and.add(id);
-								DBCursor res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("recordID", new BasicDBObject("$in", and)));
-								if(res==null || !res.hasNext()){ // we need to insert all of the new space entries
-									for(String s: space.split(" ")){
-										data = new HashMap<Object, Object>();
-										data.put("recordID", id);
-										data.put("spaceID", s);
-										DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-										data.put("timedate", dateFormat.format(new Date()));
-										connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
-									}
-								} else { // add or remove the ones that do not fit anymore
-									boolean found = false;
-									while(res.hasNext()){
-										found = false;
-										DBObject obj = res.next();
-										String spaId = (String) obj.get("spaceID");
-										for(String s: space.split(" ")){
-											if(s.equals("")){ continue; }
-											if(spaId.equals(s)){
-												space = space.replace(s, "");
-												found=true; 
-												break; }
-										}
-										if(!found){ // the user removed this space
-											and = new BasicDBList();
-											and.add(new BasicDBObject("recordID", id));
-											and.add(new BasicDBObject("spaceID", spaId));
-											DBObject queryObject = new BasicDBObject("$and", and);
-											connector.delete(MongoDBConnector.SPACES_COLLECTION_NAME, queryObject);
-										}
-									}
-									for(String s: space.split(" ")){ // now insert new ones
-										if(s.equals("") || s.length()<2){ continue; }
-										else {
-											data = new HashMap<Object, Object>();
-											data.put("recordID", id);
-											data.put("spaceID", s);
-											DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-											data.put("timedate", dateFormat.format(new Date()));
-											connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
-										}
-									}
-								}
-							} else {
-								errorMessage = "\"Record doPost: If you provide the attribute 'id' you need either to provide the attribute 'circle' or 'space' as well!\"";
-								wasError = true;
-							}
-						} else { // insert
-							userID = request.getParameter("userID");
-							name = request.getParameter("name");
-							String descr = request.getParameter("descr");
-							String values = request.getParameter("values");
+						DBCursor res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)));
+						if(res==null || !res.hasNext()){
+							errorMessage = "\"No user found with these credentials. Did you provide the correct sessionKey and credentials?\"";
+							wasError = true;
+						}
+						if(!wasError){
+							DBObject obj = res.next();
+							ObjectId myUserID = (ObjectId) obj.get("_id");
+							
+							System.out.println(name+", "+values+", "+descr);
 							if(name==null || name.length()<2 || values==null || values.length()<5 || descr==null || descr.length()<1){
 								errorMessage = "\"Record doPost: Please provide the parameters 'name', 'descr' and 'values' with the request.\"";
 								wasError = true;
 							}
 							if(!wasError){
-								if(userID!=null){userID = URLDecoder.decode(userID, "UTF-8");}
 								name = URLDecoder.decode(name, "UTF-8");
 								descr = URLDecoder.decode(descr, "UTF-8");
 								values = URLDecoder.decode(values, "UTF-8");
@@ -525,13 +403,15 @@ public class Record extends HttpServlet {
 								data.put("descr", descr);
 								DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
 								data.put("timedate", dateFormat.format(new Date()));
-	
-								if(userID!=null && userID.length()>0){ // add to another user
-									// TODO: check if current user is allowed to do so (how?)
-									data.put("userID", userID);
-								} else { // add to current user
-									data.put("userID", manager.getUserID(credentials));
+								data.put("userID", manager.getUserID(credentials));
+								
+								if(in!=null){
+									if(myUserID!=null){in.put("userID", myUserID);}
+									in.save();
+									data.put("fileID", in.getId());
+									data.put("fileName", in.getFilename());
 								}
+								
 								
 								JSONParser jsonParser = new JSONParser();
 								JSONObject json = (JSONObject) jsonParser.parse(values);
@@ -540,21 +420,278 @@ public class Record extends HttpServlet {
 									data.put(key, value);
 								}
 								
-								// TODO  File upload
-								
 								connector.insert(MongoDBConnector.RECORDS_COLLECTION_NAME, data);
 							}
 						}
 					}
-				} catch (ParseException e) {
-					errorMessage = "\"Record doPost: There was an error while parsing your JSON in parameter values. Did you provide correct JSON? Error: "+e.getMessage()+"\"";
+		        }
+				
+			} catch (ParseException e) {
+				errorMessage = "\"Record doPost: There was an error while parsing your JSON in parameter values. Did you provide correct JSON? Error: "+e.getMessage()+"\"";
+				wasError = true;
+			} catch (FileUploadException e) {
+		        errorMessage = "\"Application doPost: Cannot parse multipart request...\"";
+				wasError = true;
+		    } catch (IllegalQueryException e) {
+		    	errorMessage = "\"Application doPost: There was an illegal query to the DB...\"";
+				wasError = true;
+			} catch (NotConnectedException e) {
+				errorMessage = "\"Application doPost: Not connected to the DB...\"";
+				wasError = true;
+			}
+			if(!wasError) {
+				response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Record stored successfully\" }");
+				if(MongoDBConnector.DEBUG){System.out.println("Stored record successfully for user with sessionKey "+session);}
+			}
+			else {
+				response.getOutputStream().println("{ \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\" : \""+errorMessage+"\" }");
+				if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage);}
+			}
+		} // FINISH MULTIPART
+		else {
+			String appID = request.getParameter("appID");
+			if(appID!=null && appID.length()>0){ // call from external server using push 
+				userID = request.getParameter("userID");
+				String token = request.getParameter("token");
+				if(token==null || token.length()<2 || userID==null || userID.length()<2){
+					errorMessage = "\"Record doPost: Please provide the parameters 'userID', 'appID' and 'token' with the request.\"";
 					wasError = true;
-				} catch (NotConnectedException e) {
-					errorMessage = "\"Record doPost: We lost connection to the DB. Please try again later. Sorry for that.\"";
+				} else {
+					token = URLDecoder.decode(token, "UTF-8");
+					userID = URLDecoder.decode(userID, "UTF-8");
+					appID = URLDecoder.decode(appID, "UTF-8");
+					try{
+						BasicDBObject q1 = new BasicDBObject("userID", userID);
+						BasicDBObject q2 = new BasicDBObject("appID", appID);
+						ArrayList<BasicDBObject> myList = new ArrayList<BasicDBObject>();
+						myList.add(q1);
+						myList.add(q2);
+						BasicDBObject and = new BasicDBObject("$and", myList);
+						DBCursor res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, and);
+						if(res==null || !res.hasNext()){
+							wasError=true;
+							errorMessage = "Record doPost: User does not have this app installed!";
+						} else {
+							BasicDBObject install = (BasicDBObject) res.next();
+							if(install!=null){
+								String savedToken = install.getString("token");
+								if(savedToken.equals(token)){
+									String expiresToken = install.getString("token_expires");
+									DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+									Date d = dateFormat.parse(expiresToken);
+									if(d.before(new Date())){
+										wasError=true;
+										errorMessage = "Record doPost: Token is expired. Please get another one!";
+									} else {
+										name = request.getParameter("name");
+										descr = request.getParameter("descr");
+										values = request.getParameter("values");
+										if(name==null || name.length()<2 || values==null || values.length()<5 || descr==null || descr.length()<1){
+											errorMessage = "\"Record doPost: Please provide the parameters 'name', 'descr' and 'values' with the request.\"";
+											wasError = true;
+										}
+										if(!wasError){
+											name = URLDecoder.decode(name, "UTF-8");
+											descr = URLDecoder.decode(descr, "UTF-8");
+											values = URLDecoder.decode(values, "UTF-8");
+											
+											// check DB connection
+											if(!connector.isConnected()){
+												manager.reconnect();
+											}
+											
+											HashMap<Object, Object> data = new HashMap<Object, Object>();
+											data.put("name", name);
+											data.put("descr", descr);
+											data.put("timedate", dateFormat.format(new Date()));
+											JSONParser jsonParser = new JSONParser();
+											JSONObject json = (JSONObject) jsonParser.parse(values);
+											for(Object key : json.keySet()){
+												Object value = json.get(key);
+												data.put(key, value);
+											}
+											data.put("appID", appID);
+											data.put("userID", userID);
+											
+											connector.insert(MongoDBConnector.RECORDS_COLLECTION_NAME, data);
+											connector.update(MongoDBConnector.APPLICATION_COLLECTION_NAME, and, new BasicDBObject("$set", new BasicDBObject("token", "")));
+										}
+									}
+								} else {
+									wasError=true;
+									errorMessage = "Record doPost: Token is not valid. Use Token utility first to get a user specific access token!";
+								}
+							} else {
+								wasError=true;
+								errorMessage = "Record doPost: User does not have this app installed!";
+							}
+						}
+					} catch (NotConnectedException e) {
+						errorMessage = "\"Record doPost: We lost connection to the DB. Please try again later. Sorry for that.\"";
+						wasError = true;
+					} catch (IllegalQueryException e) {
+						errorMessage = "\"Record doPost: There was an internal error. Please contact an administrator and provide him/her with this message: "+e.getMessage()+"\"";
+						wasError = true;
+					} catch (java.text.ParseException e) {
+						errorMessage = "\"Record doPost: There was an internal parse error. Please contact an administrator and provide him/her with this message: "+e.getMessage()+"\"";
+						wasError = true;
+					} catch (ParseException e) {
+						errorMessage = "\"Record doPost: There was an error while parsing your JSON in parameter values. Did you provide correct JSON? Error: "+e.getMessage()+"\"";
+						wasError = true;
+					}
+					
+					if(!wasError) {
+						response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Entry stored successfully\" }");
+						if(MongoDBConnector.DEBUG){System.out.println("Stored record with name "+name+" to the user with userID "+userID);}
+					}
+					else {
+						response.getOutputStream().println("{ \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\" : \""+errorMessage+"\" }");
+						if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage);}
+					}
+				}
+				
+			} else {
+				// check parameters user specific parameters
+				callback = request.getParameter("callback");
+				credentials = request.getParameter("credentials");
+				session = request.getParameter("session");
+				if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
+					errorMessage = "\"Record doPost: Please provide the parameters 'pw' and 'username' with the request.\"";
 					wasError = true;
-				} catch (IllegalQueryException e) {
-					errorMessage = "\"Record doPost: There was an internal error. Please contact an administrator and provide him/her with this message: "+e.getMessage()+"\"";
-					wasError = true;
+				}
+				if(!wasError){
+					credentials = URLDecoder.decode(credentials, "UTF-8");
+					session = URLDecoder.decode(session, "UTF-8");
+					credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
+					
+					// check record specific parameters
+					try {
+						// check if user is logged in and save the new value
+						if(!manager.isUserLoggedIn(session, credentials)){
+							errorMessage = "\"Record doPost: You need to be logged in to use this service\"";
+							wasError = true;
+							isLoggedIn = false;
+						} else {
+							id = request.getParameter("id");
+							if(id!=null && id.length()>0){ // update circles
+								id = URLDecoder.decode(id, "UTF-8");
+								String circle = request.getParameter("circle");
+								String space = request.getParameter("space");
+								BasicDBList objectList = new BasicDBList();
+								if(circle!=null){
+									circle = URLDecoder.decode(circle, "UTF-8");
+									for(String s: circle.split(" ")){
+										objectList.add(new BasicDBObject("circle", s));
+									}
+									BasicDBList list = new BasicDBList();
+									list.add(new ObjectId(id));
+									connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("circles", objectList)));
+								} else  if(space!=null){
+									space = URLDecoder.decode(space, "UTF-8");
+									HashMap<Object, Object> data = new HashMap<Object, Object>();
+									BasicDBList and = new BasicDBList();
+									and.add(id);
+									DBCursor res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("recordID", new BasicDBObject("$in", and)));
+									if(res==null || !res.hasNext()){ // we need to insert all of the new space entries
+										for(String s: space.split(" ")){
+											data = new HashMap<Object, Object>();
+											data.put("recordID", id);
+											data.put("spaceID", s);
+											DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+											data.put("timedate", dateFormat.format(new Date()));
+											connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
+										}
+									} else { // add or remove the ones that do not fit anymore
+										boolean found = false;
+										while(res.hasNext()){
+											found = false;
+											DBObject obj = res.next();
+											String spaId = (String) obj.get("spaceID");
+											for(String s: space.split(" ")){
+												if(s.equals("")){ continue; }
+												if(spaId.equals(s)){
+													space = space.replace(s, "");
+													found=true; 
+													break; }
+											}
+											if(!found){ // the user removed this space
+												and = new BasicDBList();
+												and.add(new BasicDBObject("recordID", id));
+												and.add(new BasicDBObject("spaceID", spaId));
+												DBObject queryObject = new BasicDBObject("$and", and);
+												connector.delete(MongoDBConnector.SPACES_COLLECTION_NAME, queryObject);
+											}
+										}
+										for(String s: space.split(" ")){ // now insert new ones
+											if(s.equals("") || s.length()<2){ continue; }
+											else {
+												data = new HashMap<Object, Object>();
+												data.put("recordID", id);
+												data.put("spaceID", s);
+												DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+												data.put("timedate", dateFormat.format(new Date()));
+												connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
+											}
+										}
+									}
+								} else {
+									errorMessage = "\"Record doPost: If you provide the attribute 'id' you need either to provide the attribute 'circle' or 'space' as well!\"";
+									wasError = true;
+								}
+							} else { // insert
+								userID = request.getParameter("userID");
+								name = request.getParameter("name");
+								descr = request.getParameter("descr");
+								values = request.getParameter("values");
+								if(name==null || name.length()<2 || values==null || values.length()<5 || descr==null || descr.length()<1){
+									errorMessage = "\"Record doPost: Please provide the parameters 'name', 'descr' and 'values' with the request.\"";
+									wasError = true;
+								}
+								if(!wasError){
+									if(userID!=null){userID = URLDecoder.decode(userID, "UTF-8");}
+									name = URLDecoder.decode(name, "UTF-8");
+									descr = URLDecoder.decode(descr, "UTF-8");
+									values = URLDecoder.decode(values, "UTF-8");
+									
+									// check DB connection
+									if(!connector.isConnected()){
+										manager.reconnect();
+									}
+									
+									HashMap<Object, Object> data = new HashMap<Object, Object>();
+									data.put("name", name);
+									data.put("descr", descr);
+									DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+									data.put("timedate", dateFormat.format(new Date()));
+		
+									if(userID!=null && userID.length()>0){ // add to another user
+										// TODO: check if current user is allowed to do so (how?)
+										data.put("userID", userID);
+									} else { // add to current user
+										data.put("userID", manager.getUserID(credentials));
+									}
+									
+									JSONParser jsonParser = new JSONParser();
+									JSONObject json = (JSONObject) jsonParser.parse(values);
+									for(Object key : json.keySet()){
+										Object value = json.get(key);
+										data.put(key, value);
+									}
+									
+									connector.insert(MongoDBConnector.RECORDS_COLLECTION_NAME, data);
+								}
+							}
+						}
+					} catch (ParseException e) {
+						errorMessage = "\"Record doPost: There was an error while parsing your JSON in parameter values. Did you provide correct JSON? Error: "+e.getMessage()+"\"";
+						wasError = true;
+					} catch (NotConnectedException e) {
+						errorMessage = "\"Record doPost: We lost connection to the DB. Please try again later. Sorry for that.\"";
+						wasError = true;
+					} catch (IllegalQueryException e) {
+						errorMessage = "\"Record doPost: There was an internal error. Please contact an administrator and provide him/her with this message: "+e.getMessage()+"\"";
+						wasError = true;
+					}
 				}
 			}
 		

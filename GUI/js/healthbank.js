@@ -84,6 +84,7 @@ function initialize() {
 			$("#mailIcon").attr("src", "../images/newmail.png");
 			$("#mailIcon").addClass("mailIconFlash");
 			$('#mailIcon').trigger('hover'); 
+			$('#mailIcon').prop("title", "You have a new message!");
 		}
 	}});
 	initializeNavigation();
@@ -396,7 +397,7 @@ function initializeSpaces(backurl, spacesID, nrOfItems) {
 		return false;
 	});
 	$("#createRecButton").click(function(){
-		window.location = WEB_URL+"apps/addMedicalRecordApp.html"; 
+		window.location = WEB_URL+"myApps.html"; 
 		return false;
 	});
 	$("#filterMyEntry").change(function(){
@@ -1450,6 +1451,23 @@ function addRecord(name, descr, values, callback) {
 }
 
 /**
+* Add a new record to the user's chronicle including a file
+* Redirects to the login page, if not logged in. 
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - formData: The form data that contains all the information about the new app or visualization to add.
+*/
+function addRecordWithFile(formData, callback) {
+	callback = callback || {};
+	var oXHR = new XMLHttpRequest();
+	if(callback.onSuccess!=undefined){oXHR.addEventListener('load', callback.onSuccess, false);}
+	if(callback.onError!=undefined){oXHR.addEventListener('error', callback.onError, false);}
+	oXHR.open('POST', API_URL+"Record");
+	oXHR.send(formData);
+}
+
+/**
 * Add a new news entry 
 * Redirects to the login page, if not logged in. 
 *
@@ -1968,6 +1986,33 @@ function loadImage(icon, userId, type, callback){
 }
 
 /**
+* Helper function to load a file from the server
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - id: The id of the file to load
+*/
+function loadFile(id, callback){
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"File",
+			type: 'get',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id : encodeURIComponent(id)},
+			success: function(data){
+				if(callback.onSuccess){
+			        callback.onSuccess(data);
+			    }
+			},
+			error: function (request, status, error) {
+		        alert(JSON.parse(request.responseText));
+		    }
+		});
+	}
+}
+
+/**
 * Helper function to retrieve a parameter from the URL that was called to load this page.
 *
 * Parameter: 
@@ -2228,6 +2273,10 @@ function sortRecords () {
 * - recordId: The id of the record we want to save the spaces to 
 */
 function loadLatestRecords(data, backlink, space_id, nrOfItems) {
+	if(spaces==undefined){
+		setTimeout(function(){loadLatestRecords(data, backlink, space_id, nrOfItems);}, 100);
+		return false;
+	}
 	$("#recordentries").html("");
 	if(data==undefined || data.length==0){
 		$("#recordentries").append("<center>No entries yet!</center>");
@@ -2699,7 +2748,6 @@ function addNewApplication(formData, callback) {
 	if(callback.onError!=undefined){oXHR.addEventListener('error', callback.onError, false);}
 	oXHR.open('POST', API_URL+"application");
 	oXHR.send(formData);
-
 }
 
 /**

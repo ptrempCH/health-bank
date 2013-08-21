@@ -26,10 +26,14 @@
 			message = data.values.messages[0];
 			$("#messageMetadata").append('</br>&nbsp;&nbsp;Sent at: '+message.timedate+'</i></li>');
 			$("#messageSubject").append("<b>Subject: </b></br>&nbsp;&nbsp;"+message.subject);
-			$("#messageBody").append("<b>Content: </b></br>&nbsp;&nbsp;"+message.message.replace(/\n+/g, "</br></br>"));
+			$("#messageBody").append("<b>Content: </b></br><br>&nbsp;&nbsp;"+message.message.replace(/\n+/g, "</br>&nbsp;&nbsp;"));
 
 			queryUserById(message.senderID, {onSuccess: function(data, id){
-				$("#messageMetadata").prepend("<b>Message from: </b></br>&nbsp;&nbsp;"+data.values.users[0].firstname+" "+data.values.users[0].lastname);
+				if(data.values.users[0].firstname!=undefined && data.values.users[0].lastname!=undefined){
+					$("#messageMetadata").prepend("<b>Message from: </b></br>&nbsp;&nbsp;"+data.values.users[0].firstname+" "+data.values.users[0].lastname);
+				} else if(data.values.users[0].companyname!=undefined){
+					$("#messageMetadata").prepend("<b>Message from: </b></br>&nbsp;&nbsp;"+data.values.users[0].companyname);
+				}
 			}});
 		}
 
@@ -79,12 +83,12 @@
 				<div class="page-content">
 					<div id="chronic-section">
 						<h3 class="header-text">Detail Message</h3>
-						<button id="backButton" class="big-button">back</button>
+						<button id="backButton" class="big-button messageBackButton">back</button>
 						<br/>
-						<div id="messageMetadata"></div></br>
-						<div id="messageSubject"></div></br>
-						<div id="messageBody"></div>
-						<button id="replyMessageButton" class="big-button">Reply</button>
+						<div id="messageMetadata" class="messageBox"></div></br>
+						<div id="messageSubject" class="messageBox"></div></br>
+						<div id="messageBody" class="messageBox"></div>
+						<button id="replyMessageButton" class="big-button messageReplyButton">Reply</button>
 					</div>
 				</div>
 				<!--END Content-->
