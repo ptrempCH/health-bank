@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushXml.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+			$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			$(window).resize(function() {
+				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div class="dev-page">
+		<!--Logo-->
+		<div class="dev-logo">
+			<a href="../../home.html"><img src="../../../images/logo.png"/></a>
+		</div>
+		<!--END Logo-->
+		<!--Header-->
+		<div class="dev-header">
+			<h1>API Reference for the REST Requests to the Server - Query Engine</h1> 
+		</div>
+		<!--END Header-->
+
+		<!--Navi-->
+		<div class="dev-navi">
+			<br><br><br>
+			<p><a href="../devCreateApp.html">Create an Application</a></p><br>
+			<p><a href="../devCreateViz.html">Create a Visualization</a></p><br>
+			<p><a href="../devApiServer.html">API Ref. Server</a></p><br>
+			<ul>
+				<li>&nbsp;&nbsp;<a href="devApiServerUser.html">User</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerUserAuth.html">Authentication</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerRecord.html">Records</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerApplication.html">Applications</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerNews.html">News</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerMessage.html">Messages</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerFile.html">File</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerQuery.html">QueryEngine</a></li><br>
+			</ul>
+			<p><a href="../devApiClient.html">API Ref. Client</a></p><br>
+			<p><a href="../devDemos.html">Demos</a></p><br>
+		</div>
+		<!--END Navi-->
+
+		<!--Content-->
+		<div class="dev-content">
+			<br>
+			<h3>REST API for the Query Engine</h3>
+			<br>
+			<p>For the query engine we so far only provide a single servlet. But the /QueryEngine (or /queryengine, /qe) servlet can be called in three different ways all using the HTTP GET request. In the following we will describe these three functionalities which are user search, record search and text search. The query engine can only be used by institute users for research purposes and query results will only contain data from users that actively approved to share data for research purposes. The three different request forms are indicated via the 'type' parameter which can have one of these values: 'user', 'record', 'text'.</p>
+			<br>
+
+			<h4>User search:</h4>
+			<p>The user search allows the researches to specify some restrictions such as on the age, weight or height of users as well as the country they live in. The more they can set some keywords they want the users to have in their records. The system will then query for users that specify these limitations and that actively allowed researchers to see its data. For this request the 'type' parameter has to be set to 'user'. This request is best described with its JavaDocs:</p>
+			<br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[		
+				/**
+				 * The GET request allows the caller to ask various kinds of queries for users as well as for record entries.
+				 * This service is only usable by institute users and returns only data of users that actively allowed to inspect their data for research purposes.
+				 * There are three possible ways on how to call this service. The type attribute allows to differ these cases. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Query for users (at least one optional field has to be set):
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - type: Has to be set to 'user'!
+				 * - minAge: (optional)The minimum age the user shall have
+				 * - maxAge: (optional)The maximum age the user shall have
+				 * - minWeight: (optional)The minimum weight the user shall have
+				 * - maxWeight: (optional)The maximum weight the user shall have
+				 * - minHeight: (optional)The minimum height the user shall have
+				 * - maxHeight: (optional)The maximum height the user shall have
+				 * - country: (optional)The country where the user is from
+				 * - keywords: (optional)A list of keywords to be found in the users records. keywords shall be separated by a space
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * The information is stored in the 'values' attribute of the resulting JSON string.
+				 */
+			]]></script><br>
+			<p>The type parameter as defined above has to be set to 'user', credentials and session are the same as with every request to our REST API. All the parameters marked with optional can be set, but do not have to. But at least one of these has to be set, so we actually have some limitation, else we would just return all the users. The min and max values are self-explanatory, the country value is to define where the user lives and the keywords parameter holds values the caller likes to be present in the users records. These keywords are seperated with a space and so far deal as an 'or'-request rather then an 'and'. This is open to change in later versions. Please give us feedback on other limitations you would like to set here. The query will return an array of users defined by their user, first and last name as well as the user icon and the user identification. With the identification and user name we allow the caller to send messages to these users, if need be. <br>Having said this we like to encourage all the researchers out there to not overdue it and send tons of messages to innocent users out there. The rise and fall of this platform is in the hand of the users. We do not want to scare them off, so please use this functionality with care.  </p>
+			<br>
+			<h4>Record search:</h4>
+			<p>Getting users is one thing, but getting the actual data is probably even more important. Hence we introduce the record search service. Using this API the caller can give us some keywords via the keyword parameter (seperated by a space) and we will search the database for matching records. The result will be an array of records, with all the relevant data in it. Here is the relevant JavaDoc for it: </p>
+			<br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to ask various kinds of queries for users as well as for record entries.
+				 * This service is only usable by institute users and returns only data of users that actively allowed to inspect their data for research purposes.
+				 * There are three possible ways on how to call this service. The type attribute allows to differ these cases. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Query for records:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - type: Has to be set to 'record'!
+				 * - keywords: A list of keywords to be found in the users records. keywords shall be separated by a space
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * The information is stored in the 'values' attribute of the resulting JSON string.
+				 */
+			]]></script><br>
+			<p>Make sure that you set the type parameter to 'record' for using this. Send your keywords seperated by a space as a string via the 'keyowrds' parameter. The other parameters are the same as with all our services.</p>
+			<br>
+			<h4>Text search:</h4>
+			<p>TODO Set the 'type' parameter to 'text' for this request. Here is the according JavaDoc: </p>
+			<br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to ask various kinds of queries for users as well as for record entries.
+				 * This service is only usable by institute users and returns only data of users that actively allowed to inspect their data for research purposes.
+				 * There are three possible ways on how to call this service. The type attribute allows to differ these cases. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Query with a text search:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - type: Has to be set to 'text'!
+				 * - query: The query to be asked
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * The information is stored in the 'values' attribute of the resulting JSON string.
+				 */
+			]]></script><br>
+			<p>The query paramaeter contains the actual query for the text search. Make sure you set the type parameter correctly.</p><br>
+		</div>
+		<!--END Content-->
+	</div>
+	<!--END Page-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

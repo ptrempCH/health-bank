@@ -122,7 +122,7 @@ public class News extends HttpServlet {
 		String session = request.getParameter("session");
 		String id = request.getParameter("id");
 		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
-			errorMessage = "\"Please provide the parameters 'pw' and 'username' with the request.\"";
+			errorMessage = "\"Please provide the parameters 'credentials' and 'session' with the request.\"";
 			wasError = true;
 		}
 		if(!wasError){

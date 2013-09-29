@@ -140,7 +140,7 @@ public class Message extends HttpServlet {
 		String hasNew = request.getParameter("hasNew");
 		String userId = request.getParameter("userId");
 		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
-			errorMessage = "\"Please provide the parameters 'pw' and 'username' with the request.\"";
+			errorMessage = "\"Please provide the parameters 'session' and 'credentials' with the request.\"";
 			wasError = true;
 		}
 		if(!wasError){
@@ -168,7 +168,7 @@ public class Message extends HttpServlet {
 					if(id!=null && id.length()>0){
 						list.add(new ObjectId(id));
 						res = (DBCursor) connector.query(MongoDBConnector.MESSAGES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
-						// since we display this message, it obviously has been read. hence we need to update the status of the message TODO: Make sure it is not updated, when you display sent messages
+						// since we display this message, it obviously has been read. hence we need to update the status of the message 
 						HashMap<Object, Object> data = new HashMap<Object, Object>();
 						data.put("read", "true");
 						connector.update(MongoDBConnector.MESSAGES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", data));

@@ -103,13 +103,14 @@ public class Application extends HttpServlet {
 	}
 
 	/**
-	 * With this GET request the caller can query all the applications in the system if it is a user
-	 * and all it uploaded personally if it is an institute user.
+	 * With this GET request the caller can query all the applications in the system or by providing the 'uploaded' parameter
+	 * all it uploaded personally if it is an institute user.
 	 * to the HealthBank system so far. For other queries to the application collection, please use the {@link AppQuery} servlet.
 	 * 
 	 * For a successful call the following parameters need to be present in the URL:
 	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
 	 * - session: This is the current session key of the user
+	 * - uploaded: (optional) If you are an institute user, set any value to this attribute to get all the applications and visualizations you have uploaded so far
 	 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
 	 * 
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
@@ -151,27 +152,33 @@ public class Application extends HttpServlet {
 					list = new BasicDBList();
 					list.add(manager.getUserID(credentials));
 					if(myUser!=null && myUser.hasNext()){
+						String uploaded = request.getParameter("uploaded");
 						DBObject userObj = myUser.next();
 						String type = (String) userObj.get("type");
-						if(type.equals("institute")){
-							DBCursor res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("companyID", new BasicDBObject("$in", list)));
-							if(res!=null && res.hasNext()){
-								JSONParser parser = new JSONParser();
-								JSONArray resArray = new JSONArray();
-								while (res.hasNext()) {
-									DBObject obj = (DBObject) res.next();
-									JSONObject resObj = (JSONObject) parser.parse(obj.toString());
-									resArray.add(resObj);
+						if(uploaded!=null && uploaded.length()>1){
+							if(type.equals("institute") || type.equals("admin")){ // return all uploaded applications
+								DBCursor res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("companyID", new BasicDBObject("$in", list)));
+								if(res!=null && res.hasNext()){
+									JSONParser parser = new JSONParser();
+									JSONArray resArray = new JSONArray();
+									while (res.hasNext()) {
+										DBObject obj = (DBObject) res.next();
+										JSONObject resObj = (JSONObject) parser.parse(obj.toString());
+										resArray.add(resObj);
+									}
+	
+									JSONObject resultArray = new JSONObject();
+									resultArray.put("applications", resArray);
+									result = resultArray.toJSONString();
+								} else {
+									errorMessage = "\"Application doGet: We could not find any application. Have you already provided one?\"";
+									wasError = true;
 								}
-
-								JSONObject resultArray = new JSONObject();
-								resultArray.put("applications", resArray);
-								result = resultArray.toJSONString();
 							} else {
-								errorMessage = "\"Application doGet: We could not find any application. Have you already provided one?\"";
+								errorMessage = "\"Application doGet: Users are not allowed to add the 'uploaded' parameter to this request.\"";
 								wasError = true;
 							}
-						} else { // user
+						} else { // return all applications
 							DBCursor res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, null);
 							if(res!=null && res.hasNext()){
 								JSONParser parser = new JSONParser();
@@ -182,8 +189,16 @@ public class Application extends HttpServlet {
 									String curOnline = (String) resObj.get("online");
 									String isFor = (String) resObj.get("isFor");
 									resObj.remove("secret");
-									if(curOnline!=null && curOnline.equals("online") && (isFor==null || !isFor.equals("institutes"))){
-										resArray.add(resObj);
+									if(curOnline!=null && curOnline.equals("online")){
+										if(type.equals("institute") || type.equals("admin")){
+											if((isFor==null || isFor.equals("institutes"))){
+												resArray.add(resObj);
+											}
+										} else {
+											if((isFor==null || !isFor.equals("institutes"))){
+												resArray.add(resObj);
+											}
+										}
 									}
 								}
 
@@ -253,6 +268,7 @@ public class Application extends HttpServlet {
 	 * - descr: A description for the application/visualization
 	 * - type: The type of the new application/visualization. Can be either 'app' for an application or 'viz' for a visualization
 	 * - version: A string indication the version number of the application
+	 * - isFor: Decide if the application/visualization is visible for institutes only ('institutes'), users only ('users') or both ('all')
 	 * - online: Can be either 'true' or 'false'. Depending on this value we show the application to our users or it is only visible to the author of the app
 	 * - index: (only for applications) In order to make searching on the tremendous amount of data more effective, the author of an application has to give us at 
 	 * 			least one and up to five keywords that are actually used for the stored records. This will be used by our index mechanism to make access easier.
@@ -270,6 +286,7 @@ public class Application extends HttpServlet {
 	 * - descr: A description for the application/visualization
 	 * - whatsNew: A message on what has changed between the old and new version
 	 * - version: A string indication the version number of the application
+	 * - isFor: Decide if the application/visualization is visible for institutes only ('institutes'), users only ('users') or both ('all')
 	 * - online: Can be either 'true' or 'false'. Depending on this value we show the application to our users or it is only visible to the author of the app
 	 * - index: (only for applications) In order to make searching on the tremendous amount of data more effective, the author of an application has to give us at 
 	 * 			least one and up to five keywords that are actually used for the stored records. This will be used by our index mechanism to make access easier.
@@ -412,7 +429,7 @@ public class Application extends HttpServlet {
 					}
 					if(!wasError){
 						DBObject user = res.next();
-						if(user.get("type").equals("institute")){
+						if(user.get("type").equals("institute") || user.get("type").equals("admin")){
 							if(id!=null && id.length()>0){
 								list = new BasicDBList();
 								list.add(new ObjectId(id));
@@ -429,6 +446,7 @@ public class Application extends HttpServlet {
 								for(String s : indexKeywords){ 
 									if(s.length()>0){indexList.add(new BasicDBObject("keyword", s)); }
 								}
+								addKeywords(indexKeywords);
 								if(type.equals("app")){data.put("index", indexList);}
 								if(name!=null && name.length()>0){data.put("name", name);}
 								if(online!=null && online.length()>0){data.put("online", online);}
@@ -446,7 +464,11 @@ public class Application extends HttpServlet {
 								} else { // new app
 									data.put("secret", manager.randomString(32));
 									data.put("companyID", manager.getUserID(credentials));
-									data.put("companyName", user.get("companyname"));
+									if(user.get("type")!=null && user.get("type").equals("admin") && (user.get("companyname")==null || user.get("companyname").equals(""))){
+										data.put("companyName", user.get("firstname")+" "+user.get("lastname"));
+									} else {
+										data.put("companyName", user.get("companyname"));
+									}
 									data.put("nrOfInstalls", 0);
 									data.put("type", type);
 									id = connector.insert(MongoDBConnector.APPLICATION_COLLECTION_NAME, data).toString();
@@ -606,7 +628,220 @@ public class Application extends HttpServlet {
 				}
 			} 
 		}
+	}
+	
+	
+	@Override
+	protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		response.setContentType("application/json");
+		response.addHeader("Access-Control-Allow-Origin", "*");
+		String errorMessage = "";
+		boolean wasError = false;
+		boolean isLoggedIn = true;
+		String session = "", credentials = "", id = "", callback = "", secret = "";
 		
+		callback = request.getParameter("callback");
+		credentials = request.getParameter("credentials");
+		session = request.getParameter("session");
+		secret = request.getParameter("secret");
+		id = request.getParameter("id");
+		
+		if(credentials==null || credentials.length()<2 || session==null || session.length()<4 || id==null || id.length()<2 || secret==null || secret.length()<2){
+			errorMessage = "\"Application: Please provide the parameters 'credentials', 'session', 'id' and 'secret' with the request.\"";
+			wasError = true;
+		} 
+		if(!wasError){
+			credentials = URLDecoder.decode(credentials, "UTF-8");
+			session = URLDecoder.decode(session, "UTF-8");
+			credentials = StringUtils.newStringUtf8(Base64.decodeBase64(credentials));
+			secret = URLDecoder.decode(secret, "UTF-8");
+			id = URLDecoder.decode(id, "UTF-8");
+			
+			// check DB connection
+			if(connector==null || !connector.isConnected()){
+				manager.reconnect();
+			}
+			
+			// check if user is logged in
+			try {
+				if(manager.isUserLoggedIn(session, credentials)){
+					BasicDBList list = new BasicDBList();
+					list.add(new ObjectId(id));
+					DBCursor res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
+					if(res!=null && res.hasNext()){
+						BasicDBObject app = (BasicDBObject) res.next();
+						if(app!=null){
+							String companyID = (String) app.get("companyID"); // first check that the current user is the owner of this app
+							if(companyID != null && companyID.equals(manager.getUserID(credentials))){
+								String savedSecret = (String) app.get("secret");
+								if(savedSecret!=null && savedSecret.equals(secret)){ // now check if the secret fits
+									// first delete the files
+									String appName = (String) app.get("name"); 
+									if(appName!=null && appName.length()>0){
+										String htmlFileName = (String) app.get("url");
+										String cssFileName = (String) app.get("cssFile");
+										String jsFileName = (String) app.get("jsFile");
+										if(htmlFileName!=null && htmlFileName.length()>0){
+											File htmlFile = new File(MongoDBConnector.APPHTML+id+"/"+(appName.replaceAll("\\s+", ""))+"/"+htmlFileName);
+											if(htmlFile.exists()){ htmlFile.delete(); }
+										}
+										if(cssFileName!=null && cssFileName.length()>0){
+											File cssFile = new File(MongoDBConnector.APPHTML+id+"/"+(appName.replaceAll("\\s+", ""))+"/css/"+cssFileName);
+											if(cssFile.exists()){ cssFile.delete(); }
+										}
+										if(jsFileName!=null && jsFileName.length()>0){
+											File jsFile = new File(MongoDBConnector.APPHTML+id+"/"+(appName.replaceAll("\\s+", ""))+"/js/"+jsFileName);
+											if(jsFile.exists()){ jsFile.delete(); }
+										}
+										
+										// finally delete the entry
+										connector.delete(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
+									} else{
+										errorMessage = "\"Application: We could not find the app, sorry.\"";
+										wasError = true;
+									}
+								} else{
+									errorMessage = "\"Application: The provided secret does not match the current app secret.\"";
+									wasError = true;
+								}
+							} else{
+								errorMessage = "\"Application: You are not the author of the application with the provided id.\"";
+								wasError = true;
+							}
+						} else{
+							errorMessage = "\"Application: The provided id is not a valid application id.\"";
+							wasError = true;
+						}
+					} else{
+						errorMessage = "\"Application: The provided id is not a valid application id.\"";
+						wasError = true;
+					}
+					
+				} else {
+					errorMessage = "\"Application: Either your session timed out or you forgot to send me the session and credentials.\"";
+					wasError = true;
+					isLoggedIn = false;
+				}
+			} catch (IllegalQueryException e) {
+				errorMessage = "\"Application: There was an error. Did you provide the correct parameters? Error: "+e.getMessage()+"\"";
+				wasError = true;
+			} catch (NotConnectedException e) {
+				errorMessage = "\"Application: We lost connection to the DB. Please try again later. Sorry for that.\"";
+				wasError = true;
+			} 
+		}
+		
+		if(callback!=null && callback.length()>0){
+			callback = URLDecoder.decode(callback, "UTF-8");
+			if(!wasError) {
+				response.getOutputStream().println(callback+"( { \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Changed secret successfully.\" }");
+				if(MongoDBConnector.DEBUG){System.out.println("Changed secret of app with appId: "+id+"!");}
+			}
+			else {
+				response.getOutputStream().println(callback+"( { \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\": "+errorMessage+" }");
+				if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage+"!");}
+			}
+		} else {
+			if(!wasError) {
+				response.getOutputStream().println("{ \"result\": \"success\", \"loggedOut\": \""+!isLoggedIn+"\", \"message\": \"Changed secret successfully.\" }");
+				if(MongoDBConnector.DEBUG){System.out.println("Changed secret of app with appId: "+id+"!");}
+			}
+			else {
+				response.getOutputStream().println("{ \"result\": \"failed\", \"loggedOut\": \""+!isLoggedIn+"\", \"error\": "+errorMessage+" }");
+				if(MongoDBConnector.DEBUG){System.out.println("There was an error: "+errorMessage+"!");}
+			}
+		} 
+	}
+	
+	
+	/**
+	 * Creates and edits a special entry in the application collection which deals with the index keywords from the applications. 
+	 * With this entry the query engine does only need to query one record rather then all applications to get to the list of keywords.
+	 * This method can be used, when new applications are added as well as when they are edited. We only save distinct keywords. 
+	 * @param keywords An {@link ArrayList} with the keywords saved as {@link String} in it
+	 * @throws IllegalQueryException
+	 * @throws NotConnectedException
+	 */
+	private void addKeywords(ArrayList<String> keywords) throws IllegalQueryException, NotConnectedException{
+		DBCursor res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("type", "register"));
+		if(res==null || !res.hasNext()){ // create record
+			HashMap<Object, Object> data = new HashMap<Object, Object>();
+			data.put("type", "register");
+			
+			// check if there are already applications saved and add their indexes 
+			res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("typed", "app"));
+			if(res != null && res.hasNext()){
+				boolean found;
+				while(res.hasNext()){
+					DBObject entry = res.next();
+					Object list = entry.get("index");
+					if(list!=null && (list instanceof BasicDBList)){
+						BasicDBList indexes = (BasicDBList) list;
+						BasicDBObject keyObj;
+						String key;
+						for(int i=0; i<indexes.size(); i++){
+							found = false;
+							if(indexes.get(i) instanceof BasicDBObject){
+								keyObj = (BasicDBObject) indexes.get(i);
+								key = keyObj.getString("keyword");
+								if(key!=null && key.length()>0){
+									for(String s : keywords){
+										if(s.equals(key)){
+											found = true;
+											break;
+										}
+									}
+									if(!found){
+										keywords.add(key);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			BasicDBList keys = new BasicDBList();
+			for(String s : keywords){
+				if(s.length()>0){
+					keys.add(new BasicDBObject("key", s));
+				}
+			}
+			
+			data.put("keywords", keys);
+			
+			connector.insert(MongoDBConnector.APPLICATION_COLLECTION_NAME, data);
+			
+		} else { // update entry
+			DBObject entry = res.next();
+			Object list = entry.get("keywords");
+			if(list!=null && (list instanceof BasicDBList)){
+				BasicDBList keys = (BasicDBList) list;
+				boolean found;
+				for(int i=0; i<keys.size(); i++){
+					System.out.println("Found keyword: "+((BasicDBObject)keys.get(i)).getString("key"));
+				}
+				for(String s : keywords){
+					if(s.length()==0){continue;}
+					System.out.println("checking possible new keyword: "+s);
+					found = false;
+					for(int i=0; i<keys.size(); i++){
+						if(keys.get(i) instanceof BasicDBObject){
+							BasicDBObject key = (BasicDBObject) keys.get(i);
+							if((key.getString("key")).equals(s)){
+								found = true;
+								break;
+							}
+						}
+					}
+					if(!found){
+						keys.add(new BasicDBObject("key", s));
+					}
+				}
+				
+				connector.update(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("type", "register"), new BasicDBObject("$set", new BasicDBObject("keywords", keys)));
+			}
+		}
 	}
 
 }

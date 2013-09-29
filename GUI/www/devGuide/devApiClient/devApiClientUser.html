@@ -7,6 +7,16 @@
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
 
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushXml.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
 	<script type="text/javascript">
 
 		$(document).ready(function() {
@@ -16,6 +26,12 @@
 				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
 				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
 			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
 		});
 		
 	</script>
@@ -48,7 +64,8 @@
 				<li>&nbsp;&nbsp;<a href="devApiClientApplication.html">Applications</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClientNews.html">News</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClientMessage.html">Messages</a></li><br>
-				<li>&nbsp;&nbsp;<a href="devApiClientImage.html">Images</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientFiles.html">Files</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientOther.html">Other functions</a></p><br>
 			</ul>
 			<p><a href="../devDemos.html">Demos</a></p><br>
 		</div>
@@ -56,7 +73,204 @@
 
 		<!--Content-->
 		<div class="dev-content">
-			<p> Comming soon ... </p>
+			<br>
+			<h3>Client API for users</h3>
+			<br>
+			<p>In this chapter we will talk about all the functions in the client API that deal with users. Editing user data or password, updating the user icon, querying users are discussed here as well as dealing with records and adding/removing users to them. In the following we will discuss each function individually. </p>
+			<br><br>
+			<h4>Get user data</h4>
+			<p>There are actually two ways of getting the user's profile data. The reason for this is, that we store it actually twice in the database. There is the 'normal' user entry in the database, where all information about the user is stored. Data from this record is only visible by the user itself. For sharing purposes there is a record entry which contains also data from the user such as name, username, icon, address etc. but no important data such as e.g. the password. This record is visible for all the users, the current user has added to one of its circles. For both database records there is a function to query it. Let us start with the function to get the actual user data entry: </p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Gets the data of the user such as username, name etc. 
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				**/
+				function getUserData(callback) {...}
+			]]></script><br>
+			<p>For the record entry please use this function:</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Gets the data of the user such as username, name etc. stored as a record for defining its circles
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				**/
+				function getProfileRecord(callback){...}
+			]]></script><br>
+			<p>The difference between the two for you is really marginal. It does access another collection in the database. We use the 'getUserData' on every page for user related information. The 'getProfileRecord' is only used by us for the profile page where we also need to set circles for the profile etc. </p>
+			<br><br>
+			<h4>Update user data</h4>
+			<p>With this call you can update the values of the user profile. Have a look at <a href="../devApiServer/devApiServerUser.html">the server REST API</a> to get an overview about all the values returned here. Use a form field or similar to get the new values from the user. Then save these values in a JavaScript object and pass it to this function via the parameter 'userData'. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function gathers all the information the user has provided in the profile view and sends it 
+				* to the server via AJAX. This is needed to update any information about the user. This function is 
+				* not only used in the edit profile dialog but can be used by anyone to update userData. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - userData: All the userData to work with. Only existing fields will be transmitted. Possible fields are gender, code, street, city, country, emailP,
+				* 				emailW, phoneP, phoneM, phoneW, nationality, spouse, insurance, birthday, height, weight and allowResearch
+				*/
+				function updateUserData(userData, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Update password</h4>
+			<p>This function is rather straight forward. Let the user enter a new password (maybe twice and check if it is a strong one or so) and pass this password to this function. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function allows updating of the user password. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - pw: The new password of the user. 
+				*/
+				function updatePassword(pw, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Change user icon</h4>
+			<p>This is actually a multipart call since we are sending a file. Use a form field and pass the form data via the 'formData' parameter to this function. Please make sure that only PNG data is accepted, else the server will complain. This might change in future versions, but it is as it is right now. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function is a helper to update the user icon in the profile view. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - formData: The form data that contains all the information about the new user icon
+				*/
+				function updateUserIcon(formData, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Query users</h4>
+			<p>If you want to search for users by a query, this is the function to use. Just type a query into an input field and pass that to this function. We will search for user, first, last names and email addresses to check if there is a match and return an array with potential users for you. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Searches for users according to a query 
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - query: The query to search a user 
+				**/
+				function queryUsers(query, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Get users assigned to a circle</h4>
+			<p>This query will return all the users, the current user has assigned to one of its circles. This is especially needed on our circles page. To reduce the amount of calls to the server, we only provide this function without a function to ask for every circle individually. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Searches for all users which are in any of the current users circles 
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				**/
+				function queryUsersInCircles(callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Get users by identification</h4>
+			<p>This is a simple function to query a user by its identification. As an answer you will get the profile data stored in the record entry of that user and depending on if the current user is allowed to see data, it contains either only user, firs and last name as well as icon or all the data. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Searches for users according to an id 
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: The id of the user to query
+				**/
+				function queryUserById(id, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Create circle</h4>
+			<p>Creating a new circle is rather an easy task. Provide this function with a name and a description for it, tell us a colour you would like to associate with it and you are good to go. So far we have a restriction on only two additional circles for a user (apart from the four standard ones). This might change in future versions. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Add a new circle to the DB
+				* Redirects to login, if not logged in.
+
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - name: The name of the new circle
+				* - descr: The description of the new circle
+				**/
+				function addCircle(name, descr, color, callback){...}
+			]]></script><br>
+			<br><br>
+			<h4>Edit circle</h4>
+			<p>Editing a circle is essentially the same as adding one, just provide the circle identification additionally to the other values. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Edit an existing circle in the DB
+				* Redirects to login, if not logged in.
+				* 
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: The id of the circle to edit
+				* - name: The new name of the circle
+				* - descr: The new description of the circle
+				**/
+				function editCircle(id, name, descr, color, callback){...}
+			]]></script><br>
+			<br><br>
+			<h4>Delete circle</h4>
+			<p>To delete the circle again, just provide the identification for it. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Delete an existing circle from the DB
+				* Redirects to login, if not logged in.
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: the id of the circle to delete
+				**/
+				function deleteCircle(id, callback){...}
+			]]></script><br>
+			<br><br>
+			<h4>Query circles</h4>
+			<p>To get all the circle information of a user, just call this function: </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Gets the circles of the user 
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				**/
+				function loadCircles(callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Add user to circles</h4>
+			<p>Adding a new user to a circle is also straigh forward. Just provide the circle and user identification and call: </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function will add a user to a certain circle
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - circleId: The id of the circle we want to add a user to
+				* - itemId: the user id that belongs to the user we want to add to the circle
+				*/
+				function addUserToCircle(circleId, itemId, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Remove user from circles</h4>
+			<p>Removing is more or less the same then adding. Provide the circle and user identification and call: </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function will remove a user from a certain circle
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - circleId: The id of the circle we want to remove a user from
+				* - itemId: the user id that belongs to the user we want to remove from the circle
+				*/
+				function removeUserFromCircle(circleId, itemId, callback) {...}
+			]]></script><br>
 		</div>
 		<!--END Content-->
 	</div>

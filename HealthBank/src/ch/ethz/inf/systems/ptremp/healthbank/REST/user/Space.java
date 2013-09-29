@@ -131,7 +131,7 @@ public class Space extends HttpServlet {
 		String id = request.getParameter("id");
 		String name = request.getParameter("name");
 		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
-			errorMessage = "\"Please provide the parameters 'pw' and 'username' with the request.\"";
+			errorMessage = "\"Please provide the parameters 'session' and 'credentials' with the request.\"";
 			wasError = true;
 		}
 		if(!wasError){
@@ -321,31 +321,30 @@ public class Space extends HttpServlet {
 							wasError = true;
 						}
 						if(!wasError){
-							data.put("name", name);
-							data.put("descr", descr);
-							data.put("visualization", visualization);
-							hidden = (hidden==null)?"false":hidden;
-							data.put("hidden", hidden);
-							DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-							data.put("timedate", dateFormat.format(new Date()));
-							data.put("userID", manager.getUserID(credentials));
 							
-							// check if exists
-							// TODO
-							/*list.add(manager.getUserID(credentials));
+							// check if exists already
+							list.add(manager.getUserID(credentials));
 							BasicDBObject q1 = new BasicDBObject("userID", new BasicDBObject("$in", list));
 							BasicDBObject q2 = new BasicDBObject("name", name);
 							list.add(q1);
 							list.add(q2);
 							DBCursor res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("$and", list));
 							System.out.println(MongoDBConnector.SPACES_COLLECTION_NAME);
-							if(!res.hasNext()){
-								
-							} else {
+							if(res!=null && res.hasNext()){
 								errorMessage = "\"Space doPost: A space with this name already exists.\"";
-								wasError = true;
-							}*/
-							connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
+								wasError = true;								
+							} else {
+								data.put("name", name);
+								data.put("descr", descr);
+								data.put("visualization", visualization);
+								hidden = (hidden==null)?"false":hidden;
+								data.put("hidden", hidden);
+								DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+								data.put("timedate", dateFormat.format(new Date()));
+								data.put("userID", manager.getUserID(credentials));
+								
+								connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
+							}
 						}
 					} else {
 						if(id.length()<2){
@@ -355,7 +354,6 @@ public class Space extends HttpServlet {
 						if(!wasError){
 							list.add(new ObjectId(id));
 							if(circle!=null){ // add/remove circle
-								// TODO: apply to all records with this circle
 								circle = URLDecoder.decode(circle, "UTF-8");
 								int i=0;
 								for(String s: circle.split(" ")){
@@ -365,6 +363,57 @@ public class Space extends HttpServlet {
 									}
 								}
 								connector.update(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("circles", data))); 
+								
+								// apply to all records assigned to this space
+								DBCursor res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("spaceID", new BasicDBObject("$in", list)));
+								if(res!=null && res.hasNext()){
+									String recordID;
+									DBObject obj, tmp;
+									DBCursor rec;
+									BasicDBList newResults;
+									while(res.hasNext()){
+										obj = res.next();
+										if(obj!=null && obj.containsField("recordID")){
+											recordID = (String) obj.get("recordID");
+											if(recordID != null && ObjectId.isValid(recordID)){
+												rec = (DBCursor) connector.query(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new ObjectId(recordID)));
+												if(rec!=null && rec.hasNext()){
+													tmp = rec.next();
+													if(tmp.containsField("circles")){ // read existing circles and add possible new ones
+														newResults = new BasicDBList();
+														BasicDBList curCir = (BasicDBList) tmp.get("circles");
+														boolean found = false;
+														String curCirID;
+														for(int l=0;l<curCir.size();l++){
+															curCirID = ((BasicDBObject) curCir.get(l)).getString("circle");
+															if(curCirID!=null && ObjectId.isValid(curCirID)){
+																newResults.add(new BasicDBObject("circle", curCirID));
+															}
+														}
+														for(String s: circle.split(" ")){
+															found = false;
+															for(int l=0;l<curCir.size();l++){
+																if(s.equals(((BasicDBObject) curCir.get(l)).getString("circle"))){
+																	found=true;
+																	break;
+																}
+															}
+															if(!found){
+																newResults.add(new BasicDBObject("circle", s));
+															}
+														}
+														connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new ObjectId(recordID)), new BasicDBObject("$set", new BasicDBObject("circles", curCir)));
+														
+													} else { // Entry has no record assignment, so we need to assign the ones set for the space
+														connector.update(MongoDBConnector.RECORDS_COLLECTION_NAME, new BasicDBObject("_id", new ObjectId(recordID)), new BasicDBObject("$set", new BasicDBObject("circles", data)));
+													}
+												} else { continue; }
+											} else { continue; }
+										}
+									}
+									
+								}
+								
 							} else if(name!=null || descr!=null || visualization!=null || hidden!=null){ // update space
 								if(name!=null && name.length()>0){data.put("name", name);}
 								if(descr!=null && descr.length()>0){data.put("descr", descr);}

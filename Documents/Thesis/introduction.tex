@@ -1,0 +1,57 @@
+	
+% Some commands used in this file 
+\newcommand{\package}{\emph} 
+ 
+\chapter{Introduction} 
+
+Healthbank is a Geneva based Swiss cooperative formed in 2013. The project is "undertaking the development and deployment of an open standard, citizen-owned global health data platform". Its vision is to "unleash health data by enabling its accessibility, protection and leverage while ensuring full transparency"~\cite{healthbank}. With this thesis we define the technical and architectural aspects behind it and implemented a first prototype for a proof of concept.
+
+In this chapter we first motivate and describe the problem Healthbank tries to solve. Then we discuss the contributions of this thesis. Finally we will outline an overview what to expect in the remaining chapters.
+
+
+%%% ------------- SECTION -------------
+\section{Motivation}
+
+Today we are living in a world full of information. Everyone carries around computers such as a smartphone, a tablet computer, a laptop or even a computer built into glasses. We are constantly online and do more and more of our work over the Internet. But there is one important matter that is still generally offline, not fully under our control and widely distributed. We are talking about the health data of individual people. Even though there were many attempts to implement standards and create a centralized way of storing our data, at least here in Switzerland, people do not own their own health records. The patient`s health data is still stored somewhere out of reach for the individual in computers and files with the doctors and hospitals spread around the country. Several efforts to come up with a better solution were done with the goal in mind to improve the interaction between different doctors and insurance companies. But there is no system yet that brings the data to the actual owner, the patient itself. 
+
+With the widespread mobile computers like smartphones, tablets, navigation systems, smart scales or pedometers people collect more and more health related data. This data gets stored either locally on the devices or on the servers of the company behind the product. Again the owner of these devices do not have full control of that data and in most cases he is not able to combine different data sources. \newline
+With the Healthbank project we try to overcome these problems. We shall build a centralized system that collects all kind of health data from doctors, hospitals or your local devices. The Healthbank account shall be owned and fully controlled by the user itself, like the bank account for your money. Finally patients get to know their health data. They can control, who has access to it. E.g. they can combine their fitness level and weight alternation with their sport activities. They get informed when they have to take their medication or when to buy new ones. They can share data with friends and even help research by giving them access to their data in a non-personalized way. Basically there will be countless possibilities of applications which could be built to gather health data. Other applications can use this data to help patients to get well soon and help healthy users to stay healthy. 
+
+Every year the health insurance rates rise, even countries like the USA have big debates about health care. The health business is still a very expensive one. According to the Swiss Federal Statistical Office the Swiss health expenses in 2011 added up to a total of 64.6 billion Swiss Francs or 680 Francs per person and month~\cite{bfsadmin}. One aspect of the high costs is the problem that whenever patients go to a different doctor, very often they have many phone calls and requests to make until they finally get the user`s health data. Apart from the emerging costs this might also lead to incorrect treatment of the patient. \newline
+Another potential way of saving money is by providing researchers access to the user`s data on our system (if the users approve). They can get insights into our unique database of diseases and its symptoms on the actual patient, which might help them to find correlations or even a cure for so far untreatable diseases. With the help of our system they no longer have to spend a lot of money to find possible candidates for their research. You just have to ask the right question on our search engine.
+
+To sum up, a platform like Healthbank could not only give users control over their health data but also reduce cost in our health system and possibly help to cure diseases.
+
+
+%%% ------------- SECTION -------------
+\section{Problem Description}
+
+Healthbank tries to solve many different problems related to health data. Generally speaking there are two main aspects where Healthbank shall help the society. \newline
+First of all it shall help people like you and us, young or old, male or female, fit as a fiddle or critically ill, to own their very own personal health record. Not only ownership but also sharing data with others shall be an essential part within the system. Users shall share their medical record with doctors and provide the hospital, where they will undertake a surgery, the related data such as blood values, x-rays or medication. Furthermore users shall e.g. be able to share their jogging record with their running group. Healthbank shall make sure that it is the user that owns its data and it is the user that decides who else is allowed to see its data or part of it. Thereby it shall not be relevant where this data is taken from, what structure or schema it relies on or who created it. As long as the data entry is related to the user the system shall save it to the user`s account and make it accessible and shareable for them. \newline
+Having all its data at one place is great for users, but what to do with it? Healthbank shall provide interesting visualizations that aggregate and illustrate certain data such as e.g. statistics of your jogging record or graphs for your blood pressure. Both, applications to generate data and visualizations to illustrate data, shall not only be implemented by Healthbank alone but, be provided in particular by third party providers.
+
+Second of all we shall make use of the tremendous amount of health data the users will eventually generate. To do so, the system shall provide a search engine which is able to cope with the diverse, structured or unstructured data. This search engine shall not only allow users to find their own data and the data of their friends, but also be able to make analysis on top of it. This tool could be used e.g. for research purposes, provided the users agree to make their data available. Doctors and researchers shall be able to ask complex queries such as "Give me people in Zurich that run more than 10 km a week and suffer from asthma" or "people who have similar symptoms than my patient". Especially for research purposes the system has to make sure that the user actively agrees on providing its data and that all legal aspects are always fulfilled. Else the system will suffer from trust issues as other approaches did in the past.
+
+One of the biggest problem to solve for Healthbank is the heterogeneity of the data. We need to find clever ways to store the huge amount of distinct data and to make visualizations, searches and analyses on top of it not only possible but also simple to use.
+
+
+%%% ------------- SECTION -------------
+\section{Contribution}
+
+The Healthbank project, as presented in this thesis, shall be based on already completed, similar projects in this field by others (See chapter \ref{chap:relatedwork}). The main differences to the competitors are the pure focus on the patient, the ability to store both structured as well as unstructured data, the integration of external applications to provide and visualize data and the search engine to allow medical care providers and researchers to query the data.
+
+During the course of this thesis we defined the overall structure of the Healthbank project from a technical point of view. We developed the data structure as well as a wide range of use cases which define the system. In a second phase this thesis describes a first prototype implemented by the authors, which shows the system as defined works and is user-friendly. The prototype was intended to implement as many use cases as possible. It is extensible by allowing to install applications that enlarge the functionality. Taking the prototype into account the authors discuss advantages and disadvantages of the architecture and what has to be done to further improve it on the way to a final product accepted by the masses.
+
+
+%%% ------------- SECTION -------------
+\section{Thesis Outline}
+
+The thesis is structured in the following way:\newline
+
+\begin{description}
+	\item[Chapter \ref{chap:relatedwork}] discusses related work in the field such as other health platforms and social networks.
+	\item[Chapter \ref{chap:generaldesign}] introduces a general architecture which shall be met by a system built for Healthbank.
+	\item[Chapter \ref{chap:prototype}] explains extensively the implementation of our prototype.
+	\item[Chapter \ref{chap:evaluation}] evaluates the performance and user-friendliness of the prototype and explains what could be done better for the real system.
+	\item[Chapter \ref{chap:conclusion}] concludes our work and highlights our contributions. It also discusses possible future work on the platform.
+\end{description}

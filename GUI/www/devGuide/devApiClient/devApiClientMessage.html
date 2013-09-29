@@ -7,6 +7,15 @@
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
 
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
 	<script type="text/javascript">
 
 		$(document).ready(function() {
@@ -16,6 +25,12 @@
 				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
 				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
 			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
 		});
 		
 	</script>
@@ -48,7 +63,8 @@
 				<li>&nbsp;&nbsp;<a href="devApiClientApplication.html">Applications</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClientNews.html">News</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClientMessage.html">Messages</a></li><br>
-				<li>&nbsp;&nbsp;<a href="devApiClientImage.html">Images</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientFiles.html">Files</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientOther.html">Other functions</a></p><br>
 			</ul>
 			<p><a href="../devDemos.html">Demos</a></p><br>
 		</div>
@@ -56,7 +72,80 @@
 
 		<!--Content-->
 		<div class="dev-content">
-			<p> Comming soon ... </p>
+			<br>
+			<h3>Client API for Messages</h3>
+			<br>
+			<p>This page deals with sending, receiving and inspecting messages for all kind of users. There are essentially four functions to deal with this task, sending messages, checking if there are any new messages and queriing the list of messages as well as detail messages. In the following we will describe these four tasks in more detail. All the four functions have the parameter 'callback'. It you need to know more about it, read <a href="../devApiClient.html">here</a>. Messages in general are kept very easy and email like. They have a recipient, which is another user in the system, a header message and the actual content.</p>
+			<br><br>
+			<h4>Sending messages</h4>
+			<p>Sending a new messages is rather easy. All you need to provide is the identification of the user you want to send the message to, a subject or header to describe the message (similar to email) and the actual message body. The following listening will show you how to use the sendMessage function: </p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function sends a new message to a user
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - recipientID: The id of the recipient of the message
+				* - message: The message body
+				* - subject: The subject or header of the message
+				*/
+				function sendMessage(recipientID, subject, message, callback){...}
+			]]></script><br>
+			<p>As the function definition states we have to set the 'isEdit' parameter to 'false' if we want to add a new news entry or to 'true' if we like to edit an entry. If we are in editing mode, we also need to provide the identification of the news entry. The three parameters for the title of the news, a preview - which is shown in the news list - and the actual content are the same for both tasks as is the callback parameter. For a description of this parameter see <a href="../devApiClient.html">here</a></p>
+			<br><br>
+			<h4>Check if there are new messages</h4>
+			<p>The 'queryHaveNewMessage' functions does as it says, it asks the server if the currently logged in user has any new messages received. Here is the according description:</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function queries the server to check if the current user has new messages
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				*/
+				function queryHaveNewMessage(callback){...}
+			]]></script><br>
+			<p>When there is a 'onSuccess' message defined in the callback, the data send to this method will look e.g. like this:</p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				{
+				    "result": "success",
+				    "loggedOut": "false",
+				    "values": {
+				        "messages": [
+				            {
+				                "hasNew": "true"
+				            },
+				            {
+				                "unreadItems": 1
+				            }
+				        ]
+				    }
+				}
+			]]></script><br>
+			<br><br>
+			<h4>Get received messages</h4>
+			<p>This is a simple query to receive all the received messages of the currently logged in user. So far it will return all messages, but this is very likely to change to a subset in future releases. Besides the usual callback parameter there is nothing you need to provide. Here is the description of the function:</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function queries all the recieved messages from the server
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				*/
+				function getReceivedMessages(callback){...}
+			]]></script><br>
+			<br><br>
+			<h4>Get single messages detail</h4>
+			<p>Besides the list of different messages which normally shows only the inbox, the user certainly also wants to see the actual content of the message. With this function the caller can query for a single message entry to use e.g. in a detail view. Next to the callback functions you need to pass the identification of the message you want to query. Here is the description of the function:</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function queries a single message from the server given an id
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: The id of the message to query
+				*/
+				function getMessageById(id, callback){...}
+			]]></script><br>
 		</div>
 		<!--END Content-->
 	</div>

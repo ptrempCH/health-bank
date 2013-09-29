@@ -7,6 +7,16 @@
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<link href="../../css/devGuide.css" rel="stylesheet" type="text/css">
 
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../js/syntaxHighlighter/shBrushJScript.js"></script>
+	<script type="text/javascript" src="../../js/syntaxHighlighter/shBrushXml.js"></script>
+
+	<link href="../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
 	<script type="text/javascript">
 
 		$(document).ready(function() {
@@ -16,6 +26,12 @@
 				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
 				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
 			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
 		});
 		
 	</script>
@@ -48,7 +64,8 @@
 				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientApplication.html">Applications</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientNews.html">News</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientMessage.html">Messages</a></li><br>
-				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientImage.html">Images</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientFiles.html">Files</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClient/devApiClientOther.html">Other functions</a></p><br>
 			</ul>
 			<p><a href="devDemos.html">Demos</a></p><br>
 		</div>
@@ -68,8 +85,24 @@
 				<li><a href="devApiClient/devApiClientApplication.html">Applications:</a> This group deals with adding, editing applications, users installing them and asking queries on them.</li>
 				<li><a href="devApiClient/devApiClientNews.html">News:</a> Dealing with news entries is discussed in this group.</li>
 				<li><a href="devApiClient/devApiClientMessage.html">Messages:</a> Sending and receiving messesges between users and institutes is talked about here.</li>
-				<li><a href="devApiClient/devApiClientImage.html">Images:</a> This group deals with images such as user icons etc.</li> 
+				<li><a href="devApiClient/devApiClientFiles.html">Files:</a> This group deals with files and images such as user icons etc.</li> 
+				<li><a href="devApiClient/devApiClientOther.html">Other functions:</a> Here we define a few additional functions which did not fit into one of the above categories</li> 
 			</ul>
+			<br><br>
+			<p>Almost all of the client API functions will have a parameter called 'callback' as you will certainly notice by clicking thorugh the different categories. This callback parameter allows the caller to set an 'onSuccess' and 'onError' function which will be called, when the asynchonous call to the server returns depending on if there was an error or not. If the user is not logged in anymore none of these functions will be called and the user is redirected to the login page. Here is an example of how to call the 'getUserData' function as defined in <a href="devApiClient/devApiClientUser.html">the user section.</a>: </p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				getUserData(
+					{
+						onSuccess: function(data){
+							// Do something with the data
+						},
+						onError: function(data){
+							// Tell the user, that something went wrong.
+						}
+					}
+				);
+			]]></script><br>
+
 		</div>
 		<!--END Content-->
 	</div>

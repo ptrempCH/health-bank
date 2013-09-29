@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
+
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushXml.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+			$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			$(window).resize(function() {
+				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div class="dev-page">
+		<!--Logo-->
+		<div class="dev-logo">
+			<a href="../../home.html"><img src="../../../images/logo.png"/></a>
+		</div>
+		<!--END Logo-->
+		<!--Header-->
+		<div class="dev-header">
+			<h1>API Reference for the JavaScript calls on the Client - Other functions</h1> 
+		</div>
+		<!--END Header-->
+
+		<!--Navi-->
+		<div class="dev-navi">
+			<br><br><br>
+			<p><a href="../devCreateApp.html">Create an Application</a></p><br>
+			<p><a href="../devCreateViz.html">Create a Visualization</a></p><br>
+			<p><a href="../devApiServer.html">API Ref. Server</a></p><br>
+			<p><a href="../devApiClient.html">API Ref. Client</a></p><br>
+			<ul>
+				<li>&nbsp;&nbsp;<a href="devApiClientUser.html">User</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientUserAuth.html">Authentication</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientRecord.html">Records</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientApplication.html">Applications</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientNews.html">News</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientMessage.html">Messages</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientFiles.html">Files</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientOther.html">Other functions</a></p><br>
+			</ul>
+			<p><a href="../devDemos.html">Demos</a></p><br>
+		</div>
+		<!--END Navi-->
+
+		<!--Content-->
+		<div class="dev-content">
+			<br>
+			<h3>Client API for other additional functions.</h3>
+			<br>
+			<p>On this page we show you some additional functions which do not fit into one of the other chapters.  </p>
+			<br><br>
+			<h4>Get URL parameter</h4>
+			<p>This function allows the user to easily get the value of a url parameter. If there is no such parameter the function will return null. This describes how to use the function: </p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Helper function to retrieve a parameter from the URL that was called to load this page.
+				*
+				* Parameter: 
+				* - name: The name of the parameter to query.
+				*/
+				function getURLParameter(name) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Check local storage</h4>
+			<p>The function 'isStorageDefined' checks if the browser supports local storage (<a href="https://developer.mozilla.org/en-US/docs/Web/Guide/API/DOM/Storage#localStorage">HTML5 local storage</a>) and if there we stored the session and credentials successfully. This is essential for every call to the server and hence almost all client API's use this function before sending a request to the server. The function will return a boolean. Here is the detail description of the function: </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Helper function to check if on the current computer the HTML 5 local storage is accessible
+				*/
+				function isStorageDefined(){...}
+			]]></script><br>
+			<br><br>
+			<h4>Query query engine</h4>
+			<p>This is a very important and rather big function. It allows institute users to query for users, records and via a text search. Check the <a href="../devApiServer/devApiServerQuery.html">server REST API</a> for more information. Here is the detail description of the function: </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function allows to call the query engine for institute users. 
+				* There are three ways of calling this function. For searching users, provide at least one of the parameters minAge, maxAge, minWeight, maxWeight, minHeight,
+				* maxHeight, country or keywords. For searching records, set the keywords parameter and for text search set the parameter query. With the type parameter
+				* we can distinguish the type of call. Allowed are 'user', 'record' and 'text'. Just set the other parameters to null/undefined or empty string.
+				* Only users and records of users who allowed research access are returned.
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - type: The type of the call. There are the three possibilities 'user', 'record', 'text'
+				* - minAge: (optional for user search) The minimum age of the users to search for
+				* - maxAge: (optional for user search) The maximum age of the users to search for
+				* - minWeight: (optional for user search) The minimum weight of the users to search for
+				* - maxWeight: (optional for user search) The maximum weight of the users to search for
+				* - minHeight: (optional for user search) The minimum height of the users to search for
+				* - maxHeight: (optional for user search) The maximum height of the users to search for
+				* - country: (optional for user search) The country the user to search for is from
+				* - keywords: (optional for users search, needed for record search) Keywords the records have to talk about
+				* - query: (for text search only) The query to search for
+				*/
+				function queryQueryEngine(type, minAge, maxAge, minHeight, maxHeight, minWeight, maxWeight, country, keywords, query, callback) {...}
+			]]></script><br>
+			<p>Depending on the type ('user', 'record' or 'text') you have to set different parameters. For 'text' you only need to set the 'query' parameter. For 'record' only the 'keywords' parameter. And for 'user' you can set any of the parameters marked as optional but at least on of those. For all the three options you can and should provide a callback function as with almost all of our client API calls. </p>
+			<br><br>
+			<h4>Sort records</h4>
+			<p>With this function you can sort an array of record entries descending by time and data. So if you mix a records from a few users e.g. you can call this function on the resulting array and as a result you will have the most recent entry at the first element in the array.</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function sorts the records entries according to its timedate value. After the sorting, the first entry in the 
+				* records array is the latest record of all in the list and the last element the oldest one.
+				*/
+				function sortRecords () {...}
+			]]></script><br>
+			<br><br>
+			<h4>Countries list</h4>
+			<p>In the variable 'availableTags' in the client API we saved a list of almost all countries in the world. This is used by us e.g. in the profile for autocompletion in the country field.</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* List of Countries for Profile etc.
+				*/
+				var availableTags = [...]
+			]]></script><br>
+		</div>
+		<!--END Content-->
+	</div>
+	<!--END Page-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

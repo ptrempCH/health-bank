@@ -16,33 +16,6 @@ body {
 	height: 100%;
 }
 
-.recordentries {
-	border-radius: 5px;
-	border: 1px solid;
-	margin-top: 20px;
-	width: 98%;
-	padding: 5px 5px 5px 5px;
-}
-.recordentries li{
-	list-style: none;
-	display: inline-block;
-	border: 1px solid;
-	border-radius: 5px;
-	width: 100%;
-}
-.recordentries li:nth-child(even) {
-  background: #dde;
-}
-.recordentries li:nth-child(odd) {
-  background: #fff;
-}
-.recordentries img {
-	height: 30px;
-	float: left;
-}
-.recordentries .indP {
-	border: 1px solid red;
-}
 
 .page-content .timelineButton {
 	float: right !important;
@@ -135,12 +108,14 @@ body {
 
 
 .page-content .calApp-addnew-box {
-	display: none;
+	/*display: none;*/
 	border: 1px solid;
 	border-radius: 5px;
 	height: 550px;
 	margin-top: 20px;
 	padding: 10px 10px;
+	width: 800px;
+	margin: 50px auto 0 auto;
 
 	transition: none;
 	-moz-transition: none;
@@ -160,12 +135,6 @@ body {
 .page-content .timelineButton {
 	float: right !important;
 	margin-top: -25px;
-}
-.page-content #recordentries .calListBut {
-	margin: -25px 5px 0 0 !important;
-}
-.page-content #recordentries .calListSpaceBut {
-	margin: -25px 55px 0 0 !important;
 }
 
 /* Input fields */
@@ -245,48 +214,75 @@ body {
 	height: 400px;
 }
 
-/* statistics */
-
-.page-content #spaces-chronic-section #chart_div {
-	width: 500px;
-	height: 250px;
-	margin-top: 15px;
-}
-.page-content #spaces-chronic-section #chartSports_div {
-	width: 500px;
-	height: 250px;
-	margin-top: 15px;
+#needHelpButton{
+	float: right;
+	margin-top: 10px;
 }
 
-.page-content #spaces-chronic-section #statistics {
+#calDialog {
+	background-color: #CCC;
+	border: 1px solid;
+	border-radius: 5px;
+	width: 400px;
+	height: 600px;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin: -300px 0 0 -200px;
+	z-index: 90;
 	display: none;
-	border-radius: 10px;
-	border: 1px solid #F90;
-	margin: 20px 0 30px 0;
-	height: 380px;
-	padding: 15px 15px 15px 15px;
-	width: 96%
-}
-.page-content #spaces-chronic-section #statistics #statsHeader table{
-	float: left;
-}
-.page-content #spaces-chronic-section #statistics #hideButton{
-	margin-top: 5px;
-}
-.page-content #spaces-chronic-section #statsButton{
-	margin: 15px 0 30px 0;
-	height: 30px;
-}
-.page-content #spaces-chronic-section .calAppRecEnt{
-	margin-top: 50px;
-}
-.ui-front {
-	z-index: 9999 !important;
 }
 
-#addNewButton {
-	margin-top: 5px;
+#calDialogHeader {
+	margin: 10px auto 0 auto;
+	width: 320px;
+	text-align: center;
 }
-#chronic-section-header {
-	margin-top: 5px;
+
+#calDialogFooter{
+	position: absolute;
+	bottom: 10px;
+	left: 10px;
+}
+#calDialogCloseButton {
+	position: absolute;
+	bottom: 10px;
+	right: 10px;
+}
+
+#calDialogList {
+	width: 90%;
+	height: 80%;
+	border: 1px solid;
+	border-radius: 5px;
+	margin: 10px auto 0 auto;
+	overflow-y: scroll;
+}
+
+#calDialogList li {
+	width: 95%;
+	height: 30px;
+	border: 1px solid;
+	border-radius: 5px;
+	background-color: #DDD;
+	text-align: center;
+	line-height: 29px;
+	vertical-align: middle;
+	margin: 3px auto 0 auto;
+}
+
+.dialog-overlay {
+	z-index: 80;
+	background: #aaaaaa url(../../../../images/greyOverlay.png) 50% 50% repeat-x;
+	opacity: .3;
+	-moz-opacity: 0.3; 
+    -khtml-opacity: 0.3; 
+	filter: Alpha(Opacity=30);
+	width: 100%;
+    height: auto;
+    bottom: 0px;
+    top: 0;
+    left: 0;
+    position: fixed;
+    display: none;
 }

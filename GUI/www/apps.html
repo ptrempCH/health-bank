@@ -30,7 +30,7 @@
 			var apps = data.values.applications;
 			apps.reverse();
 			$.each(apps, function(i, item) {
-			    $("#yourapps-list").append('<li><div id="'+item._id.$oid+'" type="'+item.type+'"><img class="store-preview-icon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="store-preview-content"><a href="appView.html?id='+item._id.$oid+'" class="appLink"><h4 class="store-preview-header">'+item.name+'</h4></a><p class="store-preview-descr">'+item.companyName+', Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div><img class="gearImage" src="../images/gear.png" width="18px"/></div></li>');
+			    $("#yourapps-list").append('<li><div id="'+item._id.$oid+'" type="'+item.type+'"><img class="store-preview-icon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="store-preview-content"><a href="appView.html?id='+item._id.$oid+'" class="appLink"><h4 class="store-preview-header">'+item.name+'</h4></a><p class="store-preview-descr">'+item.companyName+', Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div><img class="gearImage" src="../images/gear.png" title="Change application settings" width="18px"/></div></li>');
 			    loadImage(item.icon, item._id.$oid, "application", {
 					onSuccess: function(data, id){
 						$("#"+id+" .store-preview-icon").attr("src", "data:image/png;base64,"+data);
@@ -55,6 +55,7 @@
 					$("#yourapps-list").html('<center>You do not have any applications installed yet. Visit the <a href="market.html">appstore</a> to find new applications.</center>');
 				}
 			});
+			$( document ).tooltip({ tooltipClass: "hbTooltip" });
 		});
 		
 	</script>
@@ -83,7 +84,7 @@
 				<div class="page-content">
 					<!-- Your apps -->
 					<div id="yourapps" class="store-preview">
-						<h3>Apps you already have installed <a href="myApps.html" id="allApps" class="button morenews">All my Apps</a></h3>
+						<h3>Apps you already have installed <a href="myApps.html" id="allApps" title="Click to see all your installed applications" class="button morenews">All my Apps</a></h3>
 						<ul id="yourapps-list" class="store-preview-list"></ul>
 					</div>
 					<!--END your apps -->
@@ -129,7 +130,7 @@
 							</li>
 						</ul>
 					</div>
-					<p>Visit the &nbsp;<a href="market.html" class="button" id="appstoreButton" style="margin-top:-5px; float:none;">Appstore</a> &nbsp;for more apps and visualizations. </p>
+					<p>Visit the &nbsp;<a href="market.html" class="button" id="appstoreButton" style="margin-top:-5px; float:none;">Market</a> &nbsp;for more apps and visualizations. </p>
 					</br></br>
 					<div id="developerContent" class="appDevCont">
 						<h4>For developers:</h4>

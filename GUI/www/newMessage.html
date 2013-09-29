@@ -23,7 +23,7 @@
 					$("#recipientList").append("<li id=\""+jQuery.parseJSON(item.userId).$oid+"\" >"+item.firstname+" "+item.lastname+"</li><br>");
 				});
 			}
-			if(recipientId.length>0){
+			if(recipientId.length>0 && $("#"+recipientId).html()!=undefined && $("#"+recipientId).html().length>0){
 				$("#recipient").val($("#"+recipientId).html());
 			}
 			$("#recipientList li").click(function(){
@@ -70,7 +70,7 @@
 			if($("#recipientList").html()==""){
 				$("#recipientList").html("No user found");
 			}
-}
+		}
 
 		function submit(){
 			if(recipientId==undefined || $("#subject").val().length<1 || $("#message").val().length<1){
@@ -150,7 +150,13 @@
 			receivedMessage = getURLParameter("m");
 			if(receivedSubject!=undefined){$("#subject").val("Re: "+decodeURIComponent(receivedSubject));}
 			if(receivedMessage!=undefined){$("#message").val("\n\n----------------------------\nIn Reply to: \n\n"+decodeURIComponent(receivedMessage));}
-			if(receivedRecipient!=undefined){recipientId=decodeURIComponent(receivedRecipient);}
+			if(receivedRecipient!=undefined){
+				recipientId=decodeURIComponent(receivedRecipient);
+				queryUserById(recipientId, {onSuccess: function(data){
+					name = data.values.users[0].firstname + " " + data.values.users[0].lastname;
+					$("#recipient").val(name);
+				}});
+			}
 		});
 		
 	</script>

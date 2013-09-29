@@ -108,7 +108,6 @@ public class Register extends HttpServlet {
 	 * 
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 * 
-	 * TODO: Once the companies / institute have been better defined. We need to redefine this method to correctly deal with it.
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("application/json");

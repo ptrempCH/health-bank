@@ -5,12 +5,14 @@
 	<meta charset="UTF-8">
 	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<script src="../js/healthbank.js"></script>
 	<script src="../js/moment.min.js"></script>
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 
 	<script type="text/javascript">
-		var id, type, url, mydata;
+		var id, type, url, mydata, installInfo;
 		var hasInstalled = false;
 
 		function loadUserInfoIndividual(data){
@@ -33,7 +35,20 @@
 					$("#installButton").click( function(){
 						uninstall();
 					});
-					$("#openAppButton").show();
+					$("#openAppButton").show(); 
+					if(type=="viz"){ 
+						$("#openAppButton").html("Create new Space");
+						$("#openAppButton").click(function(){
+							window.location = WEB_URL + "spaces/addSpace.html?viz="+id; 
+						});
+						$("#dialog-installed-type").html("visualization");
+						$("#dialog-installed-usage").html("in spaces to visualize their data");
+						$("#dialog-installed-secondMessage").html("Visualizations work best in spaces where you keep entries of a similar application. <br>Click on the button below to create a new space if needed.")
+					} else {
+						$("#appCirclesButton").show();
+						$("#appSpacesButton").show();
+					}
+					$( "#dialog-installed" ).dialog( "open" );
 				}, onError: function(data) {
 					$("#feedback").html("There was an error installing the application. Please try again.");
 					$("#feedback").css("color", "red");
@@ -53,6 +68,8 @@
 						install();
 					});
 					$("#openAppButton").hide();
+					$("#appSpacesButton").hide();
+					$("#appCirclesButton").hide();
 				}, onError: function(data) {
 					$("#feedback").html("There was an error uninstalling the application. Please try again.");
 					$("#feedback").css("color", "red");
@@ -63,13 +80,13 @@
 		function initInstallButton () {
 			getInstalledApplications(type, {
 				onSuccess: function(data){
-					mydata = undefined;
+					tmpdata = undefined;
 					if(type=="app"){
-						mydata = data.values.applications;
+						tmpdata = data.values.applications;
 					} else if(type="viz"){
-						mydata = data.values.visualizations;
+						tmpdata = data.values.visualizations;
 					}
-					$.each(mydata, function(i, item){
+					$.each(tmpdata, function(i, item){
 						if(item._id.$oid == id){
 							hasInstalled = true;
 							return false;
@@ -85,6 +102,8 @@
 							install();
 						});
 						$("#openAppButton").hide();
+						$("#appSpacesButton").hide();
+						$("#appCirclesButton").hide();
 					}
 				}, onError: function(data){
 					hasInstalled = false;
@@ -92,6 +111,8 @@
 						install();
 					});
 					$("#openAppButton").hide();
+					$("#appSpacesButton").hide();
+					$("#appCirclesButton").hide();
 				}
 			});
 		}
@@ -110,7 +131,10 @@
 							});
 						} else if(type="viz"){
 							mydata = data.values.visualizations[0];
-							$("#openAppButton").hide();
+							$("#openAppButton").html("Create new Space");
+							$("#openAppButton").click(function(){
+								window.location = WEB_URL + "spaces/addSpace.html?viz="+id; 
+							});
 						}
 
 						$("#name").html(mydata.name);
@@ -132,16 +156,94 @@
 						$("#feedback").css("color", "red");
 					}
 				});
+				if(type=="app"){
+					getAppInstallInformation(id, {
+						onSuccess: function(data){
+							installInfo = data.values.application[0];
+						}
+					});
+				}
 			} else {
 				$("#feedback").html("There was an error loading the application. Please try again.");
 				$("#feedback").css("color", "red");
 			}
 		}
 
-		$(document).ready(function() {
-			initialize();
-			loadApplication();
-			initInstallButton();
+		function loadedExtHTML() {
+			spacesIter++;
+			if(spacesIter==3){
+				$( "#closeCircles, #dialog-overlay, #closeSpaces" ).click(function() {
+					$("#circles-form, #spaces-form, #dialog-overlay").hide();
+					return false;
+				});
+				$( "#saveCircles" ).click(function() {
+					if(id!=undefined && id.length>0 && circles!=undefined){
+						var selectedCircles = [];
+						var iter = 0;
+						var s = "";
+						$.each(circles, function(i, item){
+							if($("#"+item._id.$oid).is(":checked")){
+								selectedCircles[iter] = item._id.$oid;
+								iter++;
+							}
+						});
+						$.each(selectedCircles, function(i, item){
+							s += item+" ";
+						});
+						s = s.substring(0,s.length-1);
+						updateCirclesForApp(id, s, {
+							onSuccess: function(data){
+								$("#circles-form, #dialog-overlay, #spaces-form").hide();
+								getAppInstallInformation(id, {
+									onSuccess: function(data){
+										installInfo = data.values.application[0];
+									}
+								});
+							}, onError: function(data){
+								alert("There was an error assigning your circles. We are terribly sorry. Error: "+data);
+							}
+						});
+					}
+					return false;
+				});
+				$( "#saveSpaces" ).click(function() {
+					if(id!=undefined && id.length>0 && spaces!=undefined){
+						var selectedSpaces = [];
+						var iter = 0;
+						var s = "";
+						$.each(spaces, function(i, item){
+							if($("#"+item._id.$oid).is(":checked")){
+								selectedSpaces[iter] = item._id.$oid;
+								iter++;
+							}
+						});
+						$.each(selectedSpaces, function(i, item){
+							s += item+" ";
+						});
+						s = s.substring(0,s.length-1);
+						updateSpacesForApp(id, s, {
+							onSuccess: function(data){
+								$("#circles-form, #dialog-overlay, #spaces-form").hide();
+								getAppInstallInformation(id, {
+									onSuccess: function(data){
+										installInfo = data.values.application[0];
+									}
+								});
+							}, onError: function(data){
+								alert("There was an error assigning your circles. We are terribly sorry. Error: "+data);
+							}
+						});
+					}
+					return false;
+				});
+			}
+		}
+
+		function initButtons(){
+			if(spaces==undefined || circle==undefined){
+				setTimeout(function(){initButtons(); return false;}, 100);
+				return false;
+			}
 			$("#backButton").click(function(){
 				url = getURLParameter("url");
 				if(url!=undefined){ window.location = WEB_URL + url; }
@@ -154,6 +256,86 @@
 				}
 				return false;
 			});
+			if(type!="app"){
+				$("#appSpacesButton").hide();
+				$("#appCirclesButton").hide();
+			} else {
+				$("#appSpacesButton").click(function(){
+					$('#spaces-form').height("320px");
+					var maskHeight = $(document).height();  
+					var maskWidth = $(window).width();
+					var dialogTop =  (maskHeight/2) - ($('#spaces-form').height()/2);  
+					var dialogLeft = (maskWidth/2) - ($('#spaces-form').width()/2);
+					var recordId = $(".detail-id").html();
+					$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+					$('#spaces-form').css({top:dialogTop, left:dialogLeft}).show();
+					$(".spaces-form label").autoWidth();
+					$("#SrecordID").val(id);
+					$("#space").contents().remove();
+					$.each(spaces, function(i, item){
+						var spaceName = item.name.replace(" ", "");
+						$("#space").append("<input type=\"checkbox\" id=\""+item._id.$oid+"\" name=\""+spaceName+"\" value=\""+spaceName+"\">"+item.name+"</input></br>");
+					});
+					$("#recordS-name").html(mydata.name);
+					$("#spaces-form p").html("<i>All records produced by this app will be visible in the selected spaces.</i>");
+					if(installInfo.spaces!=undefined){
+						$.each(installInfo.spaces, function(j,s){
+							$("#"+s.spaceID).prop('checked', true);
+						});
+					}
+					return false;
+				});
+				$("#appCirclesButton").click(function(){
+					$('#circles-form').height("320px");
+					var maskHeight = $(document).height();  
+					var maskWidth = $(window).width();
+					var dialogTop =  (maskHeight/2) - ($('#circles-form').height()/2);  
+					var dialogLeft = (maskWidth/2) - ($('#circles-form').width()/2);
+					var recordId =  $(".detail-id").html();
+					$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+					$('#circles-form').css({top:dialogTop, left:dialogLeft}).show();
+					$(".circles-form label").autoWidth();
+					$("#recordID").val(id);
+					$("#circle").contents().remove();
+					$.each(circles, function(i, item){
+						var circleName = item.name.replace(" ", "");
+						$("#circle").append("<input type=\"checkbox\" id=\""+item._id.$oid+"\" name=\""+circleName+"\" value=\""+circleName+"\">"+item.name+"</input></br>");
+					});
+					
+					$("#record-name").html(mydata.name);
+					$("#circles-form p").html("<i>All people in the selected circles will be able to see records produced by this app.</i>");
+					if(installInfo.circles!=undefined){
+						$.each(installInfo.circles, function(j,c){
+							$("#"+c.circleID).prop('checked', true);
+						});
+					}
+					return false;
+				});
+			}
+		}
+
+		$(document).ready(function() {
+			initialize();
+			loadApplication();
+			initInstallButton();
+			loadCircles({onSuccess: function(data){loadedCircles(data);}, onError: function(){console.log("Error while loading circles...");}});
+			loadSpaces({onSuccess: function(data){loadedSpaces(data);}, onError: function(){console.log("Error while loading spaces...");}});
+			$.get(WEB_URL+'dialogs/circles-form.html').success(function(data){$('body').append(data); loadedExtHTML();});
+			$.get(WEB_URL+'dialogs/spaces-form.html').success(function(data){$('body').append(data); loadedExtHTML();});
+			$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data); loadedExtHTML();});
+			initButtons();
+			$( document ).tooltip({ tooltipClass: "hbTooltip" });
+			$( "#dialog-installed" ).dialog({
+		      modal: true,
+		      autoOpen: false,
+		      width: 600, 
+		      buttons: {
+		        Ok: function() {
+		          $( this ).dialog( "close" );
+		          $("#feedback").html("");
+		        }
+		      }
+		    });
 		});
 		
 	</script>
@@ -188,9 +370,11 @@
 					<div id="descr" class="appDescr"></div></br>
 					<div id="whatIsNew" class="appWhatsNew"> </div>
 					</br></br></br>
-					<button id="backButton" class="button">Back</button>
-					<input id="installButton" type="submit" name="submit" value="Install" class="button" />
-					<button id="openAppButton" class="button">Open Application</button>
+					<button id="backButton" class="button" title="Go back to where you came from.">Back</button>
+					<input id="installButton" type="submit" name="submit" value="Install" class="button" title="Un-/Install the application." />
+					<button id="openAppButton" class="button" title="Go to the application view.">Open Application</button>
+					<button id="appSpacesButton" class="button right appSpacesButton" title="Add all entries of this app to certain spaces.">Spaces</button>
+					<button id="appCirclesButton" class="button right" title="Make all entries of this app visible for certain circles.">Circles</button>
 				</div>
 				<!--END Content-->
 			</div>
@@ -213,5 +397,15 @@
     	<div class="clr"></div>
     </div>
 	<!--END Bottom Bar -->
+	<!--Dialogs-->
+	<div id="dialog-installed" title="Installation successfull">
+		<p>
+			<span class="ui-icon ui-icon-circle-check" style="float: left; margin: 0 7px 50px 0;"></span>
+			The <span id="dialog-installed-type">application</span> has been installed successfully. You can now use it <span id="dialog-installed-usage">to add new record entries</span>.
+		</p>
+		<br>
+		<p id="dialog-installed-secondMessage">Use the spaces and circles button on the right to assign entries created by this application automatically to a certain space and share it with a certain record.</p>
+	</div>
+	<!--END Dialogs-->
 </body>
 </html>

@@ -68,7 +68,6 @@ body {
 .dev-content p {
 	width: 75%;
 	margin: 0 auto 0 auto;
-	text-align: "justify";
 	hyphens: auto; 
 }
 .dev-content .syntaxhighlighter {
@@ -80,8 +79,6 @@ body {
 .devImageContainer {
 	vertical-align: middle;
 	text-align: center;
-	width: 50%;
-	margin: 0 auto 0 auto;
 }
 .devImageContainer img {
 	height: 400px;

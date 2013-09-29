@@ -5,18 +5,329 @@
 	<meta charset="UTF-8">
 	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<script src="../js/healthbank.js"></script>
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
 
 	<script type="text/javascript">
+
+		var activeTab;
+		var personData, recordData, textData, fileID;
 
 		function loadUserInfoIndividual(data){
 			// This will be called after the user information has been loaded
 			// Add or change potential page related content here if needed
 		}
 
+		function searchPeople() {
+			minAge = $("#minAge").val();
+			maxAge = $("#maxAge").val();
+			minWeight = $("#minWeight").val();
+			maxWeight = $("#maxWeight").val();
+			minHeight = $("#minHeight").val();
+			maxHeight = $("#maxHeight").val();
+			country = $("#country").val();
+			keywords = $("#symptoms").val();
+			if((minAge==undefined || minAge.length<1)&&(maxAge==undefined || maxAge.length<1)&&(minWeight==undefined || minWeight.length<1)&&(maxWeight==undefined || maxWeight.length<1)&&(minHeight==undefined || minHeight.length<1)&&(maxHeight==undefined || maxHeight.length<1)&&(country==undefined || country.length<1)&&(keywords==undefined || keywords.length<1)){
+				$("#personFeedback").html("Please fill out at least one form field!");
+				$("#personFeedback").css("color", "red");
+				return false;
+			}
+
+			// send to server
+			queryQueryEngine('user', minAge, maxAge, minHeight, maxHeight, minWeight, maxWeight, country, keywords, "", {
+				onSuccess: function(data){
+					console.log(data);
+					personData = data.values;
+					$("#personFeedback").html("");
+					if(personData==undefined || personData.length==0){
+						$("#personSearchResult").html("No entries found to this query!");
+						return false;
+					} 
+					$("#personSearchResult").html("");
+					$.each(personData, function(i, item){
+						$("#personSearchResult").append('<li><div id="'+item._id.$oid+'"><img class="queryBoxResImg" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="queryBoxResBody"><h4 class="newsheader">'+item.firstname+' '+item.lastname+'</h4><p class="newscontent">User name: '+item.username+'</p></div><a href="newMessage.html?r='+item._id.$oid+'"><img class="queryBoxSendMailImg" src="../images/send_mail.png" /></div></li>');
+					    if(item.icon!=undefined){
+							loadImage(item.icon, item._id.$oid, "user", {
+								onSuccess: function(data, id){
+									$("#"+id+" .queryBoxResImg").attr("src", "data:image/png;base64,"+data);
+								}, onError: function(data){
+									// just ignore it
+								}
+							});
+						}
+					});
+
+				}, 
+				onError: function(data) {
+					console.log("Error: "+data);
+					$("#personFeedback").html(data);
+					$("#personFeedback").css("color", "red");
+					$("#personSearchResult").html("No entries found to this query!");
+				}
+			});
+		}
+
+		function searchRecords() {
+			keywords = $("#keywords").val();
+			if(keywords==undefined || keywords.length<1){
+				$("#recordFeedback").html("Please enter at least one keyword!");
+				$("#recordFeedback").css("color", "red");
+				return false;
+			}
+
+			// send to server
+			queryQueryEngine('record', "", "", "", "", "", "", "", keywords, "", {
+				onSuccess: function(data){
+					$("#recordFeedback").html("");
+					recordData = data.values;
+					if(recordData==undefined || recordData.length==0){
+						$("#recordSearchResult").html("No entries found to this query!");
+						return false;
+					} 
+					$("#recordSearchResult").html("");
+					$.each(recordData, function(i, item){
+						$("#recordSearchResult").append('<li id="'+item._id.$oid+'" index="'+i+'"><div><h4 class="newsheader">'+decodeURIComponent(item.name)+'</h4><p class="newscontent">Description: <i>'+decodeURIComponent(item.descr).substring(0,50)+'...</i>,  Date: <i>'+item.timedate+'</i></p></div></div></li>');
+					});
+					$("#recordSearchResult li").click(function(){
+						item = recordData[$(this).attr("index")];
+						$("#detailRecordPopUpName").html(decodeURIComponent(item.name));
+						$("#detailRecordPopUpDescr").html("<b style=\"margin-left:10px\">Description: </b>"+decodeURIComponent(item.descr));
+						$("#detailRecordPopUpTimedate").html("<b style=\"margin-left:10px\">Time and Date: </b>"+decodeURIComponent(item.timedate));
+
+						$("#detailRecordPopUpValues").html("");
+						$.each(item, function(key, value){
+				    		if(key=="fileName"){
+				    			$("#detailRecordPopUpValues").append("<p style=\"margin-left:10px\"><b>"+key+":</b>  <a id=\"fileLink\" href=\"javascript:void(0)\">"+decodeURIComponent(value)+"</a><p>");
+				    		} else if(key=="fileID"){
+				    			fileID = value.$oid;
+				    		} else if(key == "userID"){
+				    			$("#detailRecordPopUpValues").append("<p style=\"margin-left:10px\" id=\"detailRecordPopUpUserID\"><b>"+key+":</b>  "+decodeURIComponent(value)+"</p>");
+				    			queryUserById(decodeURIComponent(value), {onSuccess: function(data){
+									name = data.values.users[0].firstname + " " + data.values.users[0].lastname;
+									$("#detailRecordPopUpUserID").append("  ( "+name+" )");
+								}});
+				    		} else if(key!=undefined && key!="fileID" && key!="name" && key!="_id" && key!="timedate" && key!="descr" && key!="circles"){
+				    			$("#detailRecordPopUpValues").append("<p style=\"margin-left:10px\"><b>"+key+":</b>  "+decodeURIComponent(value)+"</p>");
+				    		}
+						});
+						if(fileID!=undefined && fileID.length>0){
+							$("#fileLink").click(function(){
+								if(isStorageDefined())
+								{
+									window.open(API_URL+"File?session="+mySession+"&credentials="+myCredentials+"&id="+fileID);
+								}
+								return false;
+							});
+						}
+						var maskHeight = $(document).height();  
+			    		var maskWidth = $(window).width();
+			    		var dialogTop =  (maskHeight/2) - ($('#detailRecordPopUp').height()/2);   
+			    		var dialogLeft = (maskWidth/2) - ($('#detailRecordPopUp').width()/2);
+			    		$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+			    		$('#detailRecordPopUp').css({top:dialogTop, left:dialogLeft}).show("slow");
+
+			    		$("#detailRecordPopUpButton, #dialog-overlay").click(function(){
+			    			$('#detailRecordPopUp, #dialog-overlay').hide("fast");
+			    		});
+					});
+				}, 
+				onError: function(data) {
+					$("#recordFeedback").html(data);
+					$("#recordFeedback").css("color", "red");
+					$("#recordSearchResult").html("No entries found to this query!");
+					console.log("Error: "+data);
+				}
+			});
+		}
+
+		function searchtext() {
+			textQuery = $("#textQuery").val();
+			if(textQuery==undefined || textQuery.length<1){
+				$("#textFeedback").html("Please enter at least something!");
+				$("#textFeedback").css("color", "red");
+				return false;
+			}
+
+			// send to server
+			queryQueryEngine('text',  "", "", "", "", "", "", "", "", textQuery, {
+				onSuccess: function(data){
+					$("#textFeedback").html("");
+					console.log(data);
+					// TODO
+					recordData = data.values;
+					if(recordData==undefined || recordData.length==0){
+						$("#textSearchResult").html("No entries found to this query!");
+						return false;
+					} 
+					$("#textSearchResult").html("");
+					$.each(recordData, function(i, item){
+						$("#textSearchResult").append('<li id="'+item._id.$oid+'" index="'+i+'"><div><h4 class="newsheader">'+decodeURIComponent(item.name)+'</h4><p class="newscontent">Description: <i>'+decodeURIComponent(item.descr).substring(0,50)+'...</i>,  Date: <i>'+item.timedate+'</i></p></div></div></li>');
+					});
+					$("#textSearchResult li").click(function(){
+						item = recordData[$(this).attr("index")];
+						$("#detailRecordPopUpName").html(decodeURIComponent(item.name));
+						$("#detailRecordPopUpDescr").html("<b style=\"margin-left:10px\">Description: </b>"+decodeURIComponent(item.descr));
+						$("#detailRecordPopUpTimedate").html("<b style=\"margin-left:10px\">Time and Date: </b>"+decodeURIComponent(item.timedate));
+
+						$("#detailRecordPopUpValues").html("");
+						$.each(item, function(key, value){
+				    		if(key=="fileName"){
+				    			$("#detailRecordPopUpValues").append("<p style=\"margin-left:10px\"><b>"+key+":</b>  <a id=\"fileLink\" href=\"javascript:void(0)\">"+decodeURIComponent(value)+"</a><p>");
+				    		} else if(key=="fileID"){
+				    			fileID = value.$oid;
+				    		} else if(key == "userID"){
+				    			$("#detailRecordPopUpValues").append("<p style=\"margin-left:10px\" id=\"detailRecordPopUpUserID\"><b>"+key+":</b>  "+decodeURIComponent(value)+"</p>");
+				    			queryUserById(decodeURIComponent(value), {onSuccess: function(data){
+				    				if(data.values.users[0].firstname!=undefined && data.values.users[0].firstname.length>0){
+										name = data.values.users[0].firstname + " " + data.values.users[0].lastname;
+									} else {
+										name = data.values.users[0].companyname;
+									}
+									$("#detailRecordPopUpUserID").append("  ( "+name+" )");
+								}});
+				    		} else if(key!=undefined && key!="fileID" && key!="name" && key!="_id" && key!="timedate" && key!="descr" && key!="circles"){
+				    			$("#detailRecordPopUpValues").append("<p style=\"margin-left:10px\"><b>"+key+":</b>  "+decodeURIComponent(value)+"</p>");
+				    		}
+						});
+						if(fileID!=undefined && fileID.length>0){
+							$("#fileLink").click(function(){
+								if(isStorageDefined())
+								{
+									window.open(API_URL+"File?session="+mySession+"&credentials="+myCredentials+"&id="+fileID);
+								}
+								return false;
+							});
+						}
+						var maskHeight = $(document).height();  
+			    		var maskWidth = $(window).width();
+			    		var dialogTop =  (maskHeight/2) - ($('#detailRecordPopUp').height()/2);   
+			    		var dialogLeft = (maskWidth/2) - ($('#detailRecordPopUp').width()/2);
+			    		$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+			    		$('#detailRecordPopUp').css({top:dialogTop, left:dialogLeft}).show("slow");
+
+			    		$("#detailRecordPopUpButton, #dialog-overlay").click(function(){
+			    			$('#detailRecordPopUp, #dialog-overlay').hide("fast");
+			    		});
+					});
+				}, 
+				onError: function(data) {
+					console.log("Error: "+data);
+					$("#textFeedback").html(data);
+					$("#textFeedback").css("color", "red");	
+					$("#textSearchResult").html("No entries found to this query!");
+				}
+			});
+		}
+
 		$(document).ready(function() {
 			initialize();
+			$.get(WEB_URL+'dialogs/dialog-overlay.html').success(function(data){$('body').append(data);});
+			$("#personRedefineSearchButton").hide();
+			$("#recordRedefineSearchButton").hide();
+			$("#textRedefineSearchButton").hide();
+			$("#personSearchResult").hide();
+			$("#recordSearchResult").hide();
+			$("#textSearchResult").hide();						
+			$("#recordSearch-content").hide();					
+			$("#textSearch-content").hide();
+			$("#detailRecordPopUp").hide();
+			$("#textSearchHelpPopUp").hide();
+
+			activeTab = $("#personSearch-content");
+
+			$("#recordSearchButton").click(function(){
+				searchRecords();
+
+				$("#recordSearchForm").hide("slow", function(){
+					$("#recordRedefineSearchButton").show();
+				});
+				$("#recordSearchResult").show("slow");
+				return false;
+			});
+			$("#personSearchButton").click(function(){
+				searchPeople();
+
+				$("#personSearchForm").hide("slow", function(){
+					$("#personRedefineSearchButton").show();
+				});
+				$("#personSearchResult").show("slow");
+				return false;
+			});
+			$("#textSearchButton").click(function(){
+				searchtext();
+
+				$("#textSearchForm").hide("slow", function(){
+					$("#textRedefineSearchButton").show();
+				});
+				$("#textSearchResult").show("slow");
+				return false;
+			});
+			$("#personRedefineSearchButton").click(function(){
+				$("#personSearchForm").show("slow");
+				$("#personRedefineSearchButton").hide();
+				return false;
+			});
+			$("#recordRedefineSearchButton").click(function(){
+				$("#recordSearchForm").show("slow");
+				$("#recordRedefineSearchButton").hide();
+				return false;
+			});
+			$("#textRedefineSearchButton").click(function(){
+				$("#textSearchForm").show("slow");
+				$("#textRedefineSearchButton").hide();
+				return false;
+			});
+
+			$("#personSearch-tab").click(function() {
+				$("#recordSearch-tab").removeClass("selected");
+				$("#textSearch-tab").removeClass("selected");
+				activeTab.fadeOut(500, function(){
+					$("#personSearch-content").fadeIn(500);
+					$("#personSearch-tab").addClass("selected");
+					activeTab = $("#personSearch-content");
+				});
+				return false;
+			});
+			$("#recordSearch-tab").click(function(){
+				$("#personSearch-tab").removeClass("selected");
+				$("#textSearch-tab").removeClass("selected");
+				activeTab.fadeOut(500, function(){
+					$("#recordSearch-content").fadeIn(500);
+					$("#recordSearch-tab").addClass("selected");
+					activeTab = $("#recordSearch-content");
+				});
+				return false;
+			});
+			$("#textSearch-tab").click(function(){
+				$("#personSearch-tab").removeClass("selected");
+				$("#recordSearch-tab").removeClass("selected");
+				activeTab.fadeOut(500, function(){
+					$("#textSearch-content").fadeIn(500);
+					$("#textSearch-tab").addClass("selected");
+					activeTab = $("#textSearch-content");
+				});
+				return false;
+			});
+			$("#textSearch-help").click(function(){
+				var maskHeight = $(document).height();  
+	    		var maskWidth = $(window).width();
+	    		var dialogTop =  (maskHeight/2) - ($('#textSearchHelpPopUp').height()/2);   
+	    		var dialogLeft = (maskWidth/2) - ($('#textSearchHelpPopUp').width()/2);
+	    		$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+	    		$('#textSearchHelpPopUp').css({top:dialogTop, left:dialogLeft}).show("slow");
+
+	    		$("#textSearchHelpPopUpButton, #dialog-overlay").click(function(){
+	    			$('#textSearchHelpPopUp, #dialog-overlay').hide("fast");
+	    		});
+			});
+			$(".page-content .queryBoxForm div label").autoWidth();
+			$( "#country" ).autocomplete({
+		      source: availableTags,
+		      appendTo: "#autoC",
+		      autoFocus: true
+		    });
 		});
 		
 	</script>
@@ -27,7 +338,7 @@
 		<div class="page-container">
 			<!--Header-->
 			<div class="page-header">
-				<h1>Query Box</h1> 
+				<h1>Query Engine</h1> 
 				<div class="page-actionbox"></div>
 			</div>
 			<!--END Header-->
@@ -39,8 +350,124 @@
 
 				<!--Content-->
 				<div class="page-content">
-					<div style="width:100%; height:100%; vertical-align: middle; text-align: center;">
-						<a href="http://searchappeal.ca/wp-content/uploads/2012/10/under-construction.gif"><img style="margin-top:100px;" src="http://searchappeal.ca/wp-content/uploads/2012/10/under-construction.gif"/></a>
+
+					<div id="query-tabs">
+						<div id="personSearch-tab" class="querytab selected">Search People</div>
+						<div id="recordSearch-tab" class="querytab">Search Record Entries</div>
+						<div id="textSearch-tab" class="querytab">Text Search</div>
+					</div>
+					<div id="personSearch-content" class="tab-content">
+						<h3>Search for people:</h3>
+						<p>Fill out as many fields as you like to search for people in the system</p>
+						<button class="button" id="personRedefineSearchButton">Redefine Search</button>
+						<form id="personSearchForm" class="queryBoxForm">
+							<table>
+							<tr>
+								<td width="20%"><span>Age: </span></td>
+								<td width="40%"><label id="minAgeLabel" for="minAge">from</label><input type="number" class="numberInput" id="minAge" /></td>
+								<td width="40%"><label id="maxAgeLabel" for="maxAge">to</label><input type="number" class="numberInput" id="maxAge" /></td>
+							</tr>
+							<tr>
+								<td><span>Height (cm): </span></td>
+								<td><label id="minHeightLabel" for="minHeight">from</label><input type="number" class="numberInput" id="minHeight" /></td>
+								<td><label id="maxHeightLabel" for="maxHeight">to</label><input type="number" class="numberInput" id="maxHeight" /></td>
+							</tr>
+							<tr>
+								<td><span>Weight (kg): </span></td>
+								<td><label id="minWeightLabel" for="minWeight">from</label><input type="number" class="numberInput" id="minWeight" /></td>
+								<td><label id="maxWeightLabel" for="maxWeight">to</label><input type="number" class="numberInput" id="maxWeight" /></td>
+							</tr>
+							<tr>
+								<td><span>Country: </span></td>
+								<td>
+									<input type="text" name="country" class="textInput" id="country"/><br/>
+									<div id="autoC"></div>
+								</td>
+								<td></td>
+							</tr>
+							<tr>
+								<td><span>Symptoms: </span></td>
+								<td><input type="text" id="symptoms" class="textInput"/></td>
+								<td><label id="symptomsLabel" for="symptoms"> multiple separated by a space</label></td>
+							</tr>
+							<tr>
+								<td></td><td></td>
+								<td><button class="big-button" id="personSearchButton">Search</button></td>
+							</tr>
+							</table>
+						</form>
+						<br><br>
+						<div>
+							<p id="personFeedback">Click on the results to get more information</p>
+							<br>
+							<ul id="personSearchResult" class="queryBoxResultBox">
+								<center>
+									<img id="loader" style="height:60px; float:center; margin-left: auto; margin-right: auto;" src="../images/loading.gif"></img>
+									<br>
+									No entries found yet!
+								</center>
+							</ul>
+						</div>
+					</div>
+					<div id="recordSearch-content" class="tab-content">
+						<h3>Search for record entries:</h3>
+						<p>Give us some keywords for records we will search for in the system</p>
+						<button class="button" id="recordRedefineSearchButton">Redefine Search</button>
+						<form id="recordSearchForm" class="queryBoxForm">
+							<table>
+							<tr>
+								<td><span>Keywords: </span></td>
+								<td><input type="text" id="keywords" class="textInput"/></td>
+								<td><label id="keywordsLabel" for="keywords"> multiple separated by a space</label></td>
+							</tr>
+							<tr>
+								<td></td><td></td>
+								<td><button class="big-button" id="recordSearchButton">Search</button></td>
+							</tr>
+							</table>
+						</form>
+						<br><br>
+						<div>
+							<p id="recordFeedback">Click on the results to get more information</p>
+							<br>
+							<ul id="recordSearchResult" class="queryBoxResultBox">
+								<center>
+									<img id="loader" style="height:60px; float:center; margin-left: auto; margin-right: auto;" src="../images/loading.gif"></img>
+									<br>
+									No entries found yet!
+								</center>
+							</ul>
+						</div>
+					</div>
+					<div id="textSearch-content" class="tab-content">
+						<h3>Text search within users and records:</h3>
+						<p>This query uses the text index on the MongoDB (<a href="http://docs.mongodb.org/manual/core/index-text/">see here</a>).</p>
+						<button class="button" id="textRedefineSearchButton">Redefine Search</button>
+						<form id="textSearchForm" class="queryBoxForm">
+							<table>
+							<tr>
+								<td><span>Query: </span></td>
+								<td><input type="text" id="textQuery" class="textInput"/></td>
+								<td><label id="textQueryLabel" for="textQuery"> <span id="textSearch-help">click for searching hints</span></label></td>
+							</tr>
+							<tr>
+								<td></td><td></td>
+								<td><button class="big-button" id="textSearchButton">Search</button></td>
+							</tr>
+							</table>
+						</form>
+						<br><br>
+						<div>
+							<p id="textFeedback">Click on the results to get more information</p>
+							<br>
+							<ul id="textSearchResult" class="queryBoxResultBox">
+								<center>
+									<img id="loader" style="height:60px; float:center; margin-left: auto; margin-right: auto;" src="../images/loading.gif"></img>
+									<br>
+									No entries found yet!
+								</center>
+							</ul>
+						</div>
 					</div>
 				</div>
 				<!--END Content-->
@@ -64,5 +491,25 @@
     	<div class="clr"></div>
     </div>
 	<!--END Bottom Bar -->
+
+	<!-- DIALOGS -->
+	<div id="detailRecordPopUp">
+		<h3 id="detailRecordPopUpName">Name</h3><br>
+		<p id="detailRecordPopUpDescr">description</p>
+		<p id="detailRecordPopUpTimedate">time/date</p>
+		<br>
+		<div id="detailRecordPopUpValues"></div>
+		<button id="detailRecordPopUpButton" class="big-button">close</button>
+	</div>
+	<div id="textSearchHelpPopUp">
+		<h3>Here are a few tips for searching</h3>
+		<ul>
+			<li>If the search string is a space-delimited text, the query performs a logical OR search on each term and returns documents that contains any of the terms. </li>
+			<li>To match the exact phrase that includes a space(s) as a single term, escape the quotes.</li>li>
+			<li>A negated term is a term that is prefixed by a minus sign -. If you negate a term, the query command will exclude the documents that contain those terms from the results.</li>
+		</ul>
+		<button id="textSearchHelpPopUpButton" class="big-button">close</button>
+	</div>
+	<!-- END DIALOGS -->
 </body>
 </html>

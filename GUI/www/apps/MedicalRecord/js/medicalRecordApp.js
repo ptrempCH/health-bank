@@ -19,7 +19,7 @@ function submit(){
     var doctor = ($("#doctor").val()!=undefined || $("#doctor").val()=="")?$("#doctor").val():"";
     var values = "{ \"app\" : \"addRecord\", \"cause\": \""+cause+"\", \"doctor\": \""+doctor+"\" }";
     // do some test with it, if need be
-    if(file.name!=undefined || icon.name.length>0){
+    if(file!=undefined && file.name!=undefined && icon.name.length>0){
         $("#values").attr("value", values);
         var formData = new FormData($('#addRec-form')[0]);
         parent.addRecordWithFile(formData, {
@@ -33,6 +33,7 @@ function submit(){
         });
     } else {
         parent.addRecord(
+            parent.id, 
             name, 
             descr, 
             values, 

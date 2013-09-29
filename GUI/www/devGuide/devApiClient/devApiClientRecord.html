@@ -7,6 +7,16 @@
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
 
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushXml.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
 	<script type="text/javascript">
 
 		$(document).ready(function() {
@@ -16,6 +26,12 @@
 				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
 				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
 			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
 		});
 		
 	</script>
@@ -48,7 +64,8 @@
 				<li>&nbsp;&nbsp;<a href="devApiClientApplication.html">Applications</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClientNews.html">News</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClientMessage.html">Messages</a></li><br>
-				<li>&nbsp;&nbsp;<a href="devApiClientImage.html">Images</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientFiles.html">Files</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientOther.html">Other functions</a></p><br>
 			</ul>
 			<p><a href="../devDemos.html">Demos</a></p><br>
 		</div>
@@ -56,7 +73,187 @@
 
 		<!--Content-->
 		<div class="dev-content">
-			<p> Comming soon ... </p>
+			<br>
+			<h3>Client API for records</h3>
+			<br>
+			<p>In this chapter we will talk about all the functions in the client API that deal with records. Creating new records, querying them, assigning them to spaces and circles and all spaces related functions will be discussed each individually in the following. </p>
+			<br><br>
+			<h4>Add a new record entry</h4>
+			<p>Depending on if the user added a file to the new record entry there are two functions to use. If the new entry does not contain a file, please use the 'addRecord' function which will lead to a normal HTTP POST request. On the other hand if there is a file along the entry, use the multipart request called via the function 'addRecordWithFile'. <br>
+			Let us start with the 'addRecord' function. Besides the usual callback functions you should provide via the 'callback' parameter you need to define a name and a description for the new entry you would like to add. The more you need to provide the identification of the application that adds the entry via the 'appID' parameter. To guarantee the most flexibility in what applications like to add to an entry, all other values that you want to save with the entry are saved as JSON in the parameter 'values'. Here is detailed description of how to call the function: </p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Add a new record to the user's chronicle 
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - appID: The id of the application that likes to add this record
+				* - name: The name of the new record
+				* - descr: The description of the new record
+				* - values: Additional values to be saved with this record in JSON data format. Use jsonlint.org to check for correctness  of your JSON
+				**/
+				function addRecord(appID, name, descr, values, callback) {...}
+			]]></script><br>
+			<p>When the user provides a file alongside the entry, we need to make a multipart request to the server. Therefore please provide the same parameters as with the call above but not as parameter to the function but within a form. Just provide the entire form including the file field and we will do the rest for you. Here is the description for the function: </p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Add a new record to the user's chronicle including a file
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - formData: The form data that contains all the information about the new app or visualization to add.
+				*/
+				function addRecordWithFile(formData, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Load your records</h4>
+			<p>This simple function will return all the records of the current user. This is most likely to change in a future version, where this function will only return a subset of say 50 entries and you will have to query again for more. But right now it will just return all the records. As a parameter this function allows to set a space identification. If you set this attribute you will only get records assigned to this particular space in return. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Gets the records of the user 
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				**/
+				function loadRecords(space_id, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Query record entries</h4>
+			<p>With this function you can search for records of the current user via a simple query. Just provide the query you are looking for as a parameter and you will get an (maybe empty) array if records in return. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Searches for entries according to a query 
+				* Redirects to the login page, if not logged in. 
+				* 
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - query: The query to search a record
+				**/
+				function queryEntries(query, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Query all entries of a certain user</h4>
+			<p>With this method you can query for records of another user by providing this user's identification. The more you can again filter by a certain space by providing a space identification as a parameter to the function. Here is the description:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Gets all the records of a certain user given by the according user ID. Only records we are allowed to see are returned 
+				* Redirects to the login page, if not logged in. 
+				* 
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - userId: The id of the user to search records from
+				* - spaceId: The id of a space, if set only records assigned to this space are returned
+				**/
+				function queryEntriesByUserId(userId, spaceId, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Query all entries of users in a certain circle</h4>
+			<p>This function is very similar to the one before. But rather then querying for records of a single user, you can query records of all users the current user has assigned to a certain circle. Just provide the circle identification of the desired circle. Again you can filter the results by a certain space if you provide a space identification as a parameter to the function. Here is the description: </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Gets all the records of users in a certain circle given by the according circle ID. Only records we are allowed to see are returned  
+				* Redirects to the login page, if not logged in. 
+				* 
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - circleId: The id of the circe to search records from the users in it
+				* - spaceId: The id of a space, if set only records assigned to this space are returned
+				**/
+				function queryEntriesByCircleId(circleId, spaceId, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Change the circle assignment of an entry</h4>
+			<p>By providing the identification of the record and the circle identifications separated by a space in a string as parameters you can use this function to change the circle assignment of a record entry. Please keep in mind that if you assign a circle to a record entry, all people you assigned to this circle will be able to see this record. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function will update the associated circles of a record
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - recordId: The id of the record to update the circles
+				* - circles: A string with all the circle ids seperated by a space
+				*/
+				function updateRecordCircles(recordId, circles, callback){...}
+			]]></script><br>
+			<br><br>
+			<h4>Change the space assignment of an entry</h4>
+			<p>By providing the identification of the record and the space identifications separated by a space in a string as parameters you can use this function to change the space assignment of a record entry. When you assign a record entry to a space, you will be able to see it, when you open the respective space view. Keep in mind that visualizations in this space will be able to see this record entry as well. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function will update the associated spaces of a record
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - recordId: The id of the record to update the spaces
+				* - circles: A string with all the spaces ids seperated by a space
+				*/
+				function updateRecordSpaces(spaceId, spaces, callback){...}
+			]]></script><br>
+			<br><br>
+			<h4>Create space</h4>
+			<p>Creating a new space is rather an easy task. First you need to provide a name and a description as parameters for this function. With the hidden parameter you can decide, if the space shall be visible in the tab view at the top of the spaces page. Then you can set one visualization to be shown when this space view is opened. To do so, set the visualization identification to the 'viz' parameter. Please keep in mind that only visualizations which the user has installed are allowed here. This is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Adds a new space to the user
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - name: The name of the space to create
+				* - descr: A description of the space
+				* - viz: The id of a visualization the user wants display on this space (so far only one visualization is supported)
+				* - hidden: true or false. If this value is set to true, there will not be a tab for this space on the screen, but the space still exists.
+				**/
+				function addSpace(name, descr, hidden, viz, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Edit space</h4>
+			<p>Editing a space is essentially the same as adding one, just provide the space identification additionally to the other values. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Edits a space entry of the user
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: The id of the space to edit
+				* - name: The name of the space to create
+				* - descr: A description of the space
+				* - vizualisation: The id of a visualization the user wants display on this space (so far only one vizualization is supported)
+				* - hidden: true or false. If this value is set to true, there will not be a tab for this space on the screen, but the space still exists.
+				**/
+				function editSpaces(id, name, descr, hidden, viz, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Query spaces</h4>
+			<p>To get all the space information of a user, just call this function: </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Gets the spaces of the user 
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				**/
+				function loadSpaces(callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Update circle assignment of a space</h4>
+			<p>The user can assign circles to spaces. If he or she does so, this means that all record entries assigned to this space and all record entries which will be assigned to this space in future will automatically be assigned to the specified circles. This helps the user, so he or she does not have to go through all record entries individually but should be used with care. To use the function just provide the circle and space identification and call: </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function will update the circles associated to a certain space
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - spaceId: The id of the space we want to update
+				* - circles: A string with the circle ids seperated by a string
+				*/
+				function updateCirclesOfSpace(spaceId, circles, callback){...}
+			]]></script><br>
 		</div>
 		<!--END Content-->
 	</div>

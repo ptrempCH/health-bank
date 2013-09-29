@@ -182,7 +182,7 @@ public class CoreManager {
 	 * @throws IllegalQueryException
 	 * @throws NotConnectedException
 	 */
-	public ArrayList<String> getCirclesIAmInOfAUser(String myUserId, String otherUserId) throws IllegalQueryException, NotConnectedException
+	public ArrayList<String> getCirclesIAmInOfAUser(String myUserId, String otherUserId) throws IllegalQueryException, NotConnectedException, IllegalArgumentException
 	{
 		try {
 			ArrayList<String> result = new ArrayList<>();
@@ -303,7 +303,6 @@ public class CoreManager {
 		// Medical
 		data.put("name", "Medical");
 		data.put("descr", "All your medical data");
-		//data.put("url", "medicalTimeline.html");
 		data.put("hidden", "false");
 		data.put("visualization", "");
 		DateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
@@ -316,7 +315,6 @@ public class CoreManager {
 		data = new HashMap<Object, Object>();
 		data.put("name", "Wellness");
 		data.put("descr", "All your wellness data");
-		//data.put("url", "wellnessTimeline.html");
 		data.put("hidden", "false");
 		data.put("visualization", "");
 		dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");

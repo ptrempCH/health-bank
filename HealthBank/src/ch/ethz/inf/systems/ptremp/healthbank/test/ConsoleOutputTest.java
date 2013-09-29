@@ -1,16 +1,19 @@
 package ch.ethz.inf.systems.ptremp.healthbank.test;
 
 import java.net.UnknownHostException;
-import java.util.HashMap;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCursor;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import ch.ethz.inf.systems.ptremp.healthbank.db.MongoDBConnector;
 import ch.ethz.inf.systems.ptremp.healthbank.exceptions.IllegalQueryException;
 import ch.ethz.inf.systems.ptremp.healthbank.exceptions.NotConnectedException;
-import ch.ethz.inf.systems.ptremp.healthbank.logic.CoreManager;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.CommandResult;
+import com.mongodb.DBObject;
 
 /**
  * This class was build with the intention to test the connection to the database server. 
@@ -25,9 +28,42 @@ public class ConsoleOutputTest {
 	 * console. Finally we update one entry in the DB and display the collection again by querying it again. 
 	 * @param args This method does not need any external arguments
 	 */
+	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
 		try {
-			System.out.println("Hi, I'm creating a connector now.");
+			// TEST for Text Query
+			MongoDBConnector connector = MongoDBConnector.getInstance();
+			connector.connect();
+			String query = "terrible headache";
+			
+			final DBObject textSearchCommand = new BasicDBObject();
+	        textSearchCommand.put("text", MongoDBConnector.RECORDS_COLLECTION_NAME);
+	        textSearchCommand.put("search", query);
+	        final CommandResult commandResult = connector.command(textSearchCommand);
+	        
+	        JSONParser parser = new JSONParser();
+	        JSONObject resObj = (JSONObject) parser.parse(commandResult.toString());
+			JSONArray finalResult = new JSONArray();
+			if(resObj!=null){
+				JSONArray resArray = new JSONArray();
+				resArray = (JSONArray) resObj.get("results");
+				JSONObject result;
+				for(int i=0;i<resArray.size();i++){
+					result = (JSONObject) resArray.get(i);
+					finalResult.add(result.get("obj"));
+					System.out.println(i+"-> Score: "+result.get("score")+"; obj: "+result.get("obj").toString());
+				}
+			}
+			System.out.println();
+			System.out.println();
+			System.out.println(finalResult.toString());
+			
+			// END TEST for Text Query
+			
+			
+			// Test for DB access
+			
+			/*System.out.println("Hi, I'm creating a connector now.");
 			System.out.println();
 			MongoDBConnector connector = MongoDBConnector.getInstance();
 			System.out.println("Now I try to connect to localhost on port 27017");
@@ -70,7 +106,9 @@ public class ConsoleOutputTest {
 			System.out.println();
 			System.out.println("Thanks for using this. Bye");
 			CoreManager manager = new CoreManager();
-			System.out.println(manager.randomString(32));
+			System.out.println(manager.randomString(32));*/
+			
+			// End for test db access
 		} catch (NotConnectedException e) {
 			System.out.println(e.getMessage());
 		} catch (UnknownHostException e) {
@@ -78,6 +116,8 @@ public class ConsoleOutputTest {
 		} catch (IllegalArgumentException e){
 			System.out.println(e.getMessage());
 		} catch (IllegalQueryException e) {
+			System.out.println(e.getMessage());
+		} catch (ParseException e) {
 			System.out.println(e.getMessage());
 		}
 	}

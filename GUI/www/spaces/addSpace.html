@@ -28,6 +28,16 @@
 					$("#visualization").val($(this).html());
 					$('#dialog-overlay').click();
 				});
+
+				viz = getURLParameter("viz");
+				if(viz!=undefined && viz.length>0){
+					visualizationID = viz;
+					$.each(data.values.visualizations, function(i, item){
+						if(item._id.$oid==viz){
+							$("#visualization").val(item.name+" by "+item.companyName);
+						}
+					});
+				}
 			} else {
 				return false;
 			}
@@ -146,7 +156,6 @@
 						}
 					});
 				}});
-				
 			}
 		});
 		

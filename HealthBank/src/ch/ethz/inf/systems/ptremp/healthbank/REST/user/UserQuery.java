@@ -278,6 +278,8 @@ public class UserQuery extends HttpServlet {
 						DBObject companyname = new BasicDBObject("companyname", new BasicDBObject("$in", list));
 						DBObject lastname = new BasicDBObject("lastname", new BasicDBObject("$in", list));
 						DBObject username = new BasicDBObject("username", new BasicDBObject("$in", list));
+						DBObject privEmail = new BasicDBObject("emailP", new BasicDBObject("$in", list));
+						DBObject workEmail = new BasicDBObject("emailW", new BasicDBObject("$in", list));
 						DBObject id = new BasicDBObject("_id", new BasicDBObject("$in", list));
 						BasicDBList or = new BasicDBList();
 						or.add(firstname);
@@ -285,6 +287,8 @@ public class UserQuery extends HttpServlet {
 						or.add(companyname);
 						or.add(username);
 						or.add(id);
+						or.add(privEmail);
+						or.add(workEmail);
 						DBObject queryObject = new BasicDBObject("$or", or);
 						res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, queryObject);
 						if(res!=null && res.size()>0){
@@ -361,6 +365,9 @@ public class UserQuery extends HttpServlet {
 								wasError = true;
 							}
 						}
+					} else {
+						errorMessage = "\"There was an error. You need to provide either one of these attributes 'id', 'query' or 'circle'? \"";
+						wasError = true;
 					}
 				} else {
 					errorMessage = "\"Either your session timed out or you forgot to send me the session and credentials.\"";

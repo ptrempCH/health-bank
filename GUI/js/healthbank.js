@@ -6,7 +6,7 @@
  * Copyright 2013, Patrick Tremp, ETH Zurich
  * This is not yet released under a licese so all rights reserved.
  *
- * Last Change: 2013-07-17 at 5pm
+ * Last Change: 2013-09-21 at 11pm
  */
 
 
@@ -14,8 +14,8 @@
 /**
 * Global Variables
 */
-var API_URL = "http://localhost:8080/HealthBank/";
-var WEB_URL = "http://localhost/GUI/www/";
+var API_URL = "http://localhost:8080/HealthBank/";  // The URL for the API. Change to where your server is running
+var WEB_URL = "http://localhost/GUI/www/"; 			// The URL to the root of the webpage. Change to where you put the web files
 var mySession, myCredentials;
 var records, circles, spaces, user;
 
@@ -81,7 +81,7 @@ function initialize() {
 	initializeActionBox();
 	queryHaveNewMessage({ onSuccess: function(data){
 		if(data.values.messages.length>0 && data.values.messages[0].hasNew=="true"){
-			$("#mailIcon").attr("src", "../images/newmail.png");
+			$("#mailIcon").attr("src", WEB_URL+"../images/newmail.png");
 			$("#mailIcon").addClass("mailIconFlash");
 			$('#mailIcon').trigger('hover'); 
 			$('#mailIcon').prop("title", "You have a new message!");
@@ -156,6 +156,22 @@ function initializeNavigation () {
 					$("#nav_community").css("margin-top", "210px");
 				} else {
 					$("#nav_community").css("margin-top", "90px");
+				}
+				if(s.indexOf("market")>0){
+					$("#apps_subsubnavigation").show();
+					$("#nav_myApps").css("margin-top", "90px");
+					if(user.type=="institute" || user.type=="admin"){
+						$("#nav_community").css("margin-top", "300px");
+					} else {
+						$("#nav_community").css("margin-top", "180px");
+					}
+					if(window.location.href.indexOf("viz")>0){
+						$("#nav_market_v").addClass("selectedLi");
+					} else {
+						$("#nav_market_a").addClass("selectedLi");
+					}
+				} else {
+					$("#apps_subsubnavigation").hide();
 				}
 			} else {
 				$("#apps_subnavigation").hide();
@@ -480,6 +496,10 @@ function initializeSpaces(backurl, spacesID, nrOfItems) {
 	initializeDropDown(spacesID, backurl);
 }
 
+/**
+* Initializes the filter dropdown menu for the spaces pages. 
+* attribute space is for the current selected space. The backurl for the url of the space which gets called, when returning from the detailview
+*/
 function initializeDropDown(space, backurl) {
 	if(circles==undefined || spaces==undefined || user==undefined){
 		setTimeout(function(){
@@ -547,6 +567,9 @@ function initializeDropDown(space, backurl) {
 	}, 600);
 }
 
+/**
+* This function and the following are to react to user input on the filters list
+*/
 var wasEveryone;
 function updateFilterSelection(spacesName, backurl){
 	if(!$("#filterEveryone").is(':checked')&& !$("#filterMyEntry").is(':checked') && !$("#filterIndCircle").is(':checked') && !$("#filterIndPeople").is(':checked')){
@@ -807,7 +830,7 @@ function getProfileRecord(callback){
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
 * - userData: All the userData to work with. Only existing fields will be transmitted. Possible fields are gender, code, street, city, country, emailP,
-* 				emailW, phoneP, phoneM, phoneW, nationality, spouse, insurance, birthday, height, weight and allowResearch
+* 				emailW, phoneP, phoneM, phoneW, nationality, spouse, insurance, birthday, height, weight, showHelp and allowResearch
 */
 function updateUserData(userData, callback) {
 	callback = callback || {};
@@ -835,6 +858,7 @@ function updateUserData(userData, callback) {
 		if(userData.weight==undefined){userData.weight="";}
 		if(userData.allowResearch==undefined){userData.allowResearch="n";}
 		if(userData.spaceTabOrder==undefined){userData.spaceTabOrder="";}
+		if(userData.showHelp==undefined){userData.showHelp="";}
 		
 		$.ajax({
 			url: API_URL+"Profile",
@@ -864,7 +888,8 @@ function updateUserData(userData, callback) {
 				height : encodeURIComponent(userData.height),
 				weight : encodeURIComponent(userData.weight),
 				allowResearch : encodeURIComponent(userData.allowResearch),
-				spaceTabOrder: encodeURIComponent(userData.spaceTabOrder)
+				spaceTabOrder: encodeURIComponent(userData.spaceTabOrder),
+				showHelp: encodeURIComponent(userData.showHelp)
 			},
 			success: function(data){
 				if(data.result=="failed"){
@@ -945,8 +970,8 @@ function loadUserInfo(data){
 	} else {
 		$("#userInfo").html("Logged in as: "+decodeURIComponent(user.username));
 	}
-	if(user.type=="institute"){
-		//$("#navApps").hide();
+	if(user.showHelp != undefined && user.showHelp.length<7){
+		showHelp(user.showHelp);
 	}
 	if (typeof loadUserInfoIndividual == 'function') { 
 		loadUserInfoIndividual(user); 
@@ -1325,7 +1350,7 @@ function loadSpaces(callback) {
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
 * - name: The name of the space to create
 * - descr: A description of the space
-* - vizualisation: The id of a visualization the user wants display on this space (so far only one vizualization is supported)
+* - viz: The id of a visualization the user wants display on this space (so far only one visualization is supported)
 * - hidden: true or false. If this value is set to true, there will not be a tab for this space on the screen, but the space still exists.
 **/
 function addSpace(name, descr, hidden, viz, callback) {
@@ -1404,11 +1429,12 @@ function editSpaces(id, name, descr, hidden, viz, callback) {
 *
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - appID: The id of the application that likes to add this record
 * - name: The name of the new record
 * - descr: The description of the new record
 * - values: Additional values to be saved with this record in JSON data format. Use jsonlint.org to check for correctness  of your JSON
 **/
-function addRecord(name, descr, values, callback) {
+function addRecord(appID, name, descr, values, callback) {
 	callback = callback || {};
 	if(isStorageDefined())
 	{
@@ -1427,9 +1453,66 @@ function addRecord(name, descr, values, callback) {
 			data: { 
 				session : encodeURIComponent(mySession), 
 				credentials : encodeURIComponent(myCredentials), 
+				appID : encodeURIComponent(appID),
 				name : encodeURIComponent(name), 
 				descr : encodeURIComponent(descr),
 				values : encodeURIComponent(values) 
+			},
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError(data.error);
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* Add a new record to the another user's chronicle 
+* Redirects to the login page, if not logged in. 
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - appID: The id of the application that likes to add this record
+* - name: The name of the new record
+* - descr: The description of the new record
+* - userID: The id of the other user to add the query to
+* - values: Additional values to be saved with this record in JSON data format. Use jsonlint.org to check for correctness  of your JSON
+**/
+function addPatientRecord(appID, name, descr, userID, values, callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		if(values==undefined || values.length<1 || userID==undefined || userID.length<1){
+			if(callback.onError){
+				console.log("calling onError");
+		        callback.onError("values or userID entry missing");
+		    }
+		    return false;
+		}
+		
+		$.ajax({
+			url: API_URL+"Record",
+			type: 'post',
+			dataType: 'json',
+			data: { 
+				session : encodeURIComponent(mySession), 
+				credentials : encodeURIComponent(myCredentials), 
+				appID : encodeURIComponent(appID),
+				name : encodeURIComponent(name), 
+				descr : encodeURIComponent(descr),
+				values : encodeURIComponent(values),
+				userID: encodeURIComponent(userID) 
 			},
 			success: function(data){
 				if(data.result=="failed"){
@@ -1468,7 +1551,7 @@ function addRecordWithFile(formData, callback) {
 }
 
 /**
-* Add a new news entry 
+* Add and edit a new news entry 
 * Redirects to the login page, if not logged in. 
 *
 * Parameters:
@@ -1479,7 +1562,7 @@ function addRecordWithFile(formData, callback) {
 * - prev: A small preview for the news entry
 * - content: The content of the news entry
 **/
-function addNews(isEdit, id, title, prev, content, callback) {
+function addEditNews(isEdit, id, title, prev, content, callback) {
 	callback = callback || {};
 	if(isStorageDefined())
 	{
@@ -1777,7 +1860,8 @@ function queryEntries(query, callback) {
 * 
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
-* - query: The query to search a record
+* - userId: The id of the user to search records from
+* - spaceId: The id of a space, if set only records assigned to this space are returned
 **/
 function queryEntriesByUserId(userId, spaceId, callback) {
 	callback = callback || {};
@@ -1837,7 +1921,8 @@ function queryEntriesByUserId(userId, spaceId, callback) {
 * 
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
-* - query: The query to search a record
+* - circleId: The id of the circe to search records from the users in it
+* - spaceId: The id of a space, if set only records assigned to this space are returned
 **/
 function queryEntriesByCircleId(circleId, spaceId, callback) {
 	callback = callback || {};
@@ -1891,34 +1976,6 @@ function queryEntriesByCircleId(circleId, spaceId, callback) {
 	}
 }
 
-/**
-* Alligns all elements you called this for according to the longest of these elements.
-* E.g. $("div.myfields div label").autoWidth(); will align all labels to the longest one 
-*/
-jQuery.fn.autoWidth = function(options) 
-{ 
-  var settings = { 
-        limitWidth   : false 
-  } 
-
-  if(options) { 
-        jQuery.extend(settings, options); 
-    }; 
-
-    var maxWidth = 0; 
-
-  this.each(function(){ 
-        if ($(this).width() > maxWidth){ 
-          if(settings.limitWidth && maxWidth >= settings.limitWidth) { 
-            maxWidth = settings.limitWidth; 
-          } else { 
-            maxWidth = $(this).width(); 
-          } 
-        } 
-  });   
-
-  this.width(maxWidth); 
-}
 
 /**
 * Helper function to load an user or application icon from the server
@@ -2290,7 +2347,7 @@ function loadLatestRecords(data, backlink, space_id, nrOfItems) {
 			if(item.app==undefined || item.app!="profile"){
 				if(item.indP!=undefined && item.indP.length>0){
 					$("#recordentries").append('<li class="indP"><p class="'+item.indP+'">Other User:</p> <h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '
-						+item.timedate+'</i><button value="'+item._id.$oid+'" class=\"list-button spaceButton\">Spaces</button></li>');
+						+item.timedate+'</i><button value="'+item._id.$oid+'" title="Assign this record to a space" class=\"list-button spaceButton\">Spaces</button></li>');
 					queryUserById(item.indP, {
 						onSuccess: function(data, id){
 							if(data.values.users[0].firstname!=undefined){
@@ -2308,10 +2365,10 @@ function loadLatestRecords(data, backlink, space_id, nrOfItems) {
 					});
 					if(color.length>0){
 						$("#recordentries").append('<li><p class="'+item.userID+'" style="background-color:'+color+' !important">Other User:</p> <h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '
-							+item.timedate+'</i><button value="'+item._id.$oid+'" class=\"list-button spaceButton\">Spaces</button></li>');
+							+item.timedate+'</i><button value="'+item._id.$oid+'" title="Assign this record to a space" class=\"list-button spaceButton\">Spaces</button></li>');
 					} else {
 						$("#recordentries").append('<li><p class="'+item.userID+'">Other User:</p> <h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '
-							+item.timedate+'</i><button value="'+item._id.$oid+'" class=\"list-button spaceButton\">Spaces</button></li>');
+							+item.timedate+'</i><button value="'+item._id.$oid+'" title="Assign this record to a space" class=\"list-button spaceButton\">Spaces</button></li>');
 					}
 					queryUserById(item.userID, {
 						onSuccess: function(data, id){
@@ -2322,9 +2379,9 @@ function loadLatestRecords(data, backlink, space_id, nrOfItems) {
 							}
 						}
 					});
-				} else {
+				} else { 
 					$("#recordentries").append('<li><h3 class="recordlist-itemheader">'+decodeURIComponent(item.name)+'</h3><i>Created at: '+item.timedate+'</i><button value="'+item._id.$oid
-						+'" class=\"list-button spaceButton\">Spaces</button><button value="'+item._id.$oid+'" class=\"list-button circleButton\">Circles</button></li>');
+						+'" title="Assign this record to a space" class=\"list-button spaceButton\">Spaces</button><button title="Assign this record to a circle" value="'+item._id.$oid+'" class=\"list-button circleButton\">Circles</button></li>');
 				}
 			    if(nrOfItems>0 && i==(nrOfItems-1)){
 			    	return false;
@@ -2874,13 +2931,14 @@ function getInstalledApplications(type, callback) {
 }
 
 /**
+* @DEPRECATED, DO NOT USE ANYMORE
 * This function queries for all the applications or visualizations the current user has created and added to the system already
 * If the current user is a standard user, this will return all the applicatio and visualizations that are present on the system so far.
 *
 * Parameters:
 * - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
 */
-function getUploadedOrInstalledApplications(callback) {
+/*function getUploadedOrInstalledApplications(callback) {
 	callback = callback || {};
 	if(isStorageDefined())
 	{
@@ -2889,6 +2947,74 @@ function getUploadedOrInstalledApplications(callback) {
 			type: 'get',
 			dataType: 'json',
 			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}*/
+
+/**
+* This will return all the applications and visualizations that are present on the system so far.
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+*/
+function getAllApplications(callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"application",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function queries for all the applications or visualizations the current user has created and added to the system already provided it is an institute user
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+*/
+function getUploadedApplications(callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"application",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), uploaded : encodeURIComponent("true") },
 			success: function(data){
 				if(data.result=="failed"){
 					if(data.loggedOut=="true"){
@@ -2944,6 +3070,122 @@ function inAndUninstallApplication(id, callback) {
 }
 
 /**
+* This function allows to assign retrieve information about the app install such as assigned spaces and circles.
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - id: The id of the applications or visualizations to get install information
+*/
+function getAppInstallInformation(id, callback) {
+	callback = callback || {};
+	if(id==undefined || id.length==0){
+		return false;
+	}
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"appinstall",
+			type: 'get',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id: encodeURIComponent(id) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function allows to assign spaces to an application so that in future every record entry, which is added by this app, is assigned to this space.
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - id: The id of the applications or visualizations to update
+* - spaces: A list of selected space ID's separated by a whitespace
+*/
+function updateSpacesForApp(id, spacesList, callback) {
+	callback = callback || {};
+	if(spacesList==undefined || id==undefined || id.length==0){
+		return false;
+	}
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"appinstall",
+			type: 'post',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id: encodeURIComponent(id), spaces: encodeURIComponent(spacesList) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
+* This function allows to assign circles to an application so that in future every record entry, which is added by this app, is assigned to this circle.
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - id: The id of the applications or visualizations to update
+* - circles: A list of selected circle ID's separated by a whitespace
+*/
+function updateCirclesForApp(id, circlesList, callback) {
+	callback = callback || {};
+	if(circlesList==undefined || id==undefined || id.length==0){
+		return false;
+	}
+	if(isStorageDefined())
+	{
+		$.ajax({
+			url: API_URL+"appinstall",
+			type: 'post',
+			dataType: 'json',
+			data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), id: encodeURIComponent(id), circles: encodeURIComponent(circlesList) },
+			success: function(data){
+				if(data.result=="failed"){
+					if(data.loggedOut=="true"){
+						window.location = WEB_URL+"login.html"; 
+					}
+					if(callback.onError){
+						console.log("calling onError");
+				        callback.onError();
+				    }
+				} else { 
+					if(callback.onSuccess){
+				        callback.onSuccess(data);
+				    }
+				}
+			}
+		});
+	}
+}
+
+/**
 * This function allows to get a new app secret provided the logged in user is the owner of the app.
 *
 * Parameters:
@@ -2979,7 +3221,383 @@ function refreshAppSecret(id, secret, callback) {
 	}
 }
 
+/**
+* This function allows to call the query engine for institute users. 
+* There are three ways of calling this function. For searching users, provide at least one of the parameters minAge, maxAge, minWeight, maxWeight, minHeight,
+* maxHeight, country or keywords. For searching records, set the keywords parameter and for text search set the parameter query. With the type parameter
+* we can distinguish the type of call. Allowed are 'user', 'record' and 'text'. Just set the other parameters to null/undefined or empty string.
+* Only users and records of users who allowed research access are returned.
+*
+* Parameters:
+* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+* - type: The type of the call. There are the three possibilities 'user', 'record', 'text'
+* - minAge: (optional for user search) The minimum age of the users to search for
+* - maxAge: (optional for user search) The maximum age of the users to search for
+* - minWeight: (optional for user search) The minimum weight of the users to search for
+* - maxWeight: (optional for user search) The maximum weight of the users to search for
+* - minHeight: (optional for user search) The minimum height of the users to search for
+* - maxHeight: (optional for user search) The maximum height of the users to search for
+* - country: (optional for user search) The country the user to search for is from
+* - keywords: (optional for users search, needed for record search) Keywords the records have to talk about
+* - query: (for text search only) The query to search for
+*/
+function queryQueryEngine(type, minAge, maxAge, minHeight, maxHeight, minWeight, maxWeight, country, keywords, query, callback) {
+	callback = callback || {};
+	if(isStorageDefined())
+	{
+		if(type=="user"){
+			$.ajax({
+				url: API_URL+"queryengine",
+				type: 'get',
+				dataType: 'json',
+				data: { 
+					session : encodeURIComponent(mySession), 
+					credentials : encodeURIComponent(myCredentials), 
+					type: encodeURIComponent(type), 
+					minAge: encodeURIComponent(minAge), 
+					maxAge: encodeURIComponent(maxAge), 
+					minWeight: encodeURIComponent(minWeight), 
+					maxWeight: encodeURIComponent(maxWeight), 
+					minHeight: encodeURIComponent(minHeight), 
+					maxHeight: encodeURIComponent(maxHeight), 
+					country: encodeURIComponent(country), 
+					keywords: encodeURIComponent(keywords)
+				},
+				success: function(data){
+					if(data.result=="failed"){
+						if(data.loggedOut=="true"){
+							window.location = WEB_URL+"login.html"; 
+						}
+						if(callback.onError){
+							console.log("calling onError");
+					        callback.onError(data.error);
+					    }
+					} else { 
+						if(callback.onSuccess){
+					        callback.onSuccess(data);
+					    }
+					}
+				}
+			});
+		} else if(type=="record"){
+			$.ajax({
+				url: API_URL+"queryengine",
+				type: 'get',
+				dataType: 'json',
+				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), keywords: encodeURIComponent(keywords), type: encodeURIComponent(type) },
+				success: function(data){
+					if(data.result=="failed"){
+						if(data.loggedOut=="true"){
+							window.location = WEB_URL+"login.html"; 
+						}
+						if(callback.onError){
+							console.log("calling onError");
+					        callback.onError(data.error);
+					    }
+					} else { 
+						if(callback.onSuccess){
+					        callback.onSuccess(data);
+					    }
+					}
+				}
+			});
+		} else if(type=="text"){
+			$.ajax({
+				url: API_URL+"queryengine",
+				type: 'get',
+				dataType: 'json',
+				data: { session : encodeURIComponent(mySession), credentials : encodeURIComponent(myCredentials), query: encodeURIComponent(query), type: encodeURIComponent(type) },
+				success: function(data){
+					if(data.result=="failed"){
+						if(data.loggedOut=="true"){
+							window.location = WEB_URL+"login.html"; 
+						}
+						if(callback.onError){
+							console.log("calling onError");
+					        callback.onError(data.error);
+					    }
+					} else { 
+						if(callback.onSuccess){
+					        callback.onSuccess(data);
+					    }
+					}
+				}
+			});
+		} else {
+			if(callback.onError){
+				console.log("calling onError: Wrong type argument");
+		        callback.onError();
+		    }
+			return false;
+		}
+	}
+}
 
+/**
+* This function will show help pop up dialogs when the user visists a page for the first time.
+*
+* Parameters:
+* - index: a string of numbers representing what type of help messages the user has already seen. e.g. '123'
+*/
+function showHelp(index){
+	pathname = $(location).attr('pathname');
+	dialog = "", number = "";
+	if(pathname.indexOf("home")>0){
+		if(index.indexOf("1")==-1){
+			dialog = 'dialogs/helpdialog-home.html';
+			number = "1";
+		}
+	} else if(pathname.indexOf("spaces")>0){
+		if(index.indexOf("2")==-1){
+			dialog = 'dialogs/helpdialog-spaces.html';
+			number = "2";
+		}
+	} else if(pathname.indexOf("circles")>0){
+		if(index.indexOf("3")==-1){
+			dialog = 'dialogs/helpdialog-circles.html';
+			number = "3";
+		}		
+	} else if(pathname.indexOf("apps")>0){
+		if(index.indexOf("4")==-1){
+			dialog = 'dialogs/helpdialog-market.html';
+			number = "4";
+		}
+	} else if(pathname.indexOf("messageInbox")>0){
+		if(index.indexOf("5")==-1){
+			dialog = 'dialogs/helpdialog-message.html';
+			number = "5";
+		}
+	} else if(pathname.indexOf("profile")>0){
+		if(index.indexOf("6")==-1){
+			dialog = 'dialogs/helpdialog-profile.html';
+			number = "6";
+		}
+	}
+	if(dialog!=""){
+		$.get(WEB_URL+dialog).success(
+			function(data){
+				$('body').append(data);
+				$( "#dialog-help" ).dialog({
+			      modal: true,
+			      autoOpen: true,
+			      width: 800, 
+			      height: 600,
+			      buttons: {
+			        Ok: function() {
+			          $( this ).dialog( "close" );
+			        }
+			      }
+			    });
+			}
+		);
+	}
+	if(number!=""){
+		index += number;
+		user.showHelp = index;
+		updateUserData(user, {});
+	}
+}
+
+
+/**
+* List of Countries for Profile etc.
+*/
+var availableTags = [
+  	"Afghanistan",
+	"Albania",
+	"Algeria",
+	"Andorra",
+	"Angola",
+	"Antigua &amp; Deps",
+	"Argentina",
+	"Armenia",
+	"Australia",
+	"Austria",
+	"Azerbaijan",
+	"Bahamas",
+	"Bahrain",
+	"Bangladesh",
+	"Barbados",
+	"Belarus",
+	"Belgium",
+	"Belize",
+	"Benin",
+	"Bhutan",
+	"Bolivia",
+	"Bosnia Herzegovina",
+	"Botswana",
+	"Brazil",
+	"Brunei",
+	"Bulgaria",
+	"Burkina",
+	"Burundi",
+	"Cambodia",
+	"Cameroon",
+	"Canada",
+	"Cape Verde",
+	"Central African Rep",
+	"Chad",
+	"Chile",
+	"China",
+	"Colombia",
+	"Comoros",
+	"Congo",
+	"Congo {Democratic Rep}",
+	"Costa Rica",
+	"Croatia",
+	"Cuba",
+	"Cyprus",
+	"Czech Republic",
+	"Denmark",
+	"Djibouti",
+	"Dominica",
+	"Dominican Republic",
+	"Timor Leste",
+	"Ecuador",
+	"Egypt",
+	"El Salvador",
+	"Equatorial Guinea",
+	"Eritrea",
+	"Estonia",
+	"Ethiopia",
+	"Fiji",
+	"Finland",
+	"France",
+	"Gabon",
+	"Gambia",
+	"Georgia",
+	"Germany",
+	"Ghana",
+	"Greece",
+	"Grenada",
+	"Guatemala",
+	"Guinea",
+	"Guinea-Bissau",
+	"Guyana",
+	"Haiti",
+	"Honduras",
+	"Hungary",
+	"Iceland",
+	"India",
+	"Indonesia",
+	"Iran",
+	"Iraq",
+	"Ireland {Republic}",
+	"Israel",
+	"Italy",
+	"Ivory Coast",
+	"Jamaica",
+	"Japan",
+	"Jordan",
+	"Kazakhstan",
+	"Kenya",
+	"Kiribati",
+	"Korea North",
+	"Korea South",
+	"Kuwait",
+	"Kyrgyzstan",
+	"Laos",
+	"Latvia",
+	"Lebanon",
+	"Lesotho",
+	"Liberia",
+	"Libya",
+	"Liechtenstein",
+	"Lithuania",
+	"Luxembourg",
+	"Macedonia",
+	"Madagascar",
+	"Malawi",
+	"Malaysia",
+	"Maldives",
+	"Mali",
+	"Malta",
+	"Marshall Islands",
+	"Mauritania",
+	"Mauritius",
+	"Mexico",
+	"Micronesia",
+	"Moldova",
+	"Monaco",
+	"Mongolia",
+	"Montenegro",
+	"Morocco",
+	"Mozambique",
+	"Myanmar, {Burma}",
+	"Namibia",
+	"Nauru",
+	"Nepal",
+	"Netherlands",
+	"New Zealand",
+	"Nicaragua",
+	"Niger",
+	"Nigeria",
+	"Norway",
+	"Oman",
+	"Pakistan",
+	"Palau",
+	"Panama",
+	"Papua New Guinea",
+	"Paraguay",
+	"Peru",
+	"Philippines",
+	"Poland",
+	"Portugal",
+	"Qatar",
+	"Romania",
+	"Russian Federation",
+	"Rwanda",
+	"St Kitts &amp; Nevis",
+	"St Lucia",
+	"Saint Vincent &amp; the Grenadines",
+	"Samoa",
+	"San Marino",
+	"Sao Tome &amp; Principe",
+	"Saudi Arabia",
+	"Senegal",
+	"Serbia",
+	"Seychelles",
+	"Sierra Leone",
+	"Singapore",
+	"Slovakia",
+	"Slovenia",
+	"Solomon Islands",
+	"Somalia",
+	"South Africa",
+	"Spain",
+	"Sri Lanka",
+	"Sudan",
+	"Suriname",
+	"Swaziland",
+	"Sweden",
+	"Switzerland",
+	"Syria",
+	"Taiwan",
+	"Tajikistan",
+	"Tanzania",
+	"Thailand",
+	"Togo",
+	"Tonga",
+	"Trinidad &amp; Tobago",
+	"Tunisia",
+	"Turkey",
+	"Turkmenistan",
+	"Tuvalu",
+	"Uganda",
+	"Ukraine",
+	"United Arab Emirates",
+	"United Kingdom",
+	"United States of America",
+	"Uruguay",
+	"Uzbekistan",
+	"Vanuatu",
+	"Vatican City",
+	"Venezuela",
+	"Vietnam",
+	"Yemen",
+	"Zambia",
+	"Zimbabwe",
+];
 
 
 /**
@@ -2996,3 +3614,33 @@ Array.prototype.remove = function(from, to) {
   this.length = from < 0 ? this.length + from : from;
   return this.push.apply(this, rest);
 };
+
+
+/**
+* Alligns all elements you called this for according to the longest of these elements.
+* E.g. $("div.myfields div label").autoWidth(); will align all labels to the longest one 
+*/
+jQuery.fn.autoWidth = function(options) 
+{ 
+  var settings = { 
+        limitWidth   : false 
+  } 
+
+  if(options) { 
+        jQuery.extend(settings, options); 
+    }; 
+
+    var maxWidth = 0; 
+
+  this.each(function(){ 
+        if ($(this).width() > maxWidth){ 
+          if(settings.limitWidth && maxWidth >= settings.limitWidth) { 
+            maxWidth = settings.limitWidth; 
+          } else { 
+            maxWidth = $(this).width(); 
+          } 
+        } 
+  });   
+
+  this.width(maxWidth); 
+}

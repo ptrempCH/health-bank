@@ -7,6 +7,16 @@
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
 
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushCss.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushXml.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
 	<script type="text/javascript">
 
 		$(document).ready(function() {
@@ -16,6 +26,12 @@
 				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
 				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
 			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
 		});
 		
 	</script>
@@ -51,7 +67,458 @@
 
 		<!--Content-->
 		<div class="dev-content">
-			<p> Comming soon ... </p>
+			<br>
+			<h3>Walkthrough of the Calories Graph visualization</h3>
+			<br>
+			<p>First of a few facts about a visualization built for the Health Bank<sup>&copy;</sup> system. <br>A visualization is displayed in an <a href="http://www.w3.org/TR/2011/WD-html5-20110525/the-iframe-element.html#the-iframe-element">iFrame</a> on a spaces page and consists mainly of an HTML document. This document can contain JavaScript and CSS components. The more it is possible to upload a individual JavaScript as well as an individual CSS file together with the HTML file for the visualization. In this tutorial we describe an approach where matters are mostly kept seperate. As a visualization is, as the name suggests, for visualizing data, it is not allowed to upload any kind of record entries. It will get the data to visualize from the parent site via a call to parent.records. This field is an array of the records available in this particular space. All of these records are  also listed in a list for the user to see below the visualization iFrame. As we are dealing with asynchronous connections and connection loss might happen now and then you should make sure, that the parent.records field is not null (or undefined in JavaScript notion). To do so you could use a call like this:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				function myFunction(myParameters, ...) {
+				    if(parent.records==undefined){
+				    	setTimeout(function(){
+				    		myFunction(myParameters, ...);
+				    	}, 100);
+				    	return false;
+				    }
+				}
+			]]></script><br>
+			<br>
+			<p>To start with let us have a look on the final product as it is currently present in Health Bank<sup>&copy;</sup>.</p>
+			<br>
+			<div class="devImageContainer">
+				<img src="../../../images/devGuide/caloriesVizScreener.PNG"/><br>
+				<span class="devImageCaption">Calories Graph Visualization Screenshot</span>
+			</div>
+			<br>
+			<p>So let us start coding. To do so create an empty HTML file, we called it caloriesGraphViz.html, and fill it with the basic structure of the page as seen in the screenshot.</p>
+			<br>
+			<script type="syntaxhighlighter" class="brush: html"><![CDATA[
+			<html>
+				<head>
+					<meta charset="UTF-8">
+					<script src="js/caloriesGraphViz.js"/>
+					<link href="css/caloriesGraphViz.css" rel="stylesheet" type="text/css">
+					<script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.1.0/moment.min.js"/>
+					<script type="text/javascript" src="https://www.google.com/jsapi"/>
+				</head>
+				<body>
+					<div id="statistics">
+						<div id="statsHeader">
+							<table>
+								<tr>
+									<th>Total data</th>
+									<th></th>
+									<th></th>
+									<th>Todays data</th>
+									<th></th>
+								</tr>
+								<tr>
+									<td>Your total consumtion: </td>
+									<td id="totalConsumption"></td>
+									<td width="30%"></td>
+									<td>Your consumtion today: </td>
+									<td id="todayConsumption"></td>
+								</tr>
+								<tr>
+									<td>Total amount burned: </td>
+									<td id="totalBurned"></td>
+									<td width="30%"></td>
+									<td>Total amount burned today: </td>
+									<td id="todayBurned"></td>
+								</tr>
+								<tr>
+									<td>Consumed/Burned ratio: </td>
+									<td id="totalRatio"></td>
+									<td width="30%"></td>
+									<td>Consumed/Burned ratio today: </td>
+									<td id="todayRatio"></td>
+								</tr>
+								<tr>
+									<td>Days with records: </td>
+									<td id="totalDays"></td>
+								</tr>
+							</table>
+						</div>
+						<br><br><br>
+						<table width="100%">
+							<tr>
+								<td><div id="chart_div"></div></td>
+								<td><div id="chartSports_div"></div></td>
+							</tr>
+						</table>							
+					</div>
+				</body>
+			</html>
+			]]></script>
+			<br>
+			<p>There are mainly two things to mention here. Let us start with the body. As you can see in the screenshot above we define a table with some statistical values for total calories consumption and burning as well as for todays values. Then there is a second table containing two div's which will later contain the charts. To create the charts we do not want to have to much of en effort and hence use the <a href="https://developers.google.com/chart/">Google Chart API</a> for this task. This leads to the second importent thing we need to talk about for this HTML code, the imports. As we are dealing with date and time values for generating the statistics and the data for the charts, we use the JavaScript library <a href="http://momentjs.com/">Moment.js v.2.1.0</a> which helps parsing, validating, formating and manipulating dates. The more, as we use the Google Chart API, we also have to import the Google js API. 
+			</p>
+			<br>
+			<p>Now let us head over to the CSS to make the table a bit more interesting. All the CSS is saved as a seperate CSS file called caloriesGraphViz.css</p>
+			<br>
+			<script type="syntaxhighlighter" class="brush: css"><![CDATA[
+				#chart_div {
+					width: 500px;
+					height: 250px;
+					margin-top: 15px;
+				}
+				#chartSports_div {
+					width: 500px;
+					height: 250px;
+					margin-top: 15px;
+				}
+
+				#statistics {
+					border-radius: 10px;
+					border: 1px solid #F90;
+					margin: 20px 0 30px 0;
+					height: 400px;
+					padding: 15px 15px 15px 15px;
+					width: 96%
+				}
+				#statistics #statsHeader table{
+					float: left;
+				}
+			]]></script><br>
+			<p>At this point we have the boring static part completed and need to start building the functionality. This will be done in the seperate JavaScript file called caloriesGraphViz.js. <br>First we need to set up the Google Chart API and define the document loaded function both in the HTML file.
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				<script type="text/javascript">
+			    	google.load('visualization', '1', {packages: ['corechart']});
+			    < /script>
+
+				<script type="text/javascript">
+					$(document).ready(function() {
+						loadAllCalItems();
+			      		google.setOnLoadCallback(drawVisualization);
+					});
+					
+				< /script>
+			]]></script><br>
+			<p>With the first instruction we tell the Google js API that it shall please load the 'corechart' package. When the DOM is ready, we load our data for the visualization in the loadAllCalItems() function, which we will see in a short while. Once the data is loaded, we can tell the Google API that it shall call the function drawVisualization() to define the Charts. <br>Ok now to the JavaScript file content. Let us start with a few definitions. In the variable 'entries' we store the data which we have access on, since we do not want to call parent all the time. In 'caloriesData' and 'sportsData' we store statistics about calories consumption and burning found in the records. Finally we use the variable 'days' to store date information about the records. The loadAllCallItems() funtion is responsible to get the data from the parent and once it gets the data, call another function to do the actual work. Here is the code for it:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				var entries, caloriesData, sportsData, days;
+
+				function loadAllCalItems(){
+					if(parent.records!=undefined){
+						loadAllCalItemsSucc(parent.records);
+					} else {
+						setTimeout(function(){
+							loadAllCallItems();
+						}, 100);
+					}
+				}
+			]]></script><br>
+			<p>
+				Ok now it gets a bit more complex. We have the array of records on which we have to do our math. We go through the array and save calories consumption records data in caloriesData and calories burning data in sportsData. BMR stands thereby for basal metabolic rate and is the amount of energy expended daily by humans. We know if it is consumption or burning via the mealtype field of the records. As this is a specialiced visualization for the two applications Calories Counter and Sports Calories we only listen to these applications or to all records with the field app="caloriesApp". We aggregate records from the same day and build our arrays. Once we have processed all the record data, we set the statistics values on the page and are done with the set up. You do not have to understand the following listening completely since it is very specific for our purpose. It shall rather be a starting point for you guys to see how to get the data and what you could do with it. We are very sure that you will come up with much cleverer and more interesting visualizations and are very much looking forward to it.
+			</p>
+			<br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				function loadAllCalItemsSucc(data) {
+					if(data.size==0){
+						$("#chart_div").css("display", "none");
+						return false;
+					}
+					$("#chart_div").css("display", "block");
+					var calories = 0, sportsCal = 0, caloriesToday = 0, sportsToday = 0;
+					caloriesData = [];
+					sportsData = [];
+					days = [];
+					$.each(data, function(i, item) {
+						if(item.app=="caloriesApp"){
+							if(item.cal!=undefined){
+								var date = moment(item.timedate).format("DD-MM-YYYY");
+								var found = false;
+								if(days.length==0){ days[0] = date; }
+								else { 
+									for(var i=0;i<days.length;i++){
+										if(days[i] == date){found = true;}
+									}
+									if(!found){days[i] = date;}
+								}
+								found = false;
+								if(item.mealtype=="sports"){
+									sportsCal = sportsCal + parseInt(item.cal);
+									if(sportsData.length==0){
+										if(item.descr.indexOf("BMR") !== -1){
+											sportsData[0] = [date, 0, parseInt(item.cal), parseInt(item.cal)];
+										} else {
+											sportsData[0] = [date, parseInt(item.cal), 0, parseInt(item.cal)];
+										}
+									} else {
+										for(var i=0;i<sportsData.length;i++){
+											if(sportsData[i][0]==date){
+												if(item.descr.indexOf("BMR") !== -1){
+													sportsData[i][2] = parseInt(item.cal);
+													sportsData[i][3] = sportsData[i][3]+parseInt(item.cal);
+												} else {
+													sportsData[i][1] = sportsData[i][1]+parseInt(item.cal);
+													sportsData[i][3] = sportsData[i][3]+parseInt(item.cal);
+												}
+												found = true;
+												break;
+											}
+										}
+										if(!found){
+											if(item.descr.indexOf("BMR") !== -1){
+												sportsData[i] = [date, 0, parseInt(item.cal), parseInt(item.cal)];
+											} else {
+												sportsData[i] = [date, parseInt(item.cal), 0, parseInt(item.cal)];
+											}
+										}
+									}
+								} else {
+									calories = calories + parseInt(item.cal);
+									if(caloriesData.length==0){
+										if(item.mealtype=="breakfast"){
+											caloriesData[0] = [date, parseInt(item.cal), 0, 0, 0];
+										} else if(item.mealtype=="lunch"){
+											caloriesData[0] = [date, 0, parseInt(item.cal), 0, 0];
+										} else if(item.mealtype=="dinner"){
+											caloriesData[0] = [date, 0, 0, parseInt(item.cal), 0];
+										} else if(item.mealtype=="snack"){
+											caloriesData[0] = [date, 0, 0, 0, parseInt(item.cal)];
+										}
+									} else {
+										for(var i=0;i<caloriesData.length;i++){
+											if(caloriesData[i][0]==date){
+												if(item.mealtype=="breakfast"){
+													caloriesData[i][1] = caloriesData[i][1]+parseInt(item.cal);
+												} else if(item.mealtype=="lunch"){
+													caloriesData[i][2] = caloriesData[i][2]+parseInt(item.cal);
+												} else if(item.mealtype=="dinner"){
+													caloriesData[i][3] = caloriesData[i][3]+parseInt(item.cal);
+												} else if(item.mealtype=="snack"){
+													caloriesData[i][4] = caloriesData[i][4]+parseInt(item.cal);
+												}
+												found = true;
+												break;
+											}
+										}
+										if(!found){
+											if(item.mealtype=="breakfast"){
+												caloriesData[i] = [date, parseInt(item.cal), 0, 0, 0];
+											} else if(item.mealtype=="lunch"){
+												caloriesData[i] = [date, 0, parseInt(item.cal), 0, 0];
+											} else if(item.mealtype=="dinner"){
+												caloriesData[i] = [date, 0, 0, parseInt(item.cal), 0];
+											} else if(item.mealtype=="snack"){
+												caloriesData[i] = [date, 0, 0, 0, parseInt(item.cal)];
+											}
+										}
+									}
+								} 
+							}
+						}
+					});
+					entries = data;
+					$.each(entries, function(i, item) {
+						if(item.app=="caloriesApp"){
+							var date = new Date(item.timedate);
+							if(moment().isSame(date, 'day')){
+								if(item.mealtype=="sports"){
+									sportsToday = sportsToday + parseInt(item.cal);
+								} else {
+									caloriesToday = caloriesToday + parseInt(item.cal);
+								}
+							}
+						}
+					});
+					
+					$("#totalConsumption").html(calories+"cal");
+					$("#todayConsumption").html(caloriesToday+"cal");
+					$("#totalBurned").html(sportsCal+"cal");
+					$("#todayBurned").html(sportsToday+"cal");
+					if(sportsCal!=null){
+						$("#totalRatio").html((Math.ceil(calories/sportsCal * 100) / 100)+"");
+					} else {
+						$("#totalRatio").html("0");
+					}
+					if(sportsToday!=0){
+						$("#todayRatio").html((Math.ceil(caloriesToday/sportsToday * 100) / 100)+"");
+					} else {
+						$("#todayRatio").html("0");
+					}
+					$("#totalDays").html(days.length+"d");
+				}
+			]]></script><br>
+			<p>Finally we need to set up the data for the Google Chart API, onece everything is loaded. Again this is very specific and we add it just for a complete overlook of the visualization. As you will see, we wait for a second before we start with the data preparation. The reason for that is again the asynchronous calls, we want to make sure, that the data is actually there, before we deal with it. Of course a waiting time of one second does not guarantee anything, but it helps in many cases. In short the following function will create a two dimensional array for the Google Chart API, tell the API where to put the result in the DOM and then calls the draw function on the chart with the data and some options. For more detail about the Google Charts, please visit <a href="https://developers.google.com/chart/">their documentation</a>. Here is the actual code for the drawVisualization() funtion.  
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				function drawVisualization() {
+					setTimeout(function(){
+					    var data;
+					    var chart;
+					    var options;
+					    if(caloriesData!=undefined && caloriesData.length>0){
+					    	for(var i=0; i<caloriesData.length;i++){
+					    		caloriesData[i][5] = (caloriesData[i][4]+caloriesData[i][3]+caloriesData[i][2]+caloriesData[i][1])/4;
+					    	}
+					    	if(caloriesData.length<2){
+					    		data = google.visualization.arrayToDataTable([
+							      ['Day', 'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Avg'],
+							      caloriesData[0]
+							    ]);
+					    	} else if(caloriesData.length==2){
+					    		data = google.visualization.arrayToDataTable([
+							      ['Day', 'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Avg'],
+							      caloriesData[0],
+							      caloriesData[1]
+							    ]);
+					    	} else if(caloriesData.length==3){
+					    		data = google.visualization.arrayToDataTable([
+							      ['Day', 'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Avg'],
+							      caloriesData[0],
+							      caloriesData[1],
+							      caloriesData[2]
+							    ]);
+					    	} else if(caloriesData.length==4){
+					    		data = google.visualization.arrayToDataTable([
+							      ['Day', 'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Avg'],
+							      caloriesData[0],
+							      caloriesData[1],
+							      caloriesData[2],
+							      caloriesData[3]
+							    ]);
+					    	} else if(caloriesData.length==5){
+					    		data = google.visualization.arrayToDataTable([
+							      ['Day', 'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Avg'],
+							      caloriesData[0],
+							      caloriesData[1],
+							      caloriesData[2],
+							      caloriesData[3],
+							      caloriesData[4]
+							    ]);
+					    	} else if(caloriesData.length==6){
+								data = google.visualization.arrayToDataTable([
+							      ['Day', 'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Avg'],
+							      caloriesData[0],
+							      caloriesData[1],
+							      caloriesData[2],
+							      caloriesData[3],
+							      caloriesData[4],
+							      caloriesData[5]
+							    ]);
+					    	} else {
+							    data = google.visualization.arrayToDataTable([
+							      ['Day', 'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Avg'],
+							      caloriesData[0],
+							      caloriesData[1],
+							      caloriesData[2],
+							      caloriesData[3],
+							      caloriesData[4],
+							      caloriesData[5],
+							      caloriesData[6]
+							    ]);
+							}
+
+						    options = {
+						      title : 'Your Calories Consumption in the Last 7 Active Days',
+						      width: 480,
+						      height: 250,
+						      vAxis: {title: "Calories"},
+						      hAxis: {title: "Day"},
+						      seriesType: "bars",
+						      series: {4: {type: "line"}}
+						    };
+
+						    chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
+						    chart.draw(data, options);
+						} else {
+							$("#chart_div").html("no data");
+						}
+						if(sportsData!=undefined && sportsData.length>0) {
+					    	if(sportsData.length<2){
+					    		data = google.visualization.arrayToDataTable([
+							      ['Day', 'Sport', 'BMR', 'Total'],
+							      sportsData[0]
+							    ]);
+					    	} else if(sportsData.length==2){
+					    		data = google.visualization.arrayToDataTable([
+							      ['Day', 'Sport', 'BMR', 'Total'],
+							      sportsData[0],
+							      sportsData[1]
+							    ]);
+					    	} else if(sportsData.length==3){
+					    		data = google.visualization.arrayToDataTable([
+							      ['Day', 'Sport', 'BMR', 'Total'],
+							      sportsData[0],
+							      sportsData[1],
+							      sportsData[2]
+							    ]);
+					    	} else if(sportsData.length==4){
+					    		data = google.visualization.arrayToDataTable([
+							      ['Day', 'Sport', 'BMR', 'Total'],
+							      sportsData[0],
+							      sportsData[1],
+							      sportsData[2],
+							      sportsData[3]
+							    ]);
+					    	} else if(sportsData.length==5){
+					    		data = google.visualization.arrayToDataTable([
+							      ['Day', 'Sport', 'BMR', 'Total'],
+							      sportsData[0],
+							      sportsData[1],
+							      sportsData[2],
+							      sportsData[3],
+							      sportsData[4]
+							    ]);
+					    	} else if(sportsData.length==6){
+								data = google.visualization.arrayToDataTable([
+							      ['Day', 'Sport', 'BMR', 'Total'],
+							      sportsData[0],
+							      sportsData[1],
+							      sportsData[2],
+							      sportsData[3],
+							      sportsData[4],
+							      sportsData[5]
+							    ]);
+					    	} else {
+							    data = google.visualization.arrayToDataTable([
+							      ['Day', 'Sport', 'BMR', 'Total'],
+							      sportsData[0],
+							      sportsData[1],
+							      sportsData[2],
+							      sportsData[3],
+							      sportsData[4],
+							      sportsData[5],
+							      sportsData[6]
+							    ]);
+							}
+
+						    options = {
+						      title : 'Your Burned Calories in the Last 7 Active Days',
+						      width: 480,
+						      height: 250,
+						      vAxis: {title: "Calories"},
+						      hAxis: {title: "Day"},
+						      seriesType: "bars",
+						      series: {2: {type: "line"}}
+						    };
+
+						    chart = new google.visualization.ComboChart(document.getElementById('chartSports_div'));
+						    chart.draw(data, options);
+						} else {
+							$("#chartSports_div").html("no data");
+						}
+					}, 1000);
+				}
+			]]></script><br><br>
+			<p>After we have created the three files (HTML, CSS and JavaScript) locally it is now time to upload them to the Health Bank<sup>&copy;</sup> system. To do so you need to login to your Health Bank<sup>&copy;</sup> institute account and navigate to <a href="../../apps.html">apps</a> page. There click on <a href="../../addNewApp.html">Add App</a> and fill out the form. </p>
+			<br>
+			<div class="devImageContainer">
+				<img src="../../../images/devGuide/addVizScreener.png"/><br>
+				<span class="devImageCaption">Add new Visualization Screenshot</span>
+			</div>
+			<br>
+			<p>You can name your visualization, describe it as detailed as possible (users like to know what they install), give your visualization a nice icon and select your three files for HTML, CSS and JavaScript respecivelly. Make sure that you have selected visualization rather then application, since we are working on a visualization that visualizes data here rather then on a data creation tool (application). The field 'Who is it for?' lets you decide if you want to make your visualization visible only for users, only for institutes or for both. With the online field you can decide if you want your visualization to be visible in the market or not. If you select offline the visualization will be uploaded as well, but is not visible for anybody besides you yet. This may help you the test the visualization before you give it a go. <br>
+			</p>
+			<br>
+			<p>
+			You can view all your visualization by clicking on the <a href="../../myUploadedApps.html">uploaded</a> link in the navigation. From the list of your visualization there you will see your visualization secret, visualization ID and by clicking on the gear icon you can change the visualization. If you edit your visualization, do not forget to tell the user about your new functionality with the help of the 'whats new' field. <b>Happy Coding!</b>
+			</p>
+			<br>
 		</div>
 		<!--END Content-->
 	</div>

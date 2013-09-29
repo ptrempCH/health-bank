@@ -33,6 +33,7 @@
 				var credentials = localStorage.getItem("hb_cred");
 				$("#session").attr("value", mySession);
 				$("#credentials").attr("value", credentials);
+				$("#appID").attr("value", parent.id);
 			}
 		});
 		
@@ -46,7 +47,8 @@
 			<!--Input fields-->
 			<input type="hidden" id="session" name="session"/>
 			<input type="hidden" id="credentials" name="credentials"/>
-			<input type="hidden" id="values" name="values"/>
+			<input type="hidden" id="values" name="values"/>			
+			<input type="hidden" id="appID" name="appID"/>
 			<div>
 				<label for="name" id="nameLabel" class="label">Name(*)</label> 
 				<input id="name" name="name" type="text" class="input name" placeholder="Name" />

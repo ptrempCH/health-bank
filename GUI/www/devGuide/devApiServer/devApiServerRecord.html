@@ -7,6 +7,15 @@
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
 
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
 	<script type="text/javascript">
 
 		$(document).ready(function() {
@@ -16,6 +25,12 @@
 				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
 				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
 			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
 		});
 		
 	</script>
@@ -48,6 +63,7 @@
 				<li>&nbsp;&nbsp;<a href="devApiServerNews.html">News</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiServerMessage.html">Messages</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiServerFile.html">File</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerQuery.html">QueryEngine</a></li><br>
 			</ul>
 			<p><a href="../devApiClient.html">API Ref. Client</a></p><br>
 			<p><a href="../devDemos.html">Demos</a></p><br>
@@ -56,7 +72,231 @@
 
 		<!--Content-->
 		<div class="dev-content">
-			<p> Comming soon ... </p>
+			<br>
+			<h3>REST APIs for Record Entries</h3>
+			<br>
+			<p>
+				In order to add new record entries to the users Health Bank<sup>&copy;</sup> account and to manipulate spaces and circles assignments on these records we have developed two different REST API's. The /Record (or /record, /rec) servlet will be used to upload new records and to manipulate circles and spaces. The /RecordQuery (or /recordquery, /rq) servlet is used to ask queries on existing record entries. We go through the two servlets one by one in the following.
+			</p>
+			<br><br>
+			<h4>/Record servlet</h4>
+			<p>
+				<b>Add new record entry:</b><br>
+				In order to add a new record query by an application there are so far three possibilities all of which use the POST request of the servlet. If the application lets the user manually insert data to create the new record the user is already logged in and we can use the usual session and credentials to authenticate the user. Using this approach we can either use a multipart request to upload a file with the record entry, or we do not use a multipart request in which case there will not be any file related to the record. For the third possibility the user does not need to be logged in the system and the call might even come from a different server then the Health Bank<sup>&copy;</sup> one. This procedure involves the app secret and a user specific access token. The detailed procedure is described <a href="../devCreateApp.html"> here</a>. In the following you will see the Java Doc for all the three requests:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to create new records, edit them and remove them again.
+				 * There are at the moment two different ways of calling this method. One for insertion and one for editing. 
+				 * Deletion will follow soon.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Insert: 
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - name: The name of the record
+				 * - descr: A description for the record
+				 * - appID: The id of the app that inserts the record
+				 * - values: A JSON string that contains additional values for the record
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * Insert with multipart:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - name: The name of the record
+				 * - descr: A description for the record
+				 * - appID: The id of the app that inserts the record
+				 * - values: A JSON string that contains additional values for the record
+				 * - file: The file to upload
+				 * 
+				 * Insert from app for user that is not currently logged in. 
+				 * - userID: The id of the user the record shall be assigned to
+				 * - appID: The id of the application that likes to store this record
+				 * - token: The token received from the call to {@link Token} 
+				 * - name: The name of the record
+				 * - descr: A description for the record
+				 * - values: A JSON string that contains additional values for the record
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Edit circle/space assignment of record:</b><br>
+				As the documentation states there shall be the possibility to edit and delete records again. Nevertheless this is not possible at the moment since this needs further discussion in the team and involves also legal aspects. The only way records can be edited so far is by changing the assignments to circles and spaces. To do so we can use the same POST request as for inserting new records (not multipart). For this request we need to define the id of the record entry as well as either a string called spaces or circles that contains the spaces or circles id's the record shall be assigned to separated by a whitespace. This is the according Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to create new records, edit them and remove them again.
+				 * There are at the moment two different ways of calling this method. One for insertion and one for editing. 
+				 * Deletion will follow soon.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Editing:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The id of the record to edit
+				 * - circle: (either circle or space or both possible) A string containing the Id's of the associated circles separated by a space
+				 * - space: (either circle or space or both possible) A string containing the Id's of the associated spaces separated by a space
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+			 	A call to change circles would e.g. look like this:<br><i>http://serveraddress/Record?session=*&credentials=*&id=521*&circle=519792c2e71aae449056c552%2520519a0689e71a1edbc2a54fce</i><br>Please notice that this is already URL encoded, hence the whitespace between the circle Id's is encoded as %2520.
+			</p>
+			<br>
+			<p>
+				<b>Query all records of user:</b><br>
+				For the GET request in the /Record servlet we implemented the functionality to query all records of a certain user. Also optionally the call can include the space id of a certain space in which case all the records assigned to that space are returned. This is the according Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to get information about existing records. There are three ways of calling this 
+				 * method. Either with or without an id and by another users id. With an id will result in getting the information about a 
+				 * single record. Without will return all the records of the given user. By providing an other users id, one can get the
+				 * records of the other user, if the other has the current in a circle.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Return all records of current user:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - spaceId: (optional) The id of a space. If this is set, only the records of the current user which are in this particular space will be returned
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p id="queryRes">
+				We realize that the more records a user will have, the larger the answer to such a call will be. Therefore we are planing to change this request in a future release in a way that it will only return a certain number of requests per call. And that future calls will return further records if the user requests them. <br>
+				An answer to such a query might look like this:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				{
+				    "result": "success",
+				    "loggedOut": "false",
+				    "size": "35",
+				    "values": {
+				        "records": [
+				            {
+				                "spaces": [],
+				                "circles": [
+				                    {
+				                        "circle": "519a0673e71a1edbc2a54fcd"
+				                    },
+				                    {
+				                        "circle": "51ca9d029a378322421be230"
+				                    }
+				                ],
+				                "userID": "516e5c0962dd0156a0236630",
+				                "app": "addRecord",
+				                "_id": {
+				                    "$oid": "5179091d89d9503fd7a2ddfa"
+				                },
+				                "timedate": "04/25/2013 12:44:45",
+				                "name": "Test1",
+				                "descr": "This is the Test1 description"
+				            }, {
+				            	...
+				            }
+				        ]
+				    }
+				}
+			]]></script><br>
+			<p>
+				You will notice that the circles and spaces are directly encoded into the answer, so that you do not need any further queries to retrieve this data.
+			</p>
+			<br><br>
+			<h4>/RecordQuery servlet</h4>
+			<p>
+			 This servlet supports various ways of querying records. You can query a single record by id, or one or multiple by a query string. The more we provide a call to get all records of a certain user provided its user id and that this other user allowed you to see anything. And there is a call to get all the records of users which the caller has in one of his or her circles. In the following we provide you with the details. 
+			</p><br>
+			<p>
+				<b>Query by id:</b><br>
+				With a simple GET request and the id of a certain record you will get all the information about it. The result will be very similar to <a href="#queryRes">the one shown above</a>. Here is the according Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to query for single or multiple records. There are multiple ways of calling this method. 
+				 * Either one can query a specific record by its id or query one or multiple records by a query string. The more one can get
+				 * all the records of a specific user by providing the userId parameter or even all records of people in a specific circle of
+				 * the currently logged in user by setting the circleId parameter. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * With id:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The id of a specific record
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Query by query string:</b><br>
+				If you do not know the id of your record, you can try to find it with a query string. The system will search in the name and description of the records as well as the app name. There might be none, a single or multiple results to it. Again the resulting JSON looks very much the same as in <a href="#queryRes">the one shown above</a>. Here is the according Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to query for single or multiple records. There are multiple ways of calling this method. 
+				 * Either one can query a specific record by its id or query one or multiple records by a query string. The more one can get
+				 * all the records of a specific user by providing the userId parameter or even all records of people in a specific circle of
+				 * the currently logged in user by setting the circleId parameter. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * With query:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - query: A query string which should match records with similar strings in attributes name, descr, or app
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Query by user id:</b><br>
+				This feature is very much customized to our spaces view in the GUI and its functionality to show the records of another user next to your records. First of all, only records which the caller is allowed to see are returned. In other words, if the user, whos id you are providing, has you in one of his circles and has assigned any records to this particular circle, then this query will return these records. Optionally you can provide the spaceId parameter to this call, which will only return records of the particular user which you have assigned to the specific space of yours. Again here it is very important to see the difference between spaces and circles. Spaces are collections of records which you define for your own. You can assign your own as well as records from other users (which allowed you to see them) to it. Circles on the other hand are the granularity of sharing. You can only assign circles to your personal records since you are not allowed to define which records of other users a third party might be allowed to see. Again the resulting JSON looks very much the same as in <a href="#queryRes">the one shown above</a>. Here is the according Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to query for single or multiple records. There are multiple ways of calling this method. 
+				 * Either one can query a specific record by its id or query one or multiple records by a query string. The more one can get
+				 * all the records of a specific user by providing the userId parameter or even all records of people in a specific circle of
+				 * the currently logged in user by setting the circleId parameter. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * With userId:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - userId: The id of a user
+				 * - spaceId: (optional) The id of a space. If this is set, only records of user userId which are in space spaceId will be returned
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server) 
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Query by circle id:</b><br>
+				This last query is another step deeper compared to the last one with the user id. We now do not just want to get records from a single other user, but from all users which we assigned to a certain circle (the one whos id we provide with the call). The system will check who of all the users in your circle put you in one of their circles as well and if there are any records which the said user assigned to that specific circle as well. Only these records will be returned. As before, this is especially needed in the spaces pages for filtering. Again the resulting JSON is similar as in <a href="#queryRes">the one further up</a>. Here is the according Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to query for single or multiple records. There are multiple ways of calling this method. 
+				 * Either one can query a specific record by its id or query one or multiple records by a query string. The more one can get
+				 * all the records of a specific user by providing the userId parameter or even all records of people in a specific circle of
+				 * the currently logged in user by setting the circleId parameter. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * With circleId
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - circleId: The id of a circle
+				 * - spaceId: (optional) The id of a space. If this is set, only records of users in circle circleId which are in space spaceId will be returned
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
 		</div>
 		<!--END Content-->
 	</div>

@@ -120,7 +120,9 @@ public class AppQuery extends HttpServlet {
 	 */
 	@SuppressWarnings("unchecked")
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		/*String authHeader = request.getHeader("Authorization");
+		/*
+		 * First try to use the authorization header of HTTP to send the credentials rather then as a URL parameter
+		String authHeader = request.getHeader("Authorization");
 		Enumeration<String> headers = request.getHeaderNames();
 		while(headers.hasMoreElements()){
 			System.out.println("Header: "+ headers.nextElement());
@@ -224,27 +226,10 @@ public class AppQuery extends HttpServlet {
 							wasError = true;
 						}
 					} else {
-//						list.add(new ObjectId(manager.getUserID(credentials)));
 						list.add(manager.getUserID(credentials));
-//						res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("_id", new BasicDBObject("$in", list)));
 						res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, new BasicDBObject("userID", new BasicDBObject("$in", list)));
 						if(res!=null && res.hasNext()){
 							list = new BasicDBList();
-//							BasicDBObject myUser = (BasicDBObject) res.next();
-//							BasicDBList myUsersApps = (BasicDBList)  myUser.get("application");
-//							if(myUsersApps != null){
-//								for(Object o : myUsersApps){
-//									BasicDBObject appID = (BasicDBObject) o;
-//									String s = appID.getString("app");
-//									if(s!=null){
-//										list.add(new ObjectId(s));
-//									} else {
-//										s = appID.getString("viz");
-//										if(s!=null){
-//											list.add(new ObjectId(s));
-//										}
-//									}
-//								}
 							while(res.hasNext()){
 								BasicDBObject installedApp = (BasicDBObject) res.next();
 								String appID = (String) installedApp.get("appID");

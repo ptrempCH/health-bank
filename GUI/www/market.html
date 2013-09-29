@@ -5,8 +5,10 @@
 	<meta charset="UTF-8">
 	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<script src="../js/healthbank.js"></script>
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 
 	<script type="text/javascript">
 
@@ -26,7 +28,7 @@
 				}, 100);
 				return false; 
 			}
-			getUploadedOrInstalledApplications({
+			getAllApplications({
 				onSuccess: function(data){
 					$("#appentries").html("");
 					if(data.size==0){
@@ -63,6 +65,12 @@
 		}
 
 		function loadVisualizations () {
+			if(user==undefined){ 
+				setTimeout(function(){ 
+					loadVisualizations(); 
+				}, 100);
+				return false; 
+			}
 			getApplicationByQuery("*", "viz", {
 				onSuccess: function(data){
 					$("#vizentries").html("");
@@ -108,6 +116,8 @@
 				$("#visualization-tab").addClass("selected");
 				$("#application-content").hide();
 				$("#application-tab").removeClass("selected");
+				$("#nav_market_a").removeClass("selectedLi");
+				$("#nav_market_v").addClass("selectedLi");
 			});
 			$("#application-tab").click(function(){
 				loadApplications();
@@ -115,6 +125,8 @@
 				$("#visualization-tab").removeClass("selected");
 				$("#application-content").show();
 				$("#application-tab").addClass("selected");
+				$("#nav_market_v").removeClass("selectedLi");
+				$("#nav_market_a").addClass("selectedLi");
 			});
 			whatToLoad = getURLParameter("type");
 			if(whatToLoad!=undefined && whatToLoad=="viz"){
@@ -122,6 +134,7 @@
 			} else {
 				loadApplications();
 			}
+			$( document ).tooltip({ tooltipClass: "hbTooltip" });
 		});
 		
 	</script>
@@ -148,12 +161,12 @@
 						<div id="application-tab" class="apptab selected">Applications</div>
 						<div id="visualization-tab" class="apptab">Visualizations</div>
 					</div>
-					<div id="application-content" class="application-content">
+					<div id="application-content" class="tab-content">
 						<h3>These are all the applications available in our system so far:</h3>
 						<p>Click on them to get more information</p><br>
 						<ul id="appentries" class="newsentries"></ul>
 					</div>
-					<div id="visualization-content" class="application-content">
+					<div id="visualization-content" class="tab-content">
 						<h3>These are all the visualizations available in our system so far:</h3>
 						<p>Click on them to get more information</p><br>
 						<ul id="vizentries" class="newsentries"></ul>

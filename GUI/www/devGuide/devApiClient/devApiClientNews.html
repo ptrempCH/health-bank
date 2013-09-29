@@ -7,6 +7,15 @@
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
 
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
 	<script type="text/javascript">
 
 		$(document).ready(function() {
@@ -16,6 +25,12 @@
 				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
 				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
 			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
 		});
 		
 	</script>
@@ -48,7 +63,8 @@
 				<li>&nbsp;&nbsp;<a href="devApiClientApplication.html">Applications</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClientNews.html">News</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClientMessage.html">Messages</a></li><br>
-				<li>&nbsp;&nbsp;<a href="devApiClientImage.html">Images</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientFiles.html">Files</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientOther.html">Other functions</a></p><br>
 			</ul>
 			<p><a href="../devDemos.html">Demos</a></p><br>
 		</div>
@@ -56,7 +72,56 @@
 
 		<!--Content-->
 		<div class="dev-content">
-			<p> Comming soon ... </p>
+			<br>
+			<h3>Client API for News</h3>
+			<br>
+			<p>Dealing with news entries is restricted to admin users. Users can only query news. The client API (accessible via the file healthbank.js) has three functions that deal with news. Two are for querying and one for creating and editing news. In the following we deal with one function at a time.</p>
+			<br><br>
+			<h4>Add and edit news entry</h4>
+			<p>News entries can only be added and edited by an admin. The reason for this is that news entries are very Health Bank<sup>&copy;</sup> related and we do not want any institute to post ads or similar here. Let us have a look at the documentation and function specification: </p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Add and edit a new news entry 
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - isEdit: Boolean to decied if we are editing an existing news or if this is a new entry
+				* - id: The id of the news entry to edit. Empty if we are providing a new entry.
+				* - title: The title of the news
+				* - prev: A small preview for the news entry
+				* - content: The content of the news entry
+				**/
+				function addEditNews(isEdit, id, title, prev, content, callback) {...}
+			]]></script><br>
+			<p>As the function definition states we have to set the 'isEdit' parameter to 'false' if we want to add a new news entry or to 'true' if we like to edit an entry. If we are in editing mode, we also need to provide the identification of the news entry. The three parameters for the title of the news, a preview - which is shown in the news list - and the actual content are the same for both tasks as is the callback parameter. For a description of this parameter see <a href="../devApiClient.html">here</a></p>
+			<br><br>
+			<h4>Load news entries</h4>
+			<p>This function is open for everyone and queries the latest news entries. At the moment it will actually return all news entries present in the system. This is likely to change in future versions. The only parameter needed are possible callback functions as with almost all of our client functions. Here is the according description:</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Gets the latest news entries. 
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				**/
+				function loadNews(callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Query a single news entry</h4>
+			<p>Besides the list of different news which normally shows only the preview message, the user certainly also wants to see the actual content of the news. With this function the caller can query for a single news entry to use e.g. in a detail view. Next to the callback functions you need to pass the identification of the news you want to query. Here is the description of the function:</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Gets a specific news entries. 
+				* Redirects to the login page, if not logged in. 
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				*- id: The id of the news entry to load
+				**/
+				function loadNewsEntry(id, callback) {...}
+			]]></script><br>
 		</div>
 		<!--END Content-->
 	</div>

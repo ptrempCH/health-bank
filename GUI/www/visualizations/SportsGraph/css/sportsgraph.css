@@ -1,0 +1,54 @@
+/* statistics */
+
+/*#chart_div {
+	width: 500px;
+	height: 250px;
+	margin-top: 15px;
+}
+#chartSports_div {
+	width: 500px;
+	height: 250px;
+	margin-top: 15px;
+}*/
+
+#statistics {
+	border-radius: 10px;
+	border: 1px solid #F90;
+	margin: 20px 0 30px 0;
+	height: 500px;
+	padding: 15px 15px 15px 15px;
+	width: 96%
+}
+#statistics #statsHeader table{
+	border-radius: 10px;
+	border: 1px solid #F90;
+	height: 110px;
+	width: 50%;
+	margin: 0 auto 0 auto;
+}
+
+#owl-carousel {
+	border-radius: 10px;
+	border: 1px solid #F90;
+	height: 380px;
+	width: 50%;
+	margin: 10px auto 0 auto;
+}
+
+#owl-carousel .item img{
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.center {
+	text-align: center;
+	width: 100%;
+}
+
+.cal_chart div div, .distance_chart div div, .avgSpeed_chart div div, .elevation_chart div div, .avgHeartRate_chart div div {
+    position: relative;
+}
+.cal_chart svg, .distance_chart svg, .avgSpeed_chart svg, .elevation_chart svg, .avgHeartRate_chart svg {
+    margin: 0 auto;
+}

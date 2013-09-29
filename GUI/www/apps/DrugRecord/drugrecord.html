@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="css/drugrecord.css" rel="stylesheet" type="text/css">
+	<script src="js/drugrecord.js"></script>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$("#submitButton").click(function(){
+				submit();
+				return false;
+			});
+			$("#clearButton").click(function(){
+				clear();
+				return false;
+			});
+			$(".page-content .addRec-form div label").autoWidth();
+			$("#name").click(function() {
+				$("#name").select();
+			});
+			$("#descr").click(function() {
+				$("#descr").select();
+			});
+			$("#addRec-feedback").html("All fields marked with a (*) are required.");
+		});
+		
+	</script>
+</head>
+<body>
+	<div class="page-content">
+		<h3 class="addRec-header-text">Add a new drug to your health record.</h3>
+		<div id="addRec-feedback" class="addRec-feedback"></div>
+		<form name="addRec-form" id="addRec-form" class="addRec-form" action="" method="post">
+			<!--Input fields-->
+			<div>
+				<label for="name" id="nameLabel" class="label">Drug Name(*)</label> 
+				<input id="name" name="name" type="text" class="input name" placeholder="Name" />
+			</div>
+			<div>
+				<label for="manufacturer" id="manufacturerLabel" class="label">Manufacturer(*)</label> 
+				<input id="manufacturer" name="manufacturer" type="text" class="input name" placeholder="Novartis" />
+			</div>
+			<div>
+				<label for="prescribed" id="prescribedLabel" class="label">Prescribed by</label> 
+				<input id="prescribed" name="prescribed" type="text" class="input name" placeholder="Dr. Doctor" />
+			</div>
+			<div>
+				<label for="bought" id="boughtLabel" class="label">Where did you buy it?</label> 
+				<input id="bought" name="bought" type="text" class="input name" placeholder="Pharmacy xy" />
+			</div>
+			<div>
+				<label for="descr" id="descrLabel" class="label descr">What for did you take it?(*)</label>
+				<textarea id="descr" name="descr" class="input descr" placeholder="Description" rows="5" cols="50" onkeyup="textAreaAdjust(this)"></textarea>
+			</div>
+			<div>
+				<label for="nrPills" id="nrPillsLabel" class="label">Number of pills taken</label> 
+				<input id="nrPills" name="nrPills" type="number" class="input name" placeholder="1" />
+			</div>
+			<div>
+				<label for="colour" id="colourLabel" class="label">Colour of pill</label> 
+				<input id="colour" name="colour" type="text" class="input name" placeholder="white" />
+			</div>
+			<!--END Input fields-->
+			<!--Buttons-->
+			<div class="addRec-footer">
+				<input id="submitButton" type="submit" name="submit" value="Add" class="big-button addRecButton" />
+				<input id="clearButton" type="submit" name="submit" value="Clear Form" class="big-button addRecButton" />
+			</div>
+			<!--END Buttons-->
+		</form>
+	</div>
+</body>
+</html>

@@ -146,86 +146,23 @@ public class Profile extends HttpServlet {
 					BasicDBList list = new BasicDBList();
 					list.add(credentials.substring(0, credentials.lastIndexOf(':')));
 					DBCursor res = (DBCursor) connector.query(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)));
-					if(res==null || res.size()==0){
+					if(res==null || !res.hasNext()){
 						errorMessage = "\"No user found with these credentials. Did you provide the correct sessionKey and credentials?\"";
 						wasError = true;
 					}
 					if(!wasError){
 						JSONParser parser = new JSONParser();
 						JSONArray resArray = new JSONArray();
-						while(res.hasNext()){
-							DBObject obj = res.next();
-							JSONObject resObj = (JSONObject) parser.parse(obj.toString());
-							resArray.add(resObj);
-						}
+						DBObject obj = res.next();
+						JSONObject resObj = (JSONObject) parser.parse(obj.toString());
+						resObj.remove("password");
+						resObj.remove("session_expires");
 						
-						/*BasicDBList and = new BasicDBList();
-						list = new BasicDBList();
-						String userid = manager.getUserID(credentials);
-						list.add(userid);
-						and.add(new BasicDBObject("userID", new BasicDBObject("$in", list)));
-						and.add(new BasicDBObject("app", "profile"));
-						DBObject queryObject = new BasicDBObject("$and", and);
-						res = (DBCursor) connector.query(MongoDBConnector.RECORDS_COLLECTION_NAME, queryObject);
-						if(res.hasNext()){
-							BasicDBObject resList = (BasicDBObject) res.next().get("circles"); 
-							if(resList!=null){
-								JSONObject resObj = (JSONObject) parser.parse(resList.toString());
-								resArray.add(resObj);
-							}
-						}*/
-						
+						resArray.add(resObj);
 						JSONObject result = new JSONObject();
 						result.put("user", resArray);
 						userData = result.toJSONString();
-						/*
-						 * This is deprecated code:
-						 * 
-							JSONParser parser = new JSONParser();
-							DBObject obj = res.next();
-							JSONObject resObj = (JSONObject) parser.parse(obj.toString());
-							userData = "\"username\" : \""+resObj.get("username")+"\", \"firstname\" : \""+resObj.get("firstname")+"\", \"lastname\" : \""+resObj.get("lastname")+"\"";
-							Object s = resObj.get("street");
-							if(s!=null){ userData += ", \"street\" : \""+s.toString()+"\"";}
-							s = resObj.get("code");
-							if(s!=null){ userData += ", \"code\" : \""+s.toString()+"\"";}
-							s = resObj.get("city");
-							if(s!=null){ userData += ", \"city\" : \""+s.toString()+"\"";}
-							s = resObj.get("country");
-							if(s!=null){ userData += ", \"country\" : \""+s+"\"";}
-							s = resObj.get("phoneP");
-							if(s!=null){ userData += ", \"privPhone\" : \""+s.toString()+"\"";}
-							s = resObj.get("phoneM");
-							if(s!=null){ userData += ", \"mobPhone\" : \""+s.toString()+"\"";}
-							s = resObj.get("phoneW");
-							if(s!=null){ userData += ", \"workPhone\" : \""+s.toString()+"\"";}
-							s = resObj.get("emailP");
-							if(s!=null){ userData += ", \"privMail\" : \""+s.toString()+"\"";}
-							s = resObj.get("emailW");
-							if(s!=null){ userData += ", \"workMail\" : \""+s.toString()+"\"";}
-							s = resObj.get("nationality");
-							if(s!=null){ userData += ", \"nationality\" : \""+s.toString()+"\"";}
-							s = resObj.get("birthday");
-							if(s!=null){ userData += ", \"birthday\" : \""+s.toString()+"\"";}
-							s = resObj.get("height");
-							if(s!=null){ userData += ", \"height\" : \""+s.toString()+"\"";}
-							s = resObj.get("weight");
-							if(s!=null){ userData += ", \"weight\" : \""+s.toString()+"\"";}
-							s = resObj.get("spouse");
-							if(s!=null){ userData += ", \"spouse\" : \""+s.toString()+"\"";}
-							s = resObj.get("insurance");
-							if(s!=null){ userData += ", \"insurance\" : \""+s.toString()+"\"";}
-							s = resObj.get("gender");
-							if(s!=null){ userData += ", \"gender\" : \""+s.toString()+"\"";}
-							s = resObj.get("userIcon");
-							if(s!=null){ userData += ", \"userIcon\" : \""+s.toString()+"\"";}
-							s = resObj.get("type");
-							if(s!=null){ userData += ", \"type\" : \""+s.toString()+"\"";}
-							s = resObj.get("allowResearch");
-							if(s!=null){ userData += ", \"allowResearch\" : \""+s.toString()+"\"";}
-							s = resObj.get("_id");
-							if(s!=null){ userData += ", \"_id\" : \""+s.toString()+"\"";}
-						*/
+						
 					}
 				} else {
 					errorMessage = "\"Either your session timed out or you forgot to send me the session and credentials.\"";
@@ -304,7 +241,7 @@ public class Profile extends HttpServlet {
 	 * Multipart call:
 	 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
 	 * - session: This is the current session key of the user
-	 * - image data of a file upload such as filecontent, filname, content type, etc. 
+	 * - icon: image data of a file upload such as filecontent, filname, content type, etc. 
 	 * 
 	 * 
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
@@ -468,6 +405,7 @@ public class Profile extends HttpServlet {
 				String weight = request.getParameter("weight");
 				String allowResearch = request.getParameter("allowResearch");
 				String spaceTabOrder = request.getParameter("spaceTabOrder");
+				String showHelp = request.getParameter("showHelp");
 				gender = (gender!=null)?URLDecoder.decode(gender, "UTF-8"):null;
 				firstname = (firstname!=null)?URLDecoder.decode(firstname, "UTF-8"):null;
 				lastname = (lastname!=null)?URLDecoder.decode(lastname, "UTF-8"):null;
@@ -490,6 +428,7 @@ public class Profile extends HttpServlet {
 				weight = (weight!=null)?URLDecoder.decode(weight, "UTF-8"):null;
 				allowResearch = (allowResearch!=null)?URLDecoder.decode(allowResearch, "UTF-8"):null;
 				spaceTabOrder = (spaceTabOrder!=null)?URLDecoder.decode(spaceTabOrder, "UTF-8"):null;
+				showHelp = (showHelp!=null)?URLDecoder.decode(showHelp, "UTF-8"):null;
 				
 				String md5 = "";
 				if(password!=null){
@@ -533,18 +472,28 @@ public class Profile extends HttpServlet {
 						if(height!=null && height.length()>0){data.put("height", height);}
 						if(weight!=null && weight.length()>0){data.put("weight", weight);}
 						if(spaceTabOrder!=null && spaceTabOrder.length()>0){data.put("spaceTabOrder", spaceTabOrder);}
+						if(showHelp!=null && showHelp.length()>0){data.put("showHelp", showHelp);}
 						if(allowResearch!=null && allowResearch.length()>0){
 							data.put("allowResearch", allowResearch);
 							if(allowResearch.equals("y")){
-								// Add research circle to user
-								HashMap<Object, Object> researchData = new HashMap<Object, Object>();
-								researchData.put("name", "Research");
-								researchData.put("descr", "All the records you allow researchers to process. This might help to cure a diseases");
-								SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-								researchData.put("timedate", dateFormat.format(new Date()));
-								researchData.put("userID", manager.getUserID(credentials));
-								researchData.put("color", "#930");
-								connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, researchData);
+								// first check that there is not already such a circle
+								BasicDBList and = new BasicDBList();
+								and.add(new BasicDBObject("userID", manager.getUserID(credentials)));
+								and.add(new BasicDBObject("name", "Research"));
+								DBCursor allowResearchCircle = (DBCursor) connector.query(MongoDBConnector.CIRCLES_COLLECTION_NAME, new BasicDBObject("$and", and));
+								if(allowResearchCircle!=null && allowResearchCircle.hasNext()){
+									// do nothing, since it already exists
+								} else {
+									// Add research circle to user
+									HashMap<Object, Object> researchData = new HashMap<Object, Object>();
+									researchData.put("name", "Research");
+									researchData.put("descr", "All the records you allow researchers to process. This might help to cure a diseases");
+									SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+									researchData.put("timedate", dateFormat.format(new Date()));
+									researchData.put("userID", manager.getUserID(credentials));
+									researchData.put("color", "#930");
+									connector.insert(MongoDBConnector.CIRCLES_COLLECTION_NAME, researchData);
+								}
 							} else if(allowResearch.equals("n")) {
 								// remove research circle from user
 								BasicDBList and = new BasicDBList();
@@ -605,7 +554,17 @@ public class Profile extends HttpServlet {
 							list.add(username);
 							connector.update(MongoDBConnector.USER_COLLECTION_NAME, new BasicDBObject("username", new BasicDBObject("$in", list)), new BasicDBObject("$set", new BasicDBObject("profileRecordId", recordid.toString())));
 						} else {
-							String userIcon = (String) myUser.get("userIcon");
+							String userIcon = null;
+							try{
+								userIcon = (String) myUser.get("userIcon");
+							} catch (ClassCastException e) {
+								try { 
+									userIcon = ((ObjectId) myUser.getObjectId("userIcon")).toString();
+								}
+								catch (ClassCastException ee) {
+									// nothing since userIcon stays null
+								}
+							}
 							if(userIcon != null){
 								data.put("userIcon", userIcon);
 							}

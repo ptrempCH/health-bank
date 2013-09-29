@@ -32,11 +32,11 @@
 					    	var s = "<b>Other values: </b><br/>";
 					    	$.each(data.values.records[item], function(key, value){
 					    		if(key=="fileName"){
-					    			s += "<p style=\"margin-left:10px\"><b>"+key+":</b>  <a id=\"fileLink\" href=\"javascript:void(0)\">"+decodeURIComponent(value)+"</a><p>"
+					    			s += "<p style=\"margin-left:10px\"><b>"+key+":</b>  <a id=\"fileLink\" href=\"javascript:void(0)\">"+decodeURIComponent(value)+"</a></p>"
 					    		} else if(key=="fileID"){
 					    			fileID = value.$oid;
 					    		} else if(key!=undefined && key!="name" && key!="_id" && key!="timedate" && key!="descr" && key!="app" && key!="userID" && key!="spaces" && key!="circles"){
-					    			s += "<p style=\"margin-left:10px\"><b>"+key+":</b>  "+decodeURIComponent(value)+"<p>"
+					    			s += "<p style=\"margin-left:10px\"><b>"+key+":</b>  "+decodeURIComponent(value)+"</p>"
 					    		}
 							});
 							if(s=="<b>Other values: </b><br/>"){s+="<p style=\"margin-left:10px\">None</p>";}
@@ -45,14 +45,6 @@
 					    }
 					});
 					if(fileID!=undefined && fileID.length>0){
-						/*if($("#fileLink").html().indexOf("png")>0){
-							loadFile(fileID, {
-								onSuccess: function(data){
-									$(".page-content").append('<img src="data:image/png;base64,'+data+'" />')
-								}
-							});
-						}*/
-
 						$("#fileLink").click(function(){
 							if(isStorageDefined())
 							{

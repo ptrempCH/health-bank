@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="css/patientrecord.css" rel="stylesheet" type="text/css">
+	<script src="js/patientrecord.js"></script>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			// Set button click listeners
+			$("#submitButton").click(function(){
+				submit();
+				return false;
+			});
+			$("#clearButton").click(function(){
+				clear();
+				return false;
+			});
+			// all labels shall have the same width
+			$(".page-content .addRec-form div label").autoWidth();
+
+			// preset some input values
+			$("#name").click(function() {
+				$("#name").select();
+			});
+			$("#descr").click(function() {
+				$("#descr").select();
+			});
+			$("#doctor").val(parent.user.companyname);
+			$.get(parent.WEB_URL+'dialogs/getRecipient-dialog.html').success(
+				function(data){
+					parent.$('body').append(data); 
+					parent.queryUsersInCircles({
+						onSuccess: function(data){
+							loadPatients(data);
+						}, 
+						onError: function(data){
+							loadPatients("");
+						}
+					});
+				}
+			);
+			$.get(parent.WEB_URL+'dialogs/dialog-overlay.html').success(function(data){parent.$('body').append(data);});
+			
+			if(typeof(Storage)!=="undefined") {
+				var mySession = localStorage.getItem("hb_session");
+				var credentials = localStorage.getItem("hb_cred");
+				$("#session").attr("value", mySession);
+				$("#credentials").attr("value", credentials);
+				$("#appID").attr("value", parent.id);
+			}
+			$("#patient").click(function() {
+				parent.$('#recipient-form').height("300px");
+				parent.$('#recipient-form').width("50%");
+				var maskHeight = parent.document.body.clientHeight;//parent.$(document).height();  
+				var maskWidth = parent.document.body.clientWidth;//parent.$(window).width();
+				var dialogTop =  (maskHeight/2) - ($('#recipient-form').height()/2);  
+				var dialogLeft = (maskWidth/2) - ($('#recipient-form').width()/2);
+				parent.$('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+
+				parent.$('#dialog-overlay').click(function(){
+					parent.$("#recipient-form, #dialog-overlay").hide();
+					return false;
+				});
+				parent.$('#recipient-form').css({top:dialogTop, left:dialogLeft}).show();
+				return false;
+			});
+
+			// set feedback text and set action attribute of form
+			$("#addRec-feedback").html("All fields marked with a (*) are required.");
+			$("#addRec-form").attr("action", parent.API_URL+"Record");
+		});
+		
+	</script>
+</head>
+<body>
+	<div class="page-content">
+		<h3 class="addRec-header-text">Add a new entry to your patients health record.</h3>
+		<div id="addRec-feedback" class="addRec-feedback"></div>
+		<form name="addRec-form" id="addRec-form" class="addRec-form" action="" method="post">
+			<!--Input fields-->
+			<input type="hidden" id="session" name="session"/>
+			<input type="hidden" id="credentials" name="credentials"/>
+			<input type="hidden" id="values" name="values"/>			
+			<input type="hidden" id="appID" name="appID"/>
+			<div>
+				<label for="name" id="nameLabel" class="label">Title(*)</label> 
+				<input id="name" name="name" type="text" class="input name"/>
+			</div>
+			<div>
+				<label for="patient" id="patientLabel" class="label">Patient(*)</label> 
+				<input id="patient" name="patient" type="text" class="input name" />
+			</div>
+			<div>
+				<label for="cause" id="causeLabel" class="label">Cause of visit</label> 
+				<input id="cause" name="cause" type="text" class="input name" />
+			</div>
+			<div>
+				<label for="doctor" id="doctorLabel" class="label">Doctor</label> 
+				<input id="doctor" name="doctor" type="text" class="input name" />
+			</div>
+			<div>
+				<label for="descr" id="descrLabel" class="label descr">Description and Diagnosis(*)</label>
+				<textarea id="descr" name="descr" class="input descr" rows="5" cols="50" onkeyup="textAreaAdjust(this)"></textarea>
+			</div>
+			<div>
+				<label for="treatment" id="treatmentLabel" class="label descr">Treatment</label>
+				<textarea id="treatment" name="treatment" class="input descr"  rows="5" cols="50" onkeyup="textAreaAdjust(this)"></textarea>
+			</div>
+			<div>
+				<label for="drugs" id="drugsLabel" class="label descr">Drug Prescriptions</label>
+				<textarea id="drugs" name="drugs" class="input descr"rows="5" cols="50" onkeyup="textAreaAdjust(this)"></textarea>
+			</div>
+			<div>
+				<label for="file" id = "fileLabel" class="label">File</label>
+				<input id="file" type="file" name="file" class="input"/>
+			</div>
+			<!--END Input fields-->
+			<!--Buttons-->
+			<div class="addRec-footer">
+				<input id="submitButton" type="submit" name="submit" value="Add" class="big-button addRecButton" />
+				<input id="clearButton" type="submit" name="submit" value="Clear Form" class="big-button addRecButton" />
+			</div>
+			<!--END Buttons-->
+		</form>
+	</div>
+</body>
+</html>

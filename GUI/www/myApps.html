@@ -5,8 +5,10 @@
 	<meta charset="UTF-8">
 	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<script src="../js/healthbank.js"></script>
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 
 	<script type="text/javascript">
 
@@ -28,7 +30,7 @@
 			apps = data.values.applications;
 			apps.reverse();
 			$.each(apps, function(i, item) { 
-			    $("#appentries").append('<li><div id="'+item._id.$oid+'" type="'+item.type+'"><img class="store-preview-icon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="store-preview-content"><h4 class="store-preview-header">'+item.name+'</h4><p class="store-preview-descr">'+item.companyName+', Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div><img class="gearImage" src="../images/gear.png" width="18px"/></div></li>');
+			    $("#appentries").append('<li><div id="'+item._id.$oid+'" type="'+item.type+'"><img class="store-preview-icon" src="'+WEB_URL+'../images/news-icon.jpg"/><div class="store-preview-content"><h4 class="store-preview-header">'+item.name+'</h4><p class="store-preview-descr">'+item.companyName+', Version: '+item.version+', Installs: '+item.nrOfInstalls+'</p></div><img class="gearImage" src="../images/gear.png" title="Change application settings" width="18px"/></div></li>');
 			    loadImage(item.icon, item._id.$oid, "application", {
 					onSuccess: function(data, id){
 						$("#"+id+" .store-preview-icon").attr("src", "data:image/png;base64,"+data);
@@ -80,6 +82,7 @@
 					$("#vizentries").html('<center>It appears like you do not have any visualizations installed yet. Visit the <a href="market.html?type=viz" class="button" id="appstoreButton" style="margin-top:-5px; float:none;">Appstore</a> to add some new ones.</br></br></br>If this is not the case, then we are sorry, there must have been an error loading your data, please refresh the page and try again.</center>');
 				}
 			});
+			$( document ).tooltip({ tooltipClass: "hbTooltip" });
 		});
 		
 	</script>

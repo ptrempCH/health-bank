@@ -6,6 +6,14 @@
 	<link rel="shortcut icon" type="image/x-icon" href="../../../images/favicon.ico">
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
 
 	<script type="text/javascript">
 
@@ -16,6 +24,12 @@
 				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
 				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
 			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
 		});
 		
 	</script>
@@ -48,6 +62,7 @@
 				<li>&nbsp;&nbsp;<a href="devApiServerNews.html">News</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiServerMessage.html">Messages</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiServerFile.html">File</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiServerQuery.html">QueryEngine</a></li><br>
 			</ul>
 			<p><a href="../devApiClient.html">API Ref. Client</a></p><br>
 			<p><a href="../devDemos.html">Demos</a></p><br>
@@ -56,7 +71,500 @@
 
 		<!--Content-->
 		<div class="dev-content">
-			<p> Comming soon ... </p>
+			<br>
+			<h3>REST APIs for Profile Entries</h3>
+			<br>
+			<p>
+				This category actually contains four different servlets or API's. Two of them are similar to the ones described in the <a href="devApiServerRecord.html">record</a> section and deal with editing profile data, changing user icon and different forms of queries. The other two are responsible for dealing with circles and spaces, creating, editing and deleting them. We will start with the <a href="#profile">/Profile API</a>, continue with the <a href="#userQuery">user query</a> one and will then go to the API's for <a href="#spaces">spaces</a> and <a href="#circles">circles</a>. 
+			</p>
+			<br><br>
+			<h4 id="profile">/Profile servlet</h4>
+			<p>
+				This API deals with all kind of editing for the user profile as well as querying information about the currently logged in user. Creating new users is not part of this API since this is done via the <a href="devAPIServerUserAuth.html#register">/Register</a> API. As you should know by now for all the requests, POST and GET, you will need to provide the session and credentials parameters for the current user in order to be able to access anything on the server. We start with the GET request followed by the different POST requests.
+			</p><br>
+			<p>
+				<b>Get profile information:</b><br>
+				This is a rather straight forward GET request to retrieve the different values for the current user. Hence the Java Doc is rather short:  
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to query all the profile data of the provided user. 
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * The user data is stored in the 'values.user' field of the returning JSON
+				*/
+			]]></script>
+			<br>
+			<p>
+				As an example, here is a possible request and the response (session and credentials are shown as '*' only for security reasons):<br>
+				GET -> <i>http://129.132.227.147:8080/HealthBank/Profile?session=*&credentials=*</i><br>
+				<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				{
+				    "result": "success",
+				    "loggedOut": "false",
+				    "message": "Here are the user's data.",
+				    "values": {
+				        "user": [
+				            {
+				                "insurance": "an insurance",
+				                "emailW": "a@b.c",
+				                "birthday": "30-05-1987",
+				                "weight": "75",
+				                "profileRecordId": "***",
+				                "street": "Musterstrasse 42",
+				                "userIcon": {
+				                    "$oid": "5214858f6556bd219067d8cf"
+				                },
+				                "lastname": "Test",
+				                "type": "user",
+				                "emailP": "test@test.test",
+				                "city": "NY",
+				                "phoneM": "012 345 67 89",
+				                "username": "a@b.c",
+				                "height": "170",
+				                "_id": {
+				                    "$oid": "516e5c0962dd0156a0236630"
+				                },
+				                "spouse": "Mme Test",
+				                "gender": "mr",
+				                "session_key": "***",
+				                "spaceTabOrder": "123 456 789 135",
+				                "phoneW": "",
+				                "haveMeInCircle": [
+				                    {
+				                        "userId": "**"
+				                    }
+				                ],
+				                "firstname": "Test",
+				                "code": "0000",
+				                "phoneP": "",
+				                "country": "Switzerland",
+				                "last_login": "08/28/2013 22:44:59",
+				                "nationality": "Switzerland",
+				                "allowResearch": "y",
+				            }
+				        ]
+				    }
+				}
+				]]></script><br>
+				As you see there are quite a few details which you get here. Not all the fields are very usefull to the caller at first, but this record is pulled in nearly every page, so some fields get more interesting for certain instances. Apart from 'normal' profile information fields, here are a few we like to talk a bit more about. The profileRecordId field points to a record which stores a copy of all the 'normal profile information fields. Since we store them as a record, the user can add his or her profile to circles if he or she desires to. This will allow people assigned to the same circle to view data like date of birth, address, insurance company, height and weight etc. It goes without saying that this record will always be updated, whenever there is a change to this data. The user icon field is a link to the file stored in the database. Use the <a href="devApiServerFile.html">/File</a> API to retrieve it. The allowResearch field is used in the circles page and allowes the user to add a special research circle. All records the users assigns to this circle will be visible for research companies registered on our site. The haveMeInCircle array is a shortcut to get to know immediately and without another query which other user that have the current one in out of their circles. So in other words, it tells you which other users might potentially share records with the current user. The session management is described in the <a href="devAPIServerUserAuth.html">authentication section</a>.
+			</p><br>
+			<p>
+				<b>Edit profile:</b><br>
+				This POST API is responsible for the editing of the profile. There are many ways of calling this request with regard to the parameters used. Apart from credentials and session you may only set a single parameter (as for example when you would like to update the password) or set multiple of them. You find the complete list of possible parameters in the Java Doc: 
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to edit information of the provided user. There are two ways of calling this request.
+				 * Either via a multipart request for updating the user icon, or via a 'normal' request for editing user information. To change
+				 * the password of a user, the caller may use the 'normal' edit request with parameter 'password'
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Edit user info:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * (The following parameter do not need to be present all together. Calls with one, multiple or all the parameters are allowed)
+				 * - gender: The gender of the user "Mr" or "Mrs"
+				 * - firstname: The first name of the user
+				 * - lastname: The surname of the user
+				 * - companyname: The name of the company the user represents
+				 * - descr: A description of the company the user represents
+				 * - street: The street and number the user is living
+				 * - code: The postal code of the city the user lives in
+				 * - city: The name of the city the user lives in
+				 * - country: The country the user lives in
+				 * - phoneP: The private phone number of the user
+				 * - phoneW: The phone number at work of the user
+				 * - phoneM: The mobile phone number of the user
+				 * - emailP: The private email address of the user
+				 * - emailW: The work email address of the user
+				 * - nationality: The user's nationality
+				 * - spouse: The spouse of the user
+				 * - insurance: The insurance company the user is registered with
+				 * - password: For updating the password, use this parameter
+				 * - birthday:  The date of birth of the user
+				 * - height: The height of the user in cm
+				 * - weight: The weight of the user in kg
+				 * - allowResearch: Wheater or not the user allows research companies to inspect his account ('y' or 'n')
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Edit profile icon:</b><br>
+				In order to change the user icon you will have to make a multipart POST request to /Profile. Do not forget to add the credentials and session to the form data. <br>
+				So far we only support PNG images up to a size of 20kb. This might change in future releases. For completion, here is the Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to edit information of the provided user. There are two ways of calling this request.
+				 * Either via a multipart request for updating the user icon, or via a 'normal' request for editing user information. To change
+				 * the password of a user, the caller may use the 'normal' edit request with parameter 'password'
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Multipart call:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - icon: image data of a file upload such as filecontent, filname, content type, etc. 
+				 *
+				*/
+			]]></script>
+			<br><br>
+			<h4 id="userQuery">/UserQuery servlet</h4>
+			<p>
+				The /UserQuery (or /userquery, /uq) allows the caller to make different queries on the user database. There is a query for a single user via an id, a query using a query string to search in the database and finally a query that will return all users in your circles. All these requests are done via a GET request. Please remember that there is a difference between a normal user with the values as seen above and a institute or company user. The later does look like this:<br>
+				<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				{
+				    ...,
+				    "values": {
+				        "user": [
+				            {
+				                "emailW": "eth@ethz.ch",
+				                "profileRecordId": "**",
+				                "street": "Raemistrasse 101",
+				                "userIcon": {
+				                    "$oid": "5214858f6556bd219067d8cf"
+				                },
+				                "haveMeInCircle": [
+				                    {
+				                        "userId": "**"
+				                    }
+				                ],
+				                "code": "8091",
+				                "type": "institute",
+				                "companyname": "ETHZ",
+				                "password": "***",
+				                "city": "Zuerich",
+				                "country": "Switzerland",
+				                "last_login": "08/28/2013 23:18:03",
+				                "username": "eth@ethz.ch",
+				                "_id": {
+				                    "$oid": "519e9af5d0d942b98b1ee701"
+				                },
+				                "descr": "Swiss Federal Institute of Technology. The leading technical university in Switzerland.",
+				                "session_key": "5f01c0c6a659399c1c38ad0157c60fbb",
+				                "session_expires": "08/29/2013 00:18:08"
+				            }
+				        ]
+				    }
+				}
+				]]></script><br>
+				Compared to the normal user this has no first- and lastname but a companyname. The more it has a field called descr which is a description of the company itself. Fields like height and weight, insurance or spouse do not make sence in this environment and hence are omitted. 
+			</p>
+			<br>
+			<p>
+				<b>Query by id:</b><br>
+				To query a special user, use the id of that user. Please notice that if the other user has not allowed you to see his profile, the information you will get is rather minimalistic. As soon as the user has put his profile and you in the same circle, you will get all the profile information you need. Here is the Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to query profile information of different users. There are three possibilities
+				 * on how to call this servlet. One is via an ID of a user, that will return the information about this particular
+				 * user if the ID was found in the DB. A second is via a query string, that will search in the DB for according
+				 * users using different patterns for lower case, upper case and wildcard searches. And the last is via a circleID. This
+				 * last query will return all the users the current user has in one of his circles (only user icon and name is returned).
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Call via ID:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The object id to search a user with
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server) 
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Query by query string:</b><br>
+				With a query string you can search for users. The system will search in username, first- and lastname and other fields for matches to your query. The result may be no, a single or multiple user. As stated above, only the data, the other users allowed you to see, is transmitted. Here is the Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to query profile information of different users. There are three possibilities
+				 * on how to call this servlet. One is via an ID of a user, that will return the information about this particular
+				 * user if the ID was found in the DB. A second is via a query string, that will search in the DB for according
+				 * users using different patterns for lower case, upper case and wildcard searches. And the last is via a circleID. This
+				 * last query will return all the users the current user has in one of his circles (only user icon and name is returned).
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Call via query:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - query: A query string to search a user with
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Query all users in your circles:</b><br>
+				This query is especially used in the message app for your 'phone book'. But it can be of use in other situations as well since it returns all the 'friends'^of the current user.  Here is the Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to query profile information of different users. There are three possibilities
+				 * on how to call this servlet. One is via an ID of a user, that will return the information about this particular
+				 * user if the ID was found in the DB. A second is via a query string, that will search in the DB for according
+				 * users using different patterns for lower case, upper case and wildcard searches. And the last is via a circleID. This
+				 * last query will return all the users the current user has in one of his circles (only user icon and name is returned).
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Query all users in your circles:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - circle: Set this parameter to a value with at least one character to query for all users in your circles
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br><br>
+			<h4 id="spaces">/Space servlet</h4>
+			<p>
+				This servlet allowes via GET requests to query spaces in different ways as described in detail below. Via the POST request the user can add new spaces and edit the information about it. In a future version it might also allow to add circles to a space witch would mean that all the records in the particular space and records that will be assigned to this space in future will automatically be assigned to this circle. 
+			</p>
+			<br>
+			<p>
+				<b>Query by id:</b><br>
+				To get information about a single space, you can query it by its id.  Here is the Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * This GET request allows the caller in three different ways to get information about one or multiple spaces belonging to the 
+				 * user with the given session key and credentials. One can get information via a space name, an object id or by retrieving all
+				 * spaces of the given user at once.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL: 
+				 * Via id:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The id of the space to search information from. 
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Query by name:</b><br>
+				To get information about a single space, you can query it by its name (This might not be unique). Here is the Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * This GET request allows the caller in three different ways to get information about one or multiple spaces belonging to the 
+				 * user with the given session key and credentials. One can get information via a space name, an object id or by retrieving all
+				 * spaces of the given user at once.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Via Name:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - name: The name of the space to search information from. 
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Query all spaces of given user:</b><br>
+				If you provide neither the name nor the id parameter you will get all the spaces of the current user in return. Here is the Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * This GET request allows the caller in three different ways to get information about one or multiple spaces belonging to the 
+				 * user with the given session key and credentials. One can get information via a space name, an object id or by retrieving all
+				 * spaces of the given user at once.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 *  Return all spaces of the given user:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Add a new space:</b><br>
+				To add a new space a POST request is required with the parameter name, descr and visualization. Besides a name for the space which will be visible on the tabs on the space website you can describe the space and tell which visualization that shall be visible on this particular space. A fourth parameter 'hidden' will decide if the space is illustrated as a tab entry on the spaces website. Here is the Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to add new spaces, edit them and add or remove circles to/from it.
+				 * There are three different possibilities for this call. One to add new spaces, one to edit them and one
+				 * for the manipulation of circles in the space.
+				 * 
+				 * For a successful call, the following parameters need to be present in the URL:
+				 * Adding a new space:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - name: The name of the space to add
+				 * - descr: The description of the space
+				 * - visualization: The associated visualization for this space
+				 * - hidden: (optional)Defines if the space is visible for the user or hidden. defaults to 'false'
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Edit an existing space:</b><br>
+				This is almost the same call as the add one. But since we are editing an existing space, we need to tell the system which one via the id parameter. Here is the Java Doc:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to add new spaces, edit them and add or remove circles to/from it.
+				 * There are three different possibilities for this call. One to add new spaces, one to edit them and one
+				 * for the manipulation of circles in the space.
+				 * 
+				 * For a successful call, the following parameters need to be present in the URL:
+				 * Editing an existing space:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The id of the space to edit
+				 * - name: (optional, but either name, descr, url, visualization or hidden must be set) The name of the space to edit
+				 * - descr: (optional, but either name, descr, url, visualization or hidden must be set) The description of the space
+				 * - visualization: (optional, but either name, descr, url, visualization or hidden must be set) The associated visualization for this space
+				 * - hidden: (optional, but either name, descr, url, visualization or hidden must be set) Defines if the space is visible for the user or hidden. 
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				As described before the 'manipulation of circles in the space' as illustrated in the documentation above is not yet existing and will be introduced in a future version.
+			</p>
+			<br><br>
+			<h4 id="circles">/Circle servlet</h4>
+			<p>
+				The /Circle servlet is in many regards similar to the spaces one. The GET requests are the same, hence we will show you the Java Doc of all three together later on. The POST requests for creating and editing a circle are also very similar to the ones from the spaces API. Again we will show them together. The features to add and remove users from circles as well as deleting circles are show seperately afterwards.
+			</p>
+			<br>
+			<p>
+				<b>GET requests:</b><br>
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The GET request allows the caller to return one or more specific circle(s). There are three different possibilities to make this call.
+				 * By providing the 'name' parameter we search for the circle with exact this name. By providing the 'id' attribute we do the same for
+				 * circles with this id. And finally if the caller omits both of these parameters, we will return all the circles of the given user.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * By name:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - name: The name of the circle to search for
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * By id:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The id of the circle to search for
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * Return all circles of the given user:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Create and edit circles:</b><br>
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to create new circles, edit them, add and remove users to it and finally to 
+				 * delete the circle again. There are multiple ways to call this request for the described operations. We will show
+				 * them in detail in the following.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Create a new circle:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - name: The name of the circle
+				 * - color: The color for the circle
+				 * - descr: The description for the circle
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 * 
+				 * Edit an existing circle:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The object id of the circle to edit
+				 * - name: The name of the circle  (either name or descr or both of them have to be provided)
+				 * - descr: The description for the circle (either name or descr or both of them have to be provided)
+				 * - color: The color for the circle
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Delete a circles:</b><br>
+				Deleting a circle is very similar. All we need is the id and authentication. The del parameter is used to tell the system that you really want to delete something. Here is the Java Doc entry:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to create new circles, edit them, add and remove users to it and finally to 
+				 * delete the circle again. There are multiple ways to call this request for the described operations. We will show
+				 * them in detail in the following.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Delete an existing circle:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - del: This parameter needs to have the value set to 'true' if the caller wants to delete the circle
+				 * - id: The id of the circle to delete
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Add a user to a circles:</b><br>
+				In order to add a user to a circle we need to define both the circle id and the user id.  Here is the Java Doc entry:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to create new circles, edit them, add and remove users to it and finally to 
+				 * delete the circle again. There are multiple ways to call this request for the described operations. We will show
+				 * them in detail in the following.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Add a new user to the circle:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The id of the circle to add to
+				 * - userId: The id of the user the caller wants to add to the circle
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
+			<br>
+			<p>
+				<b>Remove a user from a circles:</b><br>
+				The same goes for removing a user again from a circle. The more, as when we deleted the cirlce, we need to set the del parameter. Here is the Java Doc entry:
+			</p><br>
+			<script type="syntaxhighlighter" class="brush: java"><![CDATA[
+				/**
+				 * The POST request allows the caller to create new circles, edit them, add and remove users to it and finally to 
+				 * delete the circle again. There are multiple ways to call this request for the described operations. We will show
+				 * them in detail in the following.
+				 * 
+				 * For a successful call the following parameters need to be present in the URL:
+				 * Remove an user from the circle:
+				 * - credentials: This is a credentials string combining the password and user name in a hashed form for security.
+				 * - session: This is the current session key of the user
+				 * - id: The id of the circle to remove the user from
+				 * - userId: The id of the user the caller wants to remove from the circle
+				 * - del: This parameter needs to have the value set to 'true' if the caller wants to remove the user
+				 * - (callback: (optional) For JSONP requests, one can add the callback parameter, which will result in a JSONP response from the server)
+				 *
+				*/
+			]]></script>
 		</div>
 		<!--END Content-->
 	</div>

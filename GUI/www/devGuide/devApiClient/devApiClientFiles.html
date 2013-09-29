@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
+
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushXml.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
+	<script type="text/javascript">
+
+		$(document).ready(function() {
+			$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+			$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			$(window).resize(function() {
+				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
+				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
+			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
+		});
+		
+	</script>
+</head>
+<body>
+	<!--Page-->
+	<div class="dev-page">
+		<!--Logo-->
+		<div class="dev-logo">
+			<a href="../../home.html"><img src="../../../images/logo.png"/></a>
+		</div>
+		<!--END Logo-->
+		<!--Header-->
+		<div class="dev-header">
+			<h1>API Reference for the JavaScript calls on the Client - Files</h1> 
+		</div>
+		<!--END Header-->
+
+		<!--Navi-->
+		<div class="dev-navi">
+			<br><br><br>
+			<p><a href="../devCreateApp.html">Create an Application</a></p><br>
+			<p><a href="../devCreateViz.html">Create a Visualization</a></p><br>
+			<p><a href="../devApiServer.html">API Ref. Server</a></p><br>
+			<p><a href="../devApiClient.html">API Ref. Client</a></p><br>
+			<ul>
+				<li>&nbsp;&nbsp;<a href="devApiClientUser.html">User</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientUserAuth.html">Authentication</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientRecord.html">Records</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientApplication.html">Applications</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientNews.html">News</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientMessage.html">Messages</a></li><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientFiles.html">Files</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientOther.html">Other functions</a></p><br>
+			</ul>
+			<p><a href="../devDemos.html">Demos</a></p><br>
+		</div>
+		<!--END Navi-->
+
+		<!--Content-->
+		<div class="dev-content">
+			<br>
+			<h3>Client API for Files and images</h3>
+			<br>
+			<p>This page deals with loading images and other files from the server. We discuss both images and other files seperatly in the following.</p>
+			<br><br>
+			<h4>Loading images</h4>
+			<p>This function allows the caller to load images from the server such as user icons or application icons. These images are saved in the database on the server, so there is no direct URL to them. Hence we recieve the full data as an answer to the call which you can add directly to an image HTML tags source attribute via <script type="syntaxhighlighter" class="brush: html"><![CDATA[<img src=\"data:image/png;base64,"+data+"\""/>]]></script>. This describes how to use the function: </p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Helper function to load a user or application icon from the server
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - icon: The name or id of the icon to load from the server
+				* - type: The type of the image you would like to receive. Use 'application' for an app icon and 'user' for a user icon
+				* - userId: the user id that belongs to the user we are loading the image from
+				*/
+				function loadImage(icon, userId, type, callback){...}
+			]]></script><br>
+			<p>Aside the callback parameter (see <a href="../devApiClient.html">here</a> for more information ) you have to provide the name or identification of the icon you would like to load. The more you need to tell us the type of the icon, is it a user or an application icon? last but not least you can add the 'userId' parameter. This value will be passed to a onSuccess function if provided in the callback, so the caller knows to which user or application this icon belongs when the asynchronous call returns.</p>
+			<br><br>
+			<h4>Loading files</h4>
+			<p>This is the equivalent function as for the image above. It allows to load files saved with records. These files get saved in the database as well for security reasons and hence have no direct URL to call. By providing the identification of the file and a callback function as on all client API calls you will receive the entire data right away. Here is the description of the function:</p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* Helper function to load a file from the server
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: The id of the file to load
+				*/
+				function loadFile(id, callback){...}
+			]]></script><br>
+		</div>
+		<!--END Content-->
+	</div>
+	<!--END Page-->
+	
+	<!-- Bottom Bar -->
+    <div class="hb-bottom">
+		<span class="disclaimer">This is a project by Health Bank<sup>&copy;</sup>. All rights reserved. This website was elaborated by Patrick Tremp for his Master thesis.<span>
+        <span class="centerDisclaimer">If you encounter any problem on the page, please inform us <a href="http://goo.gl/zo8FBu">here</a></span>
+    	
+        <span class="right">
+    		<a href="http://www.healthbank.ch">
+    			<img src="../../../images/logo.png" style=" margin-top:6px; height: 38px;" title="To Health Bank" alt="ETHZ" />
+    		</a>
+    	</span>
+    	<div class="clr"></div>
+    </div>
+	<!--END Bottom Bar -->
+</body>
+</html>

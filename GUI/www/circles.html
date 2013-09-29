@@ -32,7 +32,7 @@
 		}
 
 		function loadQueryResult(data) {
-			$("#usersearchresults").html("<center>Search result:</center>");
+			$("#usersearchresults").html("<center>Search result (Drag-and-drop to circle to add):</center>");
 			if(data.values.users==0){
 				$("#usersearchresults").append("<center>No users found for this query!</center>");
 			}
@@ -275,29 +275,25 @@
 
 		function addUserImagesToCircle(name){
 			$("#loader").show();
-			$("#usersearchresults").html("<center>Users in Circle "+name+":</center><button value='"+name+"' id='spacesButton' class=\"list-button spaceButton\">Spaces</button>");
+			$("#usersearchresults").html("<center>Users in Circle "+name+":</center><button value='"+name+"' title='Add all record entries assigned to this circle to a space' id='spacesButton' class=\"list-button spaceButton\">Spaces</button>");
 			
 			if(name=="Family"){
 				$("#usersearchresults").css("border", "4px solid "+$("#familyCircle").css("background-color"));
-				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
+				$("#usersearchresults").append("<button value='"+name+"' title='Edit circle colour' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
 			} else if(name=="Friends"){
 				$("#usersearchresults").css("border", "4px solid "+$("#friendsCircle").css("background-color"));
-				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
+				$("#usersearchresults").append("<button value='"+name+"' title='Edit circle colour' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
 			} else if(name=="Medical Professionals"){
 				$("#usersearchresults").css("border", "4px solid "+$("#medicalCircle").css("background-color"));
-				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
+				$("#usersearchresults").append("<button value='"+name+"' title='Edit circle colour' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
 			} else if(name=="Wellness Professionals"){
 				$("#usersearchresults").css("border", "4px solid "+$("#wellnessCircle").css("background-color"));
-				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
-			} else if($("#"+name.replace(/\s+/g, '')).hasClass("circle5")){
+				$("#usersearchresults").append("<button value='"+name+"' title='Edit circle colour' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
+			} else if($("#"+name.replace(/\s+/g, '')).hasClass("circle5") || $("#"+name.replace(/\s+/g, '')).hasClass("circle6")){
 				$("#usersearchresults").css("border", "4px solid "+$("#"+name.replace(/\s+/g, '')).css("background-color"));
-				$("#usersearchresults").append("<button value='"+name+"' id='deleteCircleButton' class=\"list-button spaceButton\">Delete Circle</button>");
-				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
-			} else if($("#"+name.replace(/\s+/g, '')).hasClass("circle6")){
-				$("#usersearchresults").css("border", "4px solid "+$("#"+name.replace(/\s+/g, '')).css("background-color"));
-				$("#usersearchresults").append("<button value='"+name+"' id='deleteCircleButton' class=\"list-button spaceButton\">Delete Circle</button>");
-				$("#usersearchresults").append("<button value='"+name+"' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
-			}	
+				$("#usersearchresults").append("<button value='"+name+"' title='Delete this circle' id='deleteCircleButton' class=\"list-button spaceButton\">Delete Circle</button>");
+				$("#usersearchresults").append("<button value='"+name+"' title='Edit circle information' id='editCircleButton' class=\"list-button spaceButton\">Edit</button>");
+			} 
 
 			if(usersInCircles.length==0){
 				$("#usersearchresults").append("<center>You have no users in your circles yet!</center>");
@@ -495,7 +491,6 @@
 			});
 
 			$( "#saveSpaces" ).click(function() {
-				//$( "#notYetImplementedDialog" ).dialog( "open" );
 				$.each($("#space input"), function(i, item){ 
 					$.each(spaces, function(j, spa) {
 						if(spa._id.$oid == $(item).attr("id")){
@@ -659,11 +654,11 @@
 						<tr class="searchTr">
 							<td>
 								<div id="usersearch">
-									<div class="searchbar">
+									<div class="searchbar" title="Type a name or email to search for your friends">
 										<label for="usersearchbar" id="usersearchlabel" class="label">Search for other users</label>
 										<input type="search" id="usersearchbar" class="input"></input>
 									</div>
-									<input id="searchButton" type="submit" name="submit" value="Search" class="big-button searchButton" />
+									<input id="searchButton" type="submit" name="submit" value="Search" class="big-button searchButton" title="Type a name or email to search for your friends" />
 								</div>
 							</td>
 						</tr>
@@ -672,7 +667,8 @@
 								<div id="usersearchresults" class="recordentries">
 									<center>
 										<img id="loader" style="height:60px; float:center; display: none; margin-left: auto; margin-right: auto;" src="../images/loading.gif"></img>
-										Use the search bar above to search for users.
+										Use the search bar above to search for users.<br>
+										Click on the circles below to see who is in
 									</center>
 								</div>
 							</td>
@@ -690,7 +686,7 @@
 									<div class="circle med deg45" id="medicalCircle" name="Medical Professionals"><div><span>Medical Prof. 0</span></div></div>
 									<div class="circle wel deg270" id="wellnessCircle" name="Wellness Professionals"><div><span>Wellness Prof. 0</span></div></div>
 									<div class="circle research deg135" id="researchCircle" name="Research"><div><span>Research</span></div></div>
-									<div class="circle aNew deg180" id="addCircle">
+									<div class="circle aNew deg180" id="addCircle" title="Add new circle">
 										<div><span>
 											<svg xmlns="http://www.w3.org/2000/svg" version="1.1">
 												<rect x="32" y="1" rx="5" ry="20" width="8" height="32" style="fill:#8B814C;stroke:black;stroke-width:2;opacity:0.9" />

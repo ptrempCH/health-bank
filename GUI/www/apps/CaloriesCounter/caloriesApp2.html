@@ -10,17 +10,11 @@
 	<script type="text/javascript">
 
 		$(document).ready(function() {
-			loadTodayCalItems();
-			$("#addNewButton").click(function(){
-				$("#calApp-addnew-box").css("display", "block");
-				$("#calApp-addnew-box .label").css("width", "150px");
-				$("#addNewButton").css("display", "none");
-				$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
-				return false;
-			});
 			$("#cancelButton").click(function(){
-				$("#calApp-addnew-box").css("display", "none");
-				$("#addNewButton").css("display", "block");
+				$("#descr").val("");
+				$("#amount").val("0");
+				$("#cal").val("0");
+				$("#comment").val("");
 				return false;
 			});
 			$("#submitButton").click(function(){
@@ -29,8 +23,13 @@
 			});
 			$("#timelineButton").click(function(){
 				window.top.location = parent.WEB_URL+"spaces/spaces.html";
+				return false;
 			});
 			$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
+			$("#needHelpButton").click(function(){
+				setUpHelpDialog();
+				return false;
+			});
 		});
 		
 	</script>
@@ -38,20 +37,7 @@
 <body>
 	<!--Content-->
 	<div class="page-content">
-		<div id="chronic-section">
-			<div>
-				<h3 id="chronic-section-header">Your records for today</h3>
-				<input id="timelineButton" type="submit" name="submit" value="Timeline" class="big-button timelineButton" />
-			</div>
-			<ul id="recordentries" class="recordentries calAppRecEnt">
-				<center>
-					<img style="height:60px; float:center; display: block; margin-left: auto; margin-right: auto;" src="../images/loading.gif"></img>
-					Loading...
-				</center>
-			</ul>
-		</div>
-
-		<input id="addNewButton" type="submit" name="submit" value="Add New Item" class="button" />
+		<input id="timelineButton" type="submit" name="submit" value="Timeline" class="big-button timelineButton" />
 		<div class="calApp-addnew-box" id="calApp-addnew-box">
 			<h3 class="calApp-header-text">Add a new entry to your chronicle.</h3>
 			<div id="calApp-feedback" class="callApp-feedback">Please fill out all the fields with a (*).</div>
@@ -69,6 +55,7 @@
 				<div>
 					<label for="descr" id="descrLabel" class="label">What did you eat?(*)</label> 
 					<input id="descr" name="descr" type="text" class="input descr" placeholder="What?" required />
+					<button id="needHelpButton" class="button right">Need Help?</button>
 				</div>
 				<div>
 					<label for="amount" id="amountLabel" class="label">How many items?(*)</label> 
@@ -93,5 +80,14 @@
 		</div>
 	</div>
 	<!--END Content-->
+	<!-- Dialog -->
+	<div id="calDialog" class="front">
+		<h3 id="calDialogHeader"><button id="calDialogBackButton"class="button">back</button><span>Choose a category</span></h3>
+		<ul id="calDialogList"></ul>
+		<span id="calDialogFooter">Data taken from <a href="http://caloriecount.about.com/">caloriecount.com</a></span>
+		<button id="calDialogCloseButton" class="big-button">Cancle</button>
+	</div>
+	<div class="dialog-overlay" id="dialog-overlay"></div>
+	<!-- END Dialog -->
 </body>
 </html>

@@ -11,107 +11,21 @@
 	<script type="text/javascript">
 
 		$(document).ready(function() {
-			loadTodaySportsItems();
-			$("#addNewButton").click(function(){
-				$("#calApp-addnew-box").css("display", "block");
-				$("#calApp-addnew-box .label").css("width", "150px");
-				$("#addNewButton").css("display", "none");
-				if(bmrSet){
-					$("#mealtype").val("sports");
-					$("#gender").parent().hide();
-					$("#age").parent().hide();
-					$("#weight").parent().hide();
-					$("#activity").parent().hide();
-					$("#tall").parent().hide();
-				} else {
-					$("#cal").parent().hide();
-					$("#descr").parent().hide();
-				}
-				if(parent.user.gender=="mr"){
-					$("#gender").val("m");
-					$("#gender").parent().hide();
-				} else if(parent.user.gender=="mrs"){
-					$("#gender").val("f");
-					$("#gender").parent().hide();
-				}
-				if(parent.user.birthday!=undefined){
-					$("#age").parent().hide();
-				}
-				$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
-				$("#calApp-feedback").html("You can set your weight and height to be used here in your <a href=\"\" id=\"profileButton\">profile</a>!");
-				$("#profileButton").click(function(){
-					window.top.location = parent.WEB_URL+"profile.html";
-				});
-				return false;
-			});
-			$("#cancelButton").click(function(){
-				$("#calApp-addnew-box").css("display", "none");
-				$("#addNewButton").css("display", "block");
-				return false;
-			});
-			$("#submitButton").click(function(){
-				if($("#mealtype").val()=="sports"){
-					addCalEntry("s");
-				} else {
-					addBMREntry();
-				}
-				return false;
-			});
-			$("#timelineButton").click(function(){
-				window.top.location = parent.WEB_URL+"spaces/spaces.html";
-			});
-			$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
-			$("#mealtype").change(function(e){
-				if(this.value=="sports"){
-					$("#cal").parent().show();
-					$("#descr").parent().show();
-					$("#gender").parent().hide();
-					$("#age").parent().hide();
-					$("#weight").parent().hide();
-					$("#activity").parent().hide();
-					$("#tall").parent().hide();
-				} else {
-					if(bmrSet){
-						$("#calApp-feedback").html("You can add your BMR only once a day!");
-						$("#calApp-feedback").css("color", "red");
-						$("#mealtype").val("sports");
-						return false;
-					} 
-					if($("#gender").parent().is(":hidden")){
-						$("#cal").parent().hide();
-						$("#descr").parent().hide();
-						if(parent.user.gender==undefined || parent.user.gender.length==0){$("#gender").parent().show();}
-						if(parent.user.birthday==undefined || parent.user.birthday.length==0){$("#age").parent().show();}
-						$("#weight").parent().show();
-						$("#activity").parent().show();
-						$("#tall").parent().show();
-					}
-				}
-				$(".page-content .calApp-addnew-box .calApp-form div label").autoWidth();
-			});
+			checkBMR();
+			setValues();
+			initButtons();
 		});
 	</script>
 </head>
 <body>
 	<!--Content-->
 	<div class="page-content">
-		<div id="chronic-section">
-			<div>
-				<h3 id="chronic-section-header">Your records for today</h3>
-				<input id="timelineButton" type="submit" name="submit" value="Timeline" class="big-button timelineButton" />
-			</div>
-			<ul id="recordentries" class="recordentries calAppRecEnt">
-				<center>
-					<img style="height:60px; float:center; display: block; margin-left: auto; margin-right: auto;" src="../../images/loading.gif"></img>
-					Loading...
-				</center>
-			</ul>
+		<div>
+			<h3 id="chronic-section-header">Add a sport activity to your chronicle.</h3>
+			<input id="timelineButton" type="submit" name="submit" value="Timeline" class="big-button timelineButton" />
 		</div>
-
-		<input id="addNewButton" type="submit" name="submit" value="Add New Item" class="button" />
+		<div id="calApp-feedback" class="callApp-feedback">Please fill out all the fields with a *.</div>
 		<div class="calApp-addnew-box" id="calApp-addnew-box">
-			<h3 class="calApp-header-text">Add a new entry to your chronicle.</h3>
-			<div id="calApp-feedback" class="callApp-feedback">Please fill out all the fields with a *.</div>
 			<form name="calApp-form" id="calApp-form" class="calApp-form" action="" method="post">
 				<!--Input fields-->
 
@@ -125,7 +39,17 @@
 				</div>
 				<div>
 					<label for="descr" id="descrLabel" class="label">What did you do?(*)</label> 
-					<input id="descr" name="descr" type="text" class="input descr" placeholder="What?" required />
+					<input id="descr" name="descr" type="text" class="input descr" placeholder="Your Activity?" list="activities" required />
+					<datalist id="activities">
+					    <option value="Walking"/>
+					    <option value="Running"/>
+					    <option value="Bicycling"/>
+					    <option value="Skating"/>
+					    <option value="Swimming"/>
+					    <option value="Skiing"/>
+					    <option value="Fitness"/>
+					    <option value="Teamsport (Foot-, Volley-, Handball, Hockey, etc.)"/>
+					</datalist>
 				</div>
 				<div>
 					<label for="cal" id="calLabel" class="label">How many calories?</label> 

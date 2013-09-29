@@ -42,7 +42,7 @@
 
 		function loadUserInfoIndividual(data){
 			if(data.type=="institute" || data.type=="admin"){
-				getUploadedOrInstalledApplications({
+				getUploadedApplications({
 					onSuccess: function(data){
 						loadInstituteApps(data);
 					}, onError: function(data){

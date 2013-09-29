@@ -8,9 +8,11 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 import ch.ethz.inf.systems.ptremp.healthbank.exceptions.IllegalQueryException;
 import ch.ethz.inf.systems.ptremp.healthbank.exceptions.NotConnectedException;
 import com.mongodb.BasicDBObject;
+import com.mongodb.CommandResult;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.WriteResult;
@@ -26,6 +28,7 @@ public class MongoDBConnector implements DBConnector {
  * Singleton for this class
  */
 	private static MongoDBConnector instance = null;
+	private static final String LOCK ="LOCK";
 	
 	/**
 	 * DO NOT ACCESS THIS CONSTRUCTOR DIRECTLY!
@@ -51,9 +54,11 @@ public class MongoDBConnector implements DBConnector {
 	 * @return The instance of the MongoDBConnector class
 	 */
 	public static MongoDBConnector getInstance() {
-		if(instance == null){
-			System.out.println("Connector is creating a new instance");
-			instance = new MongoDBConnector();
+		synchronized (LOCK) {
+			if(instance == null){
+				System.out.println("Connector is creating a new instance");
+				instance = new MongoDBConnector();
+			}
 		}
 		return instance;
 	}
@@ -143,12 +148,22 @@ public class MongoDBConnector implements DBConnector {
 		try {
 			mongoClient = new MongoClient( HOST, PORT );
 			rootDatabase = mongoClient.getDB( DB_NAME );
+			/* 
+			 * If you need authentication on the MongoDB database, set up the database accordingly (See: http://stackoverflow.com/questions/4881208/how-to-put-username-password-in-mongodb)
+			 * Then define username and password (probably you would load them from the configuration file the same way as HOST, PORT etc)
+			 * Finally uncomment the following five lines and you should be good to go.
+			 */
+			//boolean auth = rootDatabase.authenticate(username, password);
+			//if(!auth){
+			//	throw new MongoException("Authentication failed");
+			//  if(DEBUG){System.out.println("Connector called connect() failed. Authentication on the db server failed.");}
+			//}
 			this.connected = true;
 			if(DEBUG){System.out.println("Connector called connect() successfully. this.connected is now: "+this.connected);}
 		} catch (UnknownHostException e) {
 			throw new UnknownHostException("Could not connect. Please provide the correct URL and port and make sure the DB server is running");
 		} catch (MongoException e) {
-			throw new MongoException("Could not connect to the DB. Is the DB running?");
+			throw new MongoException("Could not connect to the DB. Is the DB running? Message: "+e.getMessage());
 		}
 	}
 	
@@ -319,6 +334,41 @@ public class MongoDBConnector implements DBConnector {
 			}
 			if(!cursor.hasNext()){ return null;} // maybe we should skip this line for performance reasons
 			return cursor;
+		} catch (MongoException e) {
+			throw new IllegalQueryException("Your provided query did throw an exception: "+e.getMessage());
+		}
+		finally {
+			rootDatabase.requestDone();
+		}
+	}
+	
+	/**
+	 * Run a command on the MongoDB database
+	 * @param 
+	 * 		queryObject A {@link DBObject} to query from. Have a look at <a href="http://docs.mongodb.org/ecosystem/tutorial/getting-started-with-java-driver/
+	 * 			#getting-a-set-of-documents-with-a-query">this link</a> for more information
+	 * @return The {@link DBCursor} for the result as an Object
+	 * @throws IllegalQueryException
+	 * @throws NotConnectedException 
+	 */
+	public CommandResult command(DBObject queryObject) throws IllegalQueryException, NotConnectedException {
+		if(!connected || rootDatabase==null){ 
+			try{
+				this.connect();
+			} catch (Exception e){
+				throw new NotConnectedException("We are not connected to a database, try to connect first."); 
+			}
+		}
+		rootDatabase.requestStart();
+		try{
+			final CommandResult commandResult;
+			if(queryObject==null){
+				throw new IllegalQueryException("Your provided query was null.");
+			} else {
+				commandResult = rootDatabase.command(queryObject);
+			}
+			if(commandResult == null){ return null;} // maybe we should skip this line for performance reasons
+			return commandResult;
 		} catch (MongoException e) {
 			throw new IllegalQueryException("Your provided query did throw an exception: "+e.getMessage());
 		}

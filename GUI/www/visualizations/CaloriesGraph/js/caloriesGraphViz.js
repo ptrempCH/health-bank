@@ -1,11 +1,17 @@
-var entries, entriesShown, caloriesData, sportsData, days, bmrSet;
+var entries, caloriesData, sportsData, days;
 
 function loadAllCalItems(){
-	parent.loadRecords("", {onSuccess: function(data){loadAllCalItemsSucc(data);}, onError: function(){loadAllCalItemsErr();}});
+	//parent.loadRecords("", {onSuccess: function(data){loadAllCalItemsSucc(data);}, onError: function(){loadAllCalItemsErr();}});
+	if(parent.records!=undefined){
+		loadAllCalItemsSucc(parent.records);
+	} else {
+		loadAllCalItemsErr();
+	}
 }
 
 function loadAllCalItemsSucc(data) {
-	if(data.values.records.size==0){
+	//if(data.values.records.size==0){
+	if(data.size==0){
 		$("#chart_div").css("display", "none");
 	}
 	$("#chart_div").css("display", "block");
@@ -13,10 +19,10 @@ function loadAllCalItemsSucc(data) {
 	caloriesData = [];
 	sportsData = [];
 	days = [];
-	$.each(data.values.records, function(i, item) {
+	//$.each(data.values.records, function(i, item) {
+	$.each(data, function(i, item) {
 		if(item.app=="caloriesApp"){
 			if(item.cal!=undefined){
-				calories = calories + parseInt(item.cal);
 				var date = moment(item.timedate).format("DD-MM-YYYY");
 				var found = false;
 				if(days.length==0){ days[0] = date; }
@@ -30,7 +36,7 @@ function loadAllCalItemsSucc(data) {
 				if(item.mealtype=="sports"){
 					sportsCal = sportsCal + parseInt(item.cal);
 					if(sportsData.length==0){
-						if(item.descr.indexOf("BMR") !== -1){
+						if(item.descr.indexOf("BMR") !== -1 || item.name.indexOf("BMR") !== -1){
 							sportsData[0] = [date, 0, parseInt(item.cal), parseInt(item.cal)];
 						} else {
 							sportsData[0] = [date, parseInt(item.cal), 0, parseInt(item.cal)];
@@ -38,7 +44,7 @@ function loadAllCalItemsSucc(data) {
 					} else {
 						for(var i=0;i<sportsData.length;i++){
 							if(sportsData[i][0]==date){
-								if(item.descr.indexOf("BMR") !== -1){
+								if(item.descr.indexOf("BMR") !== -1 || item.name.indexOf("BMR") !== -1){
 									sportsData[i][2] = parseInt(item.cal);
 									sportsData[i][3] = sportsData[i][3]+parseInt(item.cal);
 								} else {
@@ -50,7 +56,7 @@ function loadAllCalItemsSucc(data) {
 							}
 						}
 						if(!found){
-							if(item.descr.indexOf("BMR") !== -1){
+							if(item.descr.indexOf("BMR") !== -1 || item.name.indexOf("BMR") !== -1){
 								sportsData[i] = [date, 0, parseInt(item.cal), parseInt(item.cal)];
 							} else {
 								sportsData[i] = [date, parseInt(item.cal), 0, parseInt(item.cal)];
@@ -58,6 +64,7 @@ function loadAllCalItemsSucc(data) {
 						}
 					}
 				} else {
+					calories = calories + parseInt(item.cal);
 					if(caloriesData.length==0){
 						if(item.mealtype=="breakfast"){
 							caloriesData[0] = [date, parseInt(item.cal), 0, 0, 0];
@@ -100,9 +107,10 @@ function loadAllCalItemsSucc(data) {
 			}
 		}
 	});
-	data.values.records.reverse();
-	entries = data.values.records;
-	$.each(data.values.records, function(i, item) {
+	//data.values.records.reverse();
+	//entries = data.values.records;
+	entries = data;
+	$.each(entries, function(i, item) {
 		if(item.app=="caloriesApp"){
 			var date = new Date(item.timedate);
 			if(moment().isSame(date, 'day')){
@@ -119,8 +127,16 @@ function loadAllCalItemsSucc(data) {
 	$("#todayConsumption").html(caloriesToday+"cal");
 	$("#totalBurned").html(sportsCal+"cal");
 	$("#todayBurned").html(sportsToday+"cal");
-	$("#totalRatio").html((Math.ceil(calories/sportsCal * 100) / 100)+"");
-	$("#todayRatio").html((Math.ceil(caloriesToday/sportsToday * 100) / 100)+"");
+	if(sportsCal!=null){
+		$("#totalRatio").html((Math.ceil(calories/sportsCal * 100) / 100)+"");
+	} else {
+		$("#totalRatio").html("0");
+	}
+	if(sportsToday!=0){
+		$("#todayRatio").html((Math.ceil(caloriesToday/sportsToday * 100) / 100)+"");
+	} else {
+		$("#todayRatio").html("0");
+	}
 	$("#totalDays").html(days.length+"d");
 }
 function loadAllCalItemsErr() {
@@ -132,7 +148,8 @@ function drawVisualization() {
 	    var data;
 	    var chart;
 	    var options;
-	    if(caloriesData!=undefined){
+	    if(caloriesData!=undefined && caloriesData.length>0){
+	    	caloriesData.reverse();
 	    	for(var i=0; i<caloriesData.length;i++){
 	    		caloriesData[i][5] = (caloriesData[i][4]+caloriesData[i][3]+caloriesData[i][2]+caloriesData[i][1])/4;
 	    	}
@@ -182,15 +199,16 @@ function drawVisualization() {
 			      caloriesData[5]
 			    ]);
 	    	} else {
+	    		length = caloriesData.length;
 			    data = google.visualization.arrayToDataTable([
 			      ['Day', 'Breakfast', 'Lunch', 'Dinner', 'Snack', 'Avg'],
-			      caloriesData[0],
-			      caloriesData[1],
-			      caloriesData[2],
-			      caloriesData[3],
-			      caloriesData[4],
-			      caloriesData[5],
-			      caloriesData[6]
+			      caloriesData[length-7],
+			      caloriesData[length-6],
+			      caloriesData[length-5],
+			      caloriesData[length-4],
+			      caloriesData[length-3],
+			      caloriesData[length-2],
+			      caloriesData[length-1]
 			    ]);
 			}
 
@@ -206,8 +224,11 @@ function drawVisualization() {
 
 		    chart = new google.visualization.ComboChart(document.getElementById('chart_div'));
 		    chart.draw(data, options);
+		} else {
+			$("#chart_div").html("no data");
 		}
-		if(sportsData!=undefined){
+		if(sportsData!=undefined && sportsData.length>0) {
+	    	sportsData.reverse();
 	    	if(sportsData.length<2){
 	    		data = google.visualization.arrayToDataTable([
 			      ['Day', 'Sport', 'BMR', 'Total'],
@@ -254,15 +275,16 @@ function drawVisualization() {
 			      sportsData[5]
 			    ]);
 	    	} else {
+	    		length = sportsData.length;
 			    data = google.visualization.arrayToDataTable([
 			      ['Day', 'Sport', 'BMR', 'Total'],
-			      sportsData[0],
-			      sportsData[1],
-			      sportsData[2],
-			      sportsData[3],
-			      sportsData[4],
-			      sportsData[5],
-			      sportsData[6]
+			      sportsData[length-7],
+			      sportsData[length-6],
+			      sportsData[length-5],
+			      sportsData[length-4],
+			      sportsData[length-3],
+			      sportsData[length-2],
+			      sportsData[length-1]
 			    ]);
 			}
 
@@ -278,6 +300,8 @@ function drawVisualization() {
 
 		    chart = new google.visualization.ComboChart(document.getElementById('chartSports_div'));
 		    chart.draw(data, options);
+		} else {
+			$("#chartSports_div").html("no data");
 		}
 	}, 1000);
-  }
+}

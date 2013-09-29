@@ -7,6 +7,16 @@
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 	<link href="../../../css/devGuide.css" rel="stylesheet" type="text/css">
 
+	<!-- SyntaxHighlighter -->
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shCore.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJava.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushJScript.js"></script>
+	<script type="text/javascript" src="../../../js/syntaxHighlighter/shBrushXml.js"></script>
+
+	<link href="../../../css/syntaxHighlighter/shCore.css" rel="stylesheet" type="text/css" />
+	<link href="../../../css/syntaxHighlighter/shThemeDefault.css" rel="stylesheet" type="text/css" />
+	<!-- END SyntaxHighlighter -->
+
 	<script type="text/javascript">
 
 		$(document).ready(function() {
@@ -16,6 +26,12 @@
 				$(".dev-navi").css("height", ($(window).height()*0.82)+"px");
 				$(".dev-content").css("height", ($(window).height()*0.82)+"px");
 			});
+
+			SyntaxHighlighter.all();
+			setTimeout(function(){
+				style = { width:"80%", margin:"0 auto 0 auto"};
+				$(".syntaxhighlighter").parent().css(style);
+			}, 300);
 		});
 		
 	</script>
@@ -48,7 +64,8 @@
 				<li>&nbsp;&nbsp;<a href="devApiClientApplication.html">Applications</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClientNews.html">News</a></li><br>
 				<li>&nbsp;&nbsp;<a href="devApiClientMessage.html">Messages</a></li><br>
-				<li>&nbsp;&nbsp;<a href="devApiClientImage.html">Images</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientFiles.html">Files</a></p><br>
+				<li>&nbsp;&nbsp;<a href="devApiClientOther.html">Other functions</a></p><br>
 			</ul>
 			<p><a href="../devDemos.html">Demos</a></p><br>
 		</div>
@@ -56,7 +73,169 @@
 
 		<!--Content-->
 		<div class="dev-content">
-			<p> Comming soon ... </p>
+			<br>
+			<h3>Client API for applications</h3>
+			<br>
+			<p>In this chapter we will talk about all the functions in the client API that deal with applications like creating them, editing them, installing them and querying them. Many calls are only applicable for instiutet users. In the following we will discuss each function individually. </p>
+			<br><br>
+			<h4>Add application</h4>
+			<p>To add a new application, use a form. This function uses a multipart request. The required fields are very well defined in the server REST API description <a href="../devApiServer/devApiServerApplication.html">here</a>. Get the form data via and send it to the function 'addNewApplication' as described in the following snippet: </p><br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function sends the form data to add a new application or visualization to the server.
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - formData: The form data that contains all the information about the new app or visualization to add.
+				*/
+				function addNewApplication(formData, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Edit application</h4>
+			<p>This call is very similar to the one used for adding applications. It also uses a multipart call to the server and is very well described in the server API. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function sends the form data to edit an existing application or visualization to the server.
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - formData: The form data that contains all the information about the application or visualization to edit.
+				*/
+				function editExistingApplication(formData, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Get application detail</h4>
+			<p>By providing the application identification this function will return all the information about the respective application or visualization there is. With the 'type' parameter the caller can define if he or she is looking for applications ('app') or visualizations ('viz'). Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function queries for details about a single application or visualization
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: The id of the application or visualization to query details about
+				* - type: The type you want to query. Either 'app' for applications or 'viz' for visualizations
+				*/
+				function getApplicationDetail(id, type, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Query applicationa</h4>
+			<p>With this query function we allow callers to query for applications. With the 'type' parameter the caller can define if he or she is looking for applications ('app') or visualizations ('viz'). The 'query' parameter defines the query to ask the database. The server will search for matchings in the name or description of the applications and visualizations. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function queries for applications and visualizations according to a query word
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - query: The query to search applications for
+				* - type: The type you want to query. Either 'app' for applications or 'viz' for visualizations
+				*/
+				function getApplicationByQuery(query, type, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Get all installed applications of a user</h4>
+			<p>With this query the caller gets all the application or visualizations the current user has installed on his or her profile in an array. To differentiate between applications and visualizations the caller has to provide the 'type' parameter which can have the values 'app' or 'viz' for applications or visualizations respectively. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function queries for all the applications or visualizations the current user has installed already
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - type: The type you want to query. Either 'app' for applications or 'viz' for visualizations
+				*/
+				function getInstalledApplications(type, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Get the applications you created and added to the system</h4>
+			<p>For institute users this query will return all the applications and visualizations the institute user is the author for. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function queries for all the applications or visualizations the current user has created and added to the system already provided it is an institute user
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				*/
+				function getUploadedApplications(callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Get all the applications in the system</h4>
+			<p>This function will answer with all the applications and visualizations present on the system. Only application which are set to 'online' will be returned. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This will return all the applications and visualizations that are present on the system so far.
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				*/
+				function getAllApplications(callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>In-/Uninstall application</h4>
+			<p>This function allows the caller to install or uninstall an application for the user. The system will check if the application is insalled and execute the corresponding action.  The call is straight forward and only needs the identification for the application. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function allows to install and uninstall applications and visualizations.
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: The id of the applications or visualizations to install or uninstall
+				*/
+				function inAndUninstallApplication(id, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Get information about installed application</h4>
+			<p>With this query the caller gets information about the installed application. This information icludes the circles and spaces the user assigned to this application as well as others. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function allows to assign retrieve information about the app install such as assigned spaces and circles.
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: The id of the applications or visualizations to get install information
+				*/
+				function getAppInstallInformation(id, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Set spaces for installed application</h4>
+			<p>The user can set spaces to an application he or she has installed. The result of this is that every new entry generated by this application for the user will automatically be assigned to this particular spaces. The parameters include the identification for the application and the spaces seperated by a space in a string. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function allows to assign spaces to an application so that in future every record entry, which is added by this app, is assigned to this space.
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: The id of the applications or visualizations to update
+				* - spaces: A list of selected space ID's separated by a whitespace
+				*/
+				function updateSpacesForApp(id, spacesList, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Set circles for installed application</h4>
+			<p>The user can set circles to an application he or she has installed. The result of this is that every new entry generated by this application for the user will automatically be assigned to this particicular circles. The parameters include the identification for the application and the circles seperated by a space in a string. Here is the detail description of the function:  </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function allows to assign circles to an application so that in future every record entry, which is added by this app, is assigned to this circle.
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: The id of the applications or visualizations to update
+				* - circles: A list of selected circle ID's separated by a whitespace
+				*/
+				function updateCirclesForApp(id, circlesList, callback) {...}
+			]]></script><br>
+			<br><br>
+			<h4>Refresh application secret</h4>
+			<p>The author of an application will receive a secret when installing it. This secret can be inspected on the application detail view only by the author. With this function the author of the application can renew this secret in case it got stolen or there was any other security breach. The secret is essential for applications that do business to business communication with Health Bank. For more information see <a href="../devCreateApp.html">this page.</a> Here is the detail description of the function: </p>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				/**
+				* This function allows to get a new app secret provided the logged in user is the owner of the app.
+				*
+				* Parameters:
+				* - callback: If desired the caller can provide functions onSuccess and onError via this callback, which will be called after the AJAX request returns
+				* - id: The id of the applications or visualizations to update the secret
+				* - secret: The current secret of the application/visualization
+				*/
+				function refreshAppSecret(id, secret, callback) {...}
+			]]></script><br>
 		</div>
 		<!--END Content-->
 	</div>

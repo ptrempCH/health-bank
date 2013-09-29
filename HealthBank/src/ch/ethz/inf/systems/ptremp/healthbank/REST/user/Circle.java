@@ -131,7 +131,7 @@ public class Circle extends HttpServlet {
 		String id = request.getParameter("id");
 		String name = request.getParameter("name");
 		if(credentials==null || credentials.length()<2 || session==null || session.length()<4){
-			errorMessage = "\"Please provide the parameters 'pw' and 'username' with the request.\"";
+			errorMessage = "\"Please provide the parameters 'session' and 'credentials' with the request.\"";
 			wasError = true;
 		}
 		if(!wasError){

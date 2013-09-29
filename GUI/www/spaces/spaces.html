@@ -18,6 +18,7 @@
 			initialize();
 			$.get(WEB_URL+'dialogs/not-implemented.html').success(function(data){$('body').append(data); loadedNotYetImplemented();});
 			initializeSpaces("spaces/spaces.html", "", 0);
+			$( document ).tooltip({ tooltipClass: "hbTooltip" });
 		});
 		
 	</script>
@@ -41,16 +42,16 @@
 				<!--Content-->
 				<div class="page-content spaces-page-content">
 					<div id="tabs" class="tabs">
-						<div id="all" class="tab tab-highlight"><a href="spaces.html">All Entries</a></div>
+						<div id="all" class="tab tab-highlight" title="Feed of all your record entries"><a href="spaces.html">All Entries</a></div>
 						<div id="userDefTabs"></div>
-						<div id="newtab" class="tab new-tab"><img id="newTabIcon" src="../../images/plus.png" width="18px"/></div>
+						<div id="newtab" class="tab new-tab"><img id="newTabIcon" title="Click here to change the tabs and add new spaces" src="../../images/gear.png" width="18px"/></div>
 					</div>
 					<div id="spaces-chronic-section">
 						<div class="chronic-section-header">
 							<h3 class="header-text">The latest records</h3>
-							<input id="createRecButton" type="submit" name="submit" value="Create New Record" class="big-button" /><br>
-							<ul id="filterDropdown">
-							    <li class="filterLabel"><span>Filter entries:&nbsp;</span></li>
+							<input id="createRecButton" type="submit" name="submit" value="Create New Entry" title="Click here to get to the my application page" class="big-button" /><br>
+							<ul id="filterDropdown" >
+							    <li class="filterLabel" title="Filter the record entries to your needs. Use this dropdown to show entries of other users."><span>Filter entries:&nbsp;</span></li>
 							    <li class="filterDD"><span id="filterTop">My Entries<img src="../../images/navigate_down.png" height="20px"/></span>
 								<ul>
 								    <li><span><label><input type="checkbox" id="filterEveryone"/>No Filter</label></span></li>

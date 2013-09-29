@@ -439,202 +439,6 @@
 			$("#download").click(function(){
 				$( "#notYetImplementedDialog" ).dialog( "open" );
 			});
-			var availableTags = [
-		      	"Afghanistan",
-				"Albania",
-				"Algeria",
-				"Andorra",
-				"Angola",
-				"Antigua &amp; Deps",
-				"Argentina",
-				"Armenia",
-				"Australia",
-				"Austria",
-				"Azerbaijan",
-				"Bahamas",
-				"Bahrain",
-				"Bangladesh",
-				"Barbados",
-				"Belarus",
-				"Belgium",
-				"Belize",
-				"Benin",
-				"Bhutan",
-				"Bolivia",
-				"Bosnia Herzegovina",
-				"Botswana",
-				"Brazil",
-				"Brunei",
-				"Bulgaria",
-				"Burkina",
-				"Burundi",
-				"Cambodia",
-				"Cameroon",
-				"Canada",
-				"Cape Verde",
-				"Central African Rep",
-				"Chad",
-				"Chile",
-				"China",
-				"Colombia",
-				"Comoros",
-				"Congo",
-				"Congo {Democratic Rep}",
-				"Costa Rica",
-				"Croatia",
-				"Cuba",
-				"Cyprus",
-				"Czech Republic",
-				"Denmark",
-				"Djibouti",
-				"Dominica",
-				"Dominican Republic",
-				"Timor Leste",
-				"Ecuador",
-				"Egypt",
-				"El Salvador",
-				"Equatorial Guinea",
-				"Eritrea",
-				"Estonia",
-				"Ethiopia",
-				"Fiji",
-				"Finland",
-				"France",
-				"Gabon",
-				"Gambia",
-				"Georgia",
-				"Germany",
-				"Ghana",
-				"Greece",
-				"Grenada",
-				"Guatemala",
-				"Guinea",
-				"Guinea-Bissau",
-				"Guyana",
-				"Haiti",
-				"Honduras",
-				"Hungary",
-				"Iceland",
-				"India",
-				"Indonesia",
-				"Iran",
-				"Iraq",
-				"Ireland {Republic}",
-				"Israel",
-				"Italy",
-				"Ivory Coast",
-				"Jamaica",
-				"Japan",
-				"Jordan",
-				"Kazakhstan",
-				"Kenya",
-				"Kiribati",
-				"Korea North",
-				"Korea South",
-				"Kuwait",
-				"Kyrgyzstan",
-				"Laos",
-				"Latvia",
-				"Lebanon",
-				"Lesotho",
-				"Liberia",
-				"Libya",
-				"Liechtenstein",
-				"Lithuania",
-				"Luxembourg",
-				"Macedonia",
-				"Madagascar",
-				"Malawi",
-				"Malaysia",
-				"Maldives",
-				"Mali",
-				"Malta",
-				"Marshall Islands",
-				"Mauritania",
-				"Mauritius",
-				"Mexico",
-				"Micronesia",
-				"Moldova",
-				"Monaco",
-				"Mongolia",
-				"Montenegro",
-				"Morocco",
-				"Mozambique",
-				"Myanmar, {Burma}",
-				"Namibia",
-				"Nauru",
-				"Nepal",
-				"Netherlands",
-				"New Zealand",
-				"Nicaragua",
-				"Niger",
-				"Nigeria",
-				"Norway",
-				"Oman",
-				"Pakistan",
-				"Palau",
-				"Panama",
-				"Papua New Guinea",
-				"Paraguay",
-				"Peru",
-				"Philippines",
-				"Poland",
-				"Portugal",
-				"Qatar",
-				"Romania",
-				"Russian Federation",
-				"Rwanda",
-				"St Kitts &amp; Nevis",
-				"St Lucia",
-				"Saint Vincent &amp; the Grenadines",
-				"Samoa",
-				"San Marino",
-				"Sao Tome &amp; Principe",
-				"Saudi Arabia",
-				"Senegal",
-				"Serbia",
-				"Seychelles",
-				"Sierra Leone",
-				"Singapore",
-				"Slovakia",
-				"Slovenia",
-				"Solomon Islands",
-				"Somalia",
-				"South Africa",
-				"Spain",
-				"Sri Lanka",
-				"Sudan",
-				"Suriname",
-				"Swaziland",
-				"Sweden",
-				"Switzerland",
-				"Syria",
-				"Taiwan",
-				"Tajikistan",
-				"Tanzania",
-				"Thailand",
-				"Togo",
-				"Tonga",
-				"Trinidad &amp; Tobago",
-				"Tunisia",
-				"Turkey",
-				"Turkmenistan",
-				"Tuvalu",
-				"Uganda",
-				"Ukraine",
-				"United Arab Emirates",
-				"United Kingdom",
-				"United States of America",
-				"Uruguay",
-				"Uzbekistan",
-				"Vanuatu",
-				"Vatican City",
-				"Venezuela",
-				"Vietnam",
-				"Yemen",
-				"Zambia",
-				"Zimbabwe",
-		    ];
 		    $( "#country" ).autocomplete({
 		      source: availableTags,
 		      appendTo: "#autoC",
@@ -645,13 +449,14 @@
 		      appendTo: "#autoC-institute",
 		      autoFocus: true
 		    });
+			$( document ).tooltip({ tooltipClass: "hbTooltip" });
 		});
 		
 	</script>
 </head>
 <body>
 	<div class="dialog-overlay" id="dialog-overlay"></div>
-	<div id="dialog-form" class="profile-dialog-form dialog-front" title="Edit user settings">
+	<div id="dialog-form" class="profile-dialog-form dialog-front">
 		<p class="dialog-front dialog-header">All form fields with a (*) are required.</p>
 		<br/>
 		<form class="dialog-content dialog-front">
@@ -738,7 +543,7 @@
 			</div>
 		</form>
 	</div>
-	<div id="dialog-form-institute" class="profile-dialog-form dialog-front" title="Edit user settings">
+	<div id="dialog-form-institute" class="profile-dialog-form dialog-front">
 		<p class="dialog-front dialog-header">All form fields with a (*) are required.</p>
 		<br/>
 		<form class="dialog-content dialog-front">
@@ -782,7 +587,7 @@
 			</div>
 		</form>
 	</div>
-	<div id="pw-dialog-form" class="profile-dialog-form dialog-front" title="Edit password">
+	<div id="pw-dialog-form" class="profile-dialog-form dialog-front" >
 		<p class="dialog-front dialog-header">All form fields are required.</p>
 		<br/>
 		<form class="dialog-content dialog-front">
@@ -804,7 +609,7 @@
 			</div>
 		</form>
 	</div>
-	<div id="userIcon-dialog-form" class="profile-dialog-form dialog-front" title="Change User Icon">
+	<div id="userIcon-dialog-form" class="profile-dialog-form dialog-front">
 		<p class="dialog-front dialog-header">All form fields are required.</p>
 		<br/>
 		<form class="dialog-content dialog-front" id="icon-form" enctype="multipart/form-data" >
@@ -846,7 +651,7 @@
 				<div class="page-content">
 					<div class="details">
 						<div class="detail-icon"></div>
-						<h2 class="detail-name">Name</h2> <button class="big-button profileCircleButton" id="circleButton">Circles</button>
+						<h2 class="detail-name">Name</h2> <button class="big-button profileCircleButton" title="Allow others to see your data" id="circleButton">Circles</button>
 						<p class="detail-username">Username</p></br>
 						<p class="detail-address">Address</p></br>
 						<p class="detail-email">Email</p></br>
@@ -858,11 +663,11 @@
 						<p class="detail-spouse">Spouse</p></br>
 						<p class="detail-insurance">Insurance</p>
 					</div>
-					<button class="big-button profileButton" id="edit">Edit</button>
-					<button class="big-button profileButton" id="changePW">Change Password</button>
-					<button class="big-button profileButton" id="userIcon">Change User Icon</button>
-					<button class="big-button profileButton" id="delete">Delete User Account</button>
-					<button class="big-button profileButton" id="download">Download all Data</button>
+					<button class="big-button profileButton" title="Edit user settings" id="edit">Edit</button>
+					<button class="big-button profileButton" title="Change your password" id="changePW">Change Password</button>
+					<button class="big-button profileButton" title="Change your user icon" id="userIcon">Change User Icon</button>
+					<button class="big-button profileButton" title="Delete your account" id="delete">Delete User Account</button>
+					<button class="big-button profileButton" title="Download all your data" id="download">Download all Data</button>
 				</div>
 				<!--END Content-->
 			</div>

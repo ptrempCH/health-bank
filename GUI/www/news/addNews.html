@@ -38,7 +38,7 @@
 				$("#addNews-feedback").css("color", "red");
 				return false;
 			}
-			addNews(isEdit, id, title, preview, content, {
+			addEditNews(isEdit, id, title, preview, content, {
 				onSuccess: function(data){
 					$("#addNews-feedback").html("Successfully added news to the database! Add another one or go to wherever you like. "); 
 					$("#addNews-feedback").css("color", "green");

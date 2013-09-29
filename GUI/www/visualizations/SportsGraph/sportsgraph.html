@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<script src="js/sportsgraph.js"></script>
+	<link href="css/sportsgraph.css" rel="stylesheet" type="text/css">
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.1.0/moment.min.js"></script>
+	<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+	<script type="text/javascript" src="http://www.owlgraphic.com/owlcarousel/owl-carousel/owl.carousel.min.js"></script>
+	<link href="http://www.owlgraphic.com/owlcarousel/owl-carousel/owl.carousel.css" rel="stylesheet">
+	<link href="http://www.owlgraphic.com/owlcarousel/owl-carousel/owl.theme.css" rel="stylesheet">
+    <script type="text/javascript">
+      google.load('visualization', '1', {packages: ['corechart']});
+    </script>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			loadStatistics();
+      		google.setOnLoadCallback(drawVisualization);
+		});
+		
+	</script>
+</head>
+<body>
+	<div id="statistics">
+		<div id="statsHeader">
+			<table>
+				<tr>
+					<th>Total Data</th>
+					<th></th>
+					<th width="30%"></th>
+					<th></th>
+					<th></th>
+				</tr>
+				<tr>
+					<td>Your total Distance: </td>
+					<td id="totalDistance"></td>
+					<td width="30%"></td>
+					<td>Total Time: </td>
+					<td id="totalTime"></td>
+				</tr>
+				<tr>
+					<td>Avg. Speed: </td>
+					<td id="avgSpeed"></td>
+					<td width="30%"></td>
+					<td>Total Elevation Gain: </td>
+					<td id="totalElevation"></td>
+				</tr>
+				<tr>
+					<td>Total Calories: </td>
+					<td id="totalCalories"></td>
+					<td width="30%"></td>
+					<td></td>
+					<td></td>
+				</tr>
+			</table>
+		</div>
+		<div id="owl-carousel" class="owl-carousel owl-theme">
+		  <div class="item"><h3 class="center">Calories</h3><div id="cal_chart"></div></div>
+		  <div class="item"><h3 class="center">Distance</h3><div id="distance_chart"></div></div>
+		  <div class="item"><h3 class="center">Avg. Speed</h3><div id="avgSpeed_chart" ></div></div>
+		  <div class="item"><h3 class="center">Elevation</h3><div id="elevation_chart" ></div></div>
+		  <div class="item"><h3 class="center">Avg. Heart Rate</h3><div id="avgHeartRate_chart" ></div></div>
+		</div>						
+	</div>
+</body>
+</html>

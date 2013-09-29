@@ -26,6 +26,7 @@
 			initialize();
 			initializeSpaces("home.html", "", 5);
 			loadNews({onSuccess: function(data){loadLatestNews(data, 5);}, onError: function(){loadNewsError();}});
+			$( document ).tooltip({ tooltipClass: "hbTooltip" });
 		});
 		
 	</script>
@@ -49,13 +50,13 @@
 				<!--Content-->
 				<div class="page-content">
 					<div id="news-section">
-						<h3>Latest news <a href="news/allNews.html" id="moreNews" class="button morenews">more...</a><a href="news/addNews.html" id="addnews" class="button addnews">Add new</a></h3>
+						<h3>Latest news <a href="news/allNews.html" id="moreNews" title="Read more news" class="button morenews">more...</a><a href="news/addNews.html" id="addnews" class="button addnews">Add new</a></h3>
 						<ul id="newsentries" class="newsentries">
 						</ul>
 					</div>
 					<div id="chronic-section">
-						<h3>Your latest records <a href="spaces/spaces.html" id="moreRecords" class="button morenews">more...</a></h3>
-						<ul id="recordentries" class="recordentries">
+						<h3>Your latest records <a href="spaces/spaces.html" id="moreRecords" title="Inspect more entries" class="button morenews">more...</a></h3>
+						<ul id="recordentries" class="recordentries" style="margin-top:0">
 							<center>
 								<img style="height:60px; float:center; display: block; margin-left: auto; margin-right: auto;" src="../images/loading.gif"></img>
 								Loading...

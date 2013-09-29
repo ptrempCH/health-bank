@@ -5,13 +5,16 @@
 	<meta charset="UTF-8">
 	<link rel="shortcut icon" type="image/x-icon" href="../images/favicon.ico">
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
 	<script src="../js/healthbank.js"></script>
 	<link href="../css/healthbank.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 
 	<script type="text/javascript">
 
 		$(document).ready(function() {
 			initialize();
+			$( document ).tooltip({ tooltipClass: "hbTooltip" });
 		});
 		
 	</script>

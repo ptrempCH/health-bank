@@ -68,9 +68,21 @@
 		<!--Content-->
 		<div class="dev-content">
 			<br>
+			<p style="color:red">Update: We included the file upload procedure</p>
+			<br>
 			<h3>Walkthrough of the standard Medical Record application</h3>
 			<br>
-			<p>First of a few facts about an application built for the Health Bank<sup>&copy;</sup> system. <br>An application is displayed in an <a href="http://www.w3.org/TR/2011/WD-html5-20110525/the-iframe-element.html#the-iframe-element">iFrame</a> on the app view page and consists mainly of an HTML document. This document can contain JavaScript and CSS components. The more it is possible to upload a individual JavaScript as well as an individual CSS file together with the HTML file for the app. In this tutorial we describe an approach where matters are mostly kept seperate.</p>
+			<p>First of a few facts about an application built for the Health Bank<sup>&copy;</sup> system. <br>An application is displayed in an <a href="http://www.w3.org/TR/2011/WD-html5-20110525/the-iframe-element.html#the-iframe-element">iFrame</a> on the app view page and consists mainly of an HTML document. This document can contain JavaScript and CSS components. The more it is possible to upload a individual JavaScript as well as an individual CSS file together with the HTML file for the app. In this tutorial we describe an approach where matters are mostly kept seperate. An application has to make sure that all record entries it adds to a users account do have at least the following fields:</p>
+			<ul>
+			<li>name: A name for the record</li>
+			<li>descr: A description of the record</li>
+			<li>appID: The id of the app which added the record, so your app id</li>
+			<li>file: If you add a file, name the field 'file', else it will not be accepted.</li>
+			<li>values: Used for your custom fields</li>
+			</ul>
+			<p>
+				Apart from the file field all others are mendatory. If you like to add any kind of other fields, and you are very welcome to do so, you will have to put them into the values parameter before sending it to the server in JSON form. In the following we show you an example of the Medical Record application.
+			</p>
 			<br>
 			<p>First let us have a look on the final product as it is currently present in Health Bank<sup>&copy;</sup>.</p>
 			<br>
@@ -95,6 +107,10 @@
 						<div id="addRec-feedback" class="addRec-feedback"></div>
 						<form name="addRec-form" id="addRec-form" class="addRec-form" action="" method="post">
 							<!--Input fields-->
+							<input type="hidden" id="session" name="session"/>
+							<input type="hidden" id="credentials" name="credentials"/>
+							<input type="hidden" id="values" name="values"/>			
+							<input type="hidden" id="appID" name="appID"/>
 							<div>
 								<label for="name" id="nameLabel" class="label">Name(*)</label> 
 								<input id="name" name="name" type="text" class="input name" placeholder="Name" />
@@ -114,7 +130,6 @@
 							<div>
 								<label for="file" id = "fileLabel" class="label">File</label>
 								<input id="file" type="file" name="file" class="input"/>
-								<span style="color: red">Comming soon!</span>
 							</div>
 							<!--END Input fields-->
 							<!--Buttons-->
@@ -129,7 +144,7 @@
 			</html>
 			]]></script>
 
-			<p>This is a simple HTML form with text fields for the name of the new record, the cause of the medical problem and the doctor who treated the user. The more the form contains a text area where the user can give a more detailed description about the problem. Finally there is a file upload option if the user wants to add e.g. an x-ray. With a 'clear' button the user can clear all the entries of the form and the 'add' button sends the information to the server. On top of the form there is a header and a div for feedback such as e.g. missing fields, connection errors etc. </p>
+			<p>This is a simple HTML form with text fields for the name of the new record, the cause of the medical problem and the doctor who treated the user. The more the form contains a text area where the user can give a more detailed description about the problem. Finally there is a file upload option if the user wants to add e.g. an x-ray. With a 'clear' button the user can clear all the entries of the form and the 'add' button sends the information to the server. On top of the form there is a header and a div for feedback such as e.g. missing fields, connection errors etc. When we do a file upload, we do a multipart request and send the entire form. To garantee authentication on the server side, we had to introduce the hidden fields to the form. These will only be populated when we are uploading a file. </p>
 			<br>
 			<p>The according css is rather straight forward and will be saved as a seperate CSS file called medicalRecordApp.css</p>
 			<br>
@@ -307,7 +322,7 @@
 					$("#file").val("");
 				}
 			]]></script><br>
-			<p>Now we need to implement the sending of the data to the server. To do so we write a function submit(), get all the values the user entered and check if the input is valid. If there is a problem we inform the user via the feedback field. When everything is fine, we can finally call the client API and use the function addRecord(name, descr, values, callback) to send the data. Since our app is loaded within an iFrame we can use a call to 'parent' to access the client API. The addRecord function takes the name and description of the new record as an argument. The more a JSON object 'values' that contains other values we like to store for our record. In the case of this application this will be the content of the 'cause' and 'doctor' fields. The last argument of addRecord a callback which we can use to pass an onSuccess and an onError function to get informed, when the AJAX call to the server was successfull or ended in an error. Please keep in mind that the user has to be logged in to use this API function. Else he or she will be redirected to the login screen without adding the new record to the server. The following snippet shows the finished submit function.
+			<p>Now we need to implement the sending of the data to the server. To do so we write a function submit(). We preferred to differentiate between the two cases file upload and no file upload here. If the user did not add a file to the record, we get all the values the user entered and check if the input is valid. If there is a problem we inform the user via the feedback field. When everything is fine, we can finally call the client API and use the function addRecord(appID, name, descr, values, callback) to send the data. Since our app is loaded within an iFrame we can use a call to 'parent' to access the client API. The addRecord function takes the application id, name and description of the new record as an argument. The more a JSON object 'values' that contains other values we like to store for our record as declared above. In the case of this application this will be the content of the 'cause' and 'doctor' fields. The last argument of addRecord a callback which we can use to pass an onSuccess and an onError function to get informed, when the AJAX call to the server was successfull or ended in an error. Please keep in mind that the user has to be logged in to use this API function. Else he or she will be redirected to the login screen without adding the new record to the server. The following snippet shows the finished submit function for the case of no file upload.
 			</p><br>
 			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
 				function submit(){
@@ -320,24 +335,89 @@
 					} 
 					var cause = ($("#cause").val()!=undefined || $("#cause").val()=="")?$("#cause").val():"";
 					var doctor = ($("#doctor").val()!=undefined || $("#doctor").val()=="")?$("#doctor").val():"";
+					var values = "{ \"app\" : \"addRecord\", \"cause\": \""+cause+"\", \"doctor\": \""+doctor+"\" }";
 					parent.addRecord(
-						name, 
-						descr, 
-						"{ \"app\" : \"addRecord\", \"cause\": \""+cause+"\", \"doctor\": \""+doctor+"\" }", 
-						{
-							onSuccess: function(data){
-								$("#addRec-feedback").html(data.message+"<br/>To see all your records click <a id=\"seeAllRecsButton\">here</a>.");
-								$("#addRec-feedback").css("color", "green");
-								$("#seeAllRecsButton").click(function () {
-									window.top.location = parent.WEB_URL+"spaces/spaces.html";
-								});
-							}, 
-							onError: function(message){
-								$("#addRec-feedback").html(message); 
-								$("#addRec-feedback").css("color", "red");
-							}
+			            parent.id, 
+			            name, 
+			            descr, 
+			            values, 
+			            {
+			                onSuccess: function(data){
+			                    $("#addRec-feedback").html(data.message+"<br/>To see all your records click <a id=\"seeAllRecsButton\">here</a>.");
+							    $("#addRec-feedback").css("color", "green");
+							    $("#seeAllRecsButton").click(function () {
+							        window.top.location = parent.WEB_URL+"spaces/spaces.html";
+							    });
+			                }, 
+			                onError: function(message){
+			                    $("#addRec-feedback").html(message); 
+			                    $("#addRec-feedback").css("color", "red");
+			                }
+			            }
+			        );
+				}
+			]]></script><br>
+			<p>
+				Now let us talk about the case, where the user decides to add a file such as an x-ray or a prescription. As said before in this case we would like to send the entire form data via a multipart call to the server. To do so, we need to do a few changes to the above submit() code. First we get the file from the form and check, if everything is ok. Then we set the hidden fields and finally get the form data to send it via the client API function addRecordWithFile(formData, callback) to the server. The reason for the hidden field values and the rather cumbersome task of saving the values of other fields to it has to be done, because the server only seeks for additional fields (apart from name, appID, descr) within the JSON of the values field and ignores fields which it does not know. So the submit function is adapted to this:
+			</p>
+			<br>
+			<script type="syntaxhighlighter" class="brush: js"><![CDATA[
+				function submit(){
+				    var name = $("#name").val();
+				    var descr = $("#descr").val();
+				    if(name==undefined || name.length<1 || descr==undefined || descr.length<1 || descr=="Enter your description of the record here..."){
+				        $("#addRec-feedback").html("Please fill out all the form fields with a (*).");
+				        $("#addRec-feedback").css("color", "red");
+				        return false;
+				    } 
+				    var file = $("#file")[0].files[0];
+				    var cause = ($("#cause").val()!=undefined || $("#cause").val()=="")?$("#cause").val():"";
+				    var doctor = ($("#doctor").val()!=undefined || $("#doctor").val()=="")?$("#doctor").val():"";
+				    var values = "{ \"app\" : \"addRecord\", \"cause\": \""+cause+"\", \"doctor\": \""+doctor+"\" }";
+				    if(file!=undefined && file.name!=undefined && icon.name.length>0){
+				    	if(typeof(Storage)!=="undefined") {
+							var mySession = localStorage.getItem("hb_session");
+							var credentials = localStorage.getItem("hb_cred");
+							$("#session").attr("value", mySession);
+							$("#credentials").attr("value", credentials);
+							$("#appID").attr("value", parent.id);
+							$("#values").attr("value", values);
+					        var formData = new FormData($('#addRec-form')[0]);
+					        parent.addRecordWithFile(formData, {
+					            onSuccess: function(data){
+					                $("#addRec-feedback").html(data.message+"<br/>To see all your records click <a id=\"seeAllRecsButton\">here</a>.");
+								    $("#addRec-feedback").css("color", "green");
+								    $("#seeAllRecsButton").click(function () {
+								        window.top.location = parent.WEB_URL+"spaces/spaces.html";
+								    });
+					            }, 
+					            onError: function(message){
+					              $("#addRec-feedback").html(message); 
+					              $("#addRec-feedback").css("color", "red");
+					            }
+					        });
 						}
-					);
+				    } else {
+				        parent.addRecord(
+				            parent.id, 
+				            name, 
+				            descr, 
+				            values, 
+				            {
+				                onSuccess: function(data){
+				                    $("#addRec-feedback").html(data.message+"<br/>To see all your records click <a id=\"seeAllRecsButton\">here</a>.");
+								    $("#addRec-feedback").css("color", "green");
+								    $("#seeAllRecsButton").click(function () {
+								        window.top.location = parent.WEB_URL+"spaces/spaces.html";
+								    });
+				                }, 
+				                onError: function(message){
+				                    $("#addRec-feedback").html(message); 
+				                    $("#addRec-feedback").css("color", "red");
+				                }
+				            }
+				        );
+				    }
 				}
 			]]></script><br>
 			<p>Finally we need to set the click listener for the buttons and initialize the feedback field. To do so we use the jQuery ready() function on $(document) which gets called, when the DOM has finished loading. 
@@ -367,10 +447,9 @@
 			</p>
 			<br>
 			<p>
-			You can view all your applications by clicking on the <a href="../../myUploadedApps.html">uploaded</a> link in the navigation. From the list of your applications there you will see your app secret, app ID and by clicking on the gear icon you can change the application. If you edit you app, do not forget to tell the user about your new functionality with the help of the 'whats new' field. <b>Happy Coding!</b>
+			You can view all your applications by clicking on the <a href="../../myUploadedApps.html">uploaded</a> link in the navigation. From the list of your applications there you will see your app secret, app ID and by clicking on the gear icon you can change the application. If you edit your app, do not forget to tell the user about your new functionality with the help of the 'whats new' field. <b>Happy Coding!</b>
 			</p>
-			<br><br>
-			<p>As you may have noticed, we did not illustrate the way files are uploaded. This is because this feature is not yet implemented. We will update this tutorial as soon as this functionality is ready to be used. Thank you for your patience.</p>
+			<br>
 		</div>
 		<!--END Content-->
 	</div>

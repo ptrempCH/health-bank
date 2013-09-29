@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Health Bank</title>
+	<meta charset="UTF-8">
+	<link rel="shortcut icon" type="image/x-icon" href="../../images/favicon.ico">
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  	<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+	<link href="css/sportstrack.css" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+	<script src="js/sportstrack.js"></script>
+
+	<script type="text/javascript">
+		$(document).ready(function() {
+			$("#submitButton").click(function(){
+				submit();
+				return false;
+			});
+			$("#clearButton").click(function(){
+				clear();
+				return false;
+			});
+			$(".page-content .addRec-form div label").autoWidth();
+			$("#name").click(function() {
+				$("#name").select();
+			});
+			$("#descr").click(function() {
+				$("#descr").select();
+			});
+			$("#addRec-feedback").html("All fields marked with a (*) are required.");
+			$( "#name" ).autocomplete({
+		      source: activities,
+		      appendTo: "#autoC",
+		      autoFocus: true
+		    });
+		});
+		
+	</script>
+</head>
+<body>
+	<div class="page-content">
+		<h3 class="addRec-header-text">Add a new sports activity to your health record.</h3>
+		<div id="addRec-feedback" class="addRec-feedback"></div>
+		<form name="addRec-form" id="addRec-form" class="addRec-form" action="" method="post">
+			<!--Input fields-->
+			<div>
+				<label for="name" id="nameLabel" class="label">Activity(*)</label> 
+				<input id="name" name="name" type="text" class="input name" />
+				<div id="autoC"></div>
+			</div>
+			<div>
+				<label for="descr" id="descrLabel" class="label descr">Describe what you did(*)</label>
+				<textarea id="descr" name="descr" class="input descr" placeholder="Description" rows="5" cols="50" onkeyup="textAreaAdjust(this)"></textarea>
+			</div>
+			<div>
+				<label for="distance" id="distanceLabel" class="label">Distance (in km)(*)</label> 
+				<input id="distance" name="distance" type="number" step="0.1" class="input name" placeholder="12.4" />
+			</div>
+			<div>
+				<label for="time" id="timeLabel" class="label">Total time (in min)(*)</label> 
+				<input id="time" name="time" type="text" class="input name" placeholder="10:05" />
+			</div>
+			<div>
+				<label for="avgSpeed" id="avgSpeedLabel" class="label">Avg. moving speed (in km/h)</label> 
+				<input id="avgSpeed" name="avgSpeed" type="number" step="0.01" class="input name" placeholder="8.7" />
+			</div>
+			<div>
+				<label for="elevationGain" id="elevationGainLabel" class="label">Elevation gain (in m)</label> 
+				<input id="elevationGain" name="elevationGain" type="number" class="input name" placeholder="125" />
+			</div>
+			<div>
+				<label for="elevationLoss" id="elevationLossLabel" class="label">Elevation loss (in m)</label> 
+				<input id="elevationLoss" name="elevationLoss" type="number" class="input name" placeholder="65" />
+			</div>
+			<div>
+				<label for="cal" id="calLabel" class="label">Calories burned</label> 
+				<input id="cal" name="cal" type="number" class="input name" placeholder="512" />
+			</div>
+			<div>
+				<label for="avgHeartRate" id="avgHeartRateLabel" class="label">Avg. heart beat</label> 
+				<input id="avgHeartRate" name="avgHeartRate" type="number" class="input name" placeholder="120" />
+			</div>
+			<!--END Input fields-->
+			<!--Buttons-->
+			<div class="addRec-footer">
+				<input id="submitButton" type="submit" name="submit" value="Add" class="big-button addRecButton" />
+				<input id="clearButton" type="submit" name="submit" value="Clear Form" class="big-button addRecButton" />
+			</div>
+			<!--END Buttons-->
+		</form>
+	</div>
+</body>
+</html>
