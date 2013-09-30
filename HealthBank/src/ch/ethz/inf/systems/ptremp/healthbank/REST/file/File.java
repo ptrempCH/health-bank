@@ -1,6 +1,5 @@
 package ch.ethz.inf.systems.ptremp.healthbank.REST.file;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.URLDecoder;
 
@@ -13,7 +12,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.StringUtils;
-import org.apache.commons.io.IOUtils;
 import org.bson.types.ObjectId;
 
 import com.mongodb.gridfs.GridFS;
@@ -146,30 +144,9 @@ public class File extends HttpServlet {
 				response.addHeader("Access-Control-Allow-Origin", "*");
 		        response.setBufferSize(DEFAULT_BUFFER_SIZE);
 		        response.setContentType(fileForOutput.getContentType());
-		        response.setHeader("Content-Length", String.valueOf(fileForOutput.getLength()));
+		        response.setContentLength((int) fileForOutput.getLength());
 		        response.setHeader("Content-Disposition", "attachment; filename=\"" + fileForOutput.getFilename() + "\"");
-
-		        // Prepare stream.
-		        BufferedOutputStream output = null;
-
-		        try {
-		            // Open stream.
-					output = new BufferedOutputStream(response.getOutputStream(), DEFAULT_BUFFER_SIZE);
-					byte[] file = IOUtils.toByteArray(fileForOutput.getInputStream());
-					file = Base64.encodeBase64(file);
-					response.setHeader("Content-Length", String.valueOf(file.length));
-		            
-		    		output.write(file);
-		            
-		            
-		        } finally {
-		        	try {
-		                output.close();
-		            } catch (IOException e) {
-		                e.printStackTrace();
-		            }
-
-		        }
+		        fileForOutput.writeTo(response.getOutputStream());
 			}
 		} catch (IllegalArgumentException e) {
 			response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR); // 500

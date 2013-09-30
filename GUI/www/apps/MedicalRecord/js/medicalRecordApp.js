@@ -1,5 +1,5 @@
 function addRecordCompleted(data){
-    $("#addRec-feedback").html(data.message+"<br/>To see all your records click <a id=\"seeAllRecsButton\">here</a>.");
+    $("#addRec-feedback").html("Success!<br/>To see all your records click <a id=\"seeAllRecsButton\">here</a>.");
     $("#addRec-feedback").css("color", "green");
     $("#seeAllRecsButton").click(function () {
         window.top.location = parent.WEB_URL+"spaces/spaces.html";
@@ -19,7 +19,7 @@ function submit(){
     var doctor = ($("#doctor").val()!=undefined || $("#doctor").val()=="")?$("#doctor").val():"";
     var values = "{ \"app\" : \"addRecord\", \"cause\": \""+cause+"\", \"doctor\": \""+doctor+"\" }";
     // do some test with it, if need be
-    if(file!=undefined && file.name!=undefined && icon.name.length>0){
+    if(file!=undefined && file.name!=undefined){
         $("#values").attr("value", values);
         var formData = new FormData($('#addRec-form')[0]);
         parent.addRecordWithFile(formData, {
@@ -48,6 +48,7 @@ function submit(){
             }
         );
     }
+    return false;
 }
 
 function clear() {
@@ -56,6 +57,7 @@ function clear() {
     $("#cause").val("");
     $("#doctor").val("");
     $("#file").val("");
+    return false;
 }
 
 function textAreaAdjust(o) {

@@ -280,7 +280,7 @@
 					$("#spaces-form p").html("<i>All records produced by this app will be visible in the selected spaces.</i>");
 					if(installInfo.spaces!=undefined){
 						$.each(installInfo.spaces, function(j,s){
-							$("#"+s.spaceID).prop('checked', true);
+							$("#"+s.space).prop('checked', true);
 						});
 					}
 					return false;
@@ -306,7 +306,7 @@
 					$("#circles-form p").html("<i>All people in the selected circles will be able to see records produced by this app.</i>");
 					if(installInfo.circles!=undefined){
 						$.each(installInfo.circles, function(j,c){
-							$("#"+c.circleID).prop('checked', true);
+							$("#"+c.circle).prop('checked', true);
 						});
 					}
 					return false;

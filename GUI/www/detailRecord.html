@@ -35,7 +35,7 @@
 					    			s += "<p style=\"margin-left:10px\"><b>"+key+":</b>  <a id=\"fileLink\" href=\"javascript:void(0)\">"+decodeURIComponent(value)+"</a></p>"
 					    		} else if(key=="fileID"){
 					    			fileID = value.$oid;
-					    		} else if(key!=undefined && key!="name" && key!="_id" && key!="timedate" && key!="descr" && key!="app" && key!="userID" && key!="spaces" && key!="circles"){
+					    		} else if(key!=undefined && key!="name" && key!="_id" && key!="timedate" && key!="descr" && key!="appID" && key!="app" && key!="userID" && key!="spaces" && key!="circles"){
 					    			s += "<p style=\"margin-left:10px\"><b>"+key+":</b>  "+decodeURIComponent(value)+"</p>"
 					    		}
 							});

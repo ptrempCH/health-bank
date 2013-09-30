@@ -30,8 +30,8 @@
 		function login() {
 			var username = $("#username").val();
 			var pw = $("#pw").val();
-			if(username==undefined || username.length<4 || pw==undefined || pw.length < 6){ 
-				$("#feedbackText").html("Username or password is either missing or too short. Username has to be at least 4, password at least 6 characters long"); 
+			if(username==undefined || username.length<4 || pw==undefined || pw.length < 4){ 
+				$("#feedbackText").html("Username or password is either missing or too short. Username and password have to be at least 4 characters long"); 
 				$("#feedbackText").css("color","red"); 
 				return false;
 			}

@@ -457,7 +457,41 @@ public class Record extends HttpServlet {
 									data.put(key, value);
 								}
 								
-								connector.insert(MongoDBConnector.RECORDS_COLLECTION_NAME, data);
+								
+								// check if for this application the user has defined spaces or circles
+								list = new BasicDBList();
+								list.add(manager.getUserID(credentials));
+								BasicDBObject q1 = new BasicDBObject("userID", new BasicDBObject("$in", list));
+								BasicDBObject q2 = new BasicDBObject("appID", appID);
+								BasicDBList myList = new BasicDBList();
+								myList.add(q1);
+								myList.add(q2);
+								BasicDBObject and = new BasicDBObject("$and", myList);
+								res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, and);
+								BasicDBList mySpaces = null;
+								if(res!=null && res.hasNext()){
+									obj = (BasicDBObject) res.next();
+									BasicDBList myCircles = null;
+									if(obj.containsField("spaces")){ mySpaces = (BasicDBList) obj.get("spaces"); }
+									if(obj.containsField("circles")){ myCircles = (BasicDBList) obj.get("circles"); }
+									if(myCircles!=null){
+										data.put("circles", myCircles);
+										System.out.println("added circles to new record");
+									}
+								}
+								
+								ObjectId newId = (ObjectId) connector.insert(MongoDBConnector.RECORDS_COLLECTION_NAME, data);
+								if(mySpaces!=null && !mySpaces.isEmpty()){
+									System.out.println("mySpaces size: "+mySpaces.size());
+									for(int i=0; i<mySpaces.size();i++){
+										data = new HashMap<Object, Object>();
+										data.put("recordID", newId.toString());
+										data.put("spaceID", ((BasicDBObject)mySpaces.get(i)).getString("space"));
+										data.put("timedate", dateFormat.format(new Date()));
+										connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
+										System.out.println("added space to new record with id:"+newId);
+									}
+								}
 							}
 						}
 					}
@@ -550,7 +584,43 @@ public class Record extends HttpServlet {
 											data.put("appID", appID);
 											data.put("userID", userID);
 											
-											connector.insert(MongoDBConnector.RECORDS_COLLECTION_NAME, data);
+											// check if for this application the user has defined spaces or circles
+											BasicDBList list = new BasicDBList();
+											list.add(manager.getUserID(credentials));
+											q1 = new BasicDBObject("userID", new BasicDBObject("$in", list));
+											q2 = new BasicDBObject("appID", appID);
+											BasicDBList myList2 = new BasicDBList();
+											myList2.add(q1);
+											myList2.add(q2);
+											and = new BasicDBObject("$and", myList2);
+											res = (DBCursor) connector.query(MongoDBConnector.APPLICATION_COLLECTION_NAME, and);
+											BasicDBList mySpaces = null;
+											if(res!=null && res.hasNext()){
+												BasicDBObject obj = (BasicDBObject) res.next();
+												BasicDBList myCircles = null;
+												if(obj.containsField("spaces")){ mySpaces = (BasicDBList) obj.get("spaces"); }
+												if(obj.containsField("circles")){ myCircles = (BasicDBList) obj.get("circles"); }
+												if(myCircles!=null){
+													data.put("circles", myCircles);
+													System.out.println("added circles to new record");
+												}
+											}
+											
+											ObjectId newId = (ObjectId) connector.insert(MongoDBConnector.RECORDS_COLLECTION_NAME, data);
+											if(mySpaces!=null && !mySpaces.isEmpty()){
+												System.out.println("mySpaces size: "+mySpaces.size());
+												for(int i=0; i<mySpaces.size();i++){
+													data = new HashMap<Object, Object>();
+													data.put("recordID", newId.toString());
+													data.put("spaceID", ((BasicDBObject)mySpaces.get(i)).getString("space"));
+													data.put("timedate", dateFormat.format(new Date()));
+													connector.insert(MongoDBConnector.SPACES_COLLECTION_NAME, data);
+													System.out.println("added space to new record with id:"+newId);
+												}
+											}
+											
+											
+											
 											connector.update(MongoDBConnector.APPLICATION_COLLECTION_NAME, and, new BasicDBObject("$set", new BasicDBObject("token", "")));
 										}
 									}

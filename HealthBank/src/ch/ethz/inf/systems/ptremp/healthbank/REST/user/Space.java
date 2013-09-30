@@ -321,11 +321,12 @@ public class Space extends HttpServlet {
 							wasError = true;
 						}
 						if(!wasError){
-							
+							System.out.println("checking if space already exists");
 							// check if exists already
 							list.add(manager.getUserID(credentials));
 							BasicDBObject q1 = new BasicDBObject("userID", new BasicDBObject("$in", list));
 							BasicDBObject q2 = new BasicDBObject("name", name);
+							list = new BasicDBList();
 							list.add(q1);
 							list.add(q2);
 							DBCursor res = (DBCursor) connector.query(MongoDBConnector.SPACES_COLLECTION_NAME, new BasicDBObject("$and", list));

@@ -2,7 +2,7 @@ var patientID;
 
 
 function addRecordCompleted(data){
-    $("#addRec-feedback").html(data.message+"<br/>To see all your records click <a id=\"seeAllRecsButton\">here</a>.");
+    $("#addRec-feedback").html("Success! <br/>Entry added to users health record.");
     $("#addRec-feedback").css("color", "green");
     $("#seeAllRecsButton").click(function () {
         window.top.location = parent.WEB_URL+"spaces/spaces.html";
@@ -24,7 +24,7 @@ function submit(){
     var treatment = ($("#treatment").val()!=undefined || $("#treatment").val()=="")?$("#treatment").val():"";
     var drugs = ($("#drugs").val()!=undefined || $("#drugs").val()=="")?$("#drugs").val():"";
     // do some test with it, if need be
-    if(file!=undefined && file.name!=undefined && icon.name.length>0){
+    if(file!=undefined && file.name!=undefined){
         var values = "{ \"app\" : \"addRecord\", \"cause\": \""+cause+"\", \"doctor\": \""+doctor+"\", \"treatment\": \""+treatment+"\", \"drugs\": \""+drugs+"\", \"patient\": \""+patient+"\", \"userID\": \""+patientID+"\" }";
         $("#values").attr("value", values);
         var formData = new FormData($('#addRec-form')[0]);
